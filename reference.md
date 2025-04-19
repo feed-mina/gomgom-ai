@@ -1,5 +1,5 @@
 # 🍚 CLICK YOUR TASTE! - 밥꾹
-
+https://github.com/feed-mina/esgproject
 "오늘은 뭘 먹을까?" 고민하는 당신을 위한 귀여운 메뉴 추천 서비스입니다.  
 토끼 셰프와 함께, 다양한 상황과 입맛에 맞는 메뉴를 추천받아보세요!
 
