@@ -25,8 +25,7 @@ SECRET_KEY = 'django-insecure-k3=p4i=(mu-)*2w4d6-_)3h+w(o&sk5*tl)c-#n^%7(!w6co8@
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'mindevprofile.kr', 'www.mindevprofile.kr', '43.202.138.165']
 
 # Application definition
 
