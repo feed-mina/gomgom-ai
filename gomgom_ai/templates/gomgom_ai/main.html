@@ -43,8 +43,21 @@
                     </div>
 
                     <!-- 버튼 -->
-                    <div>
-                        <a href="{% url 'situation' %}"><button class="button_random">랜덤메뉴 추천</button></a>
+                    <div class="button-group">
+<!--                        <a href="{% url 'situation' %}"><button class="button_random">랜덤메뉴 추천</button></a>-->
+
+                        <!-- 입력창 -->
+                        <div class="input-box">
+                            <input
+                                    type="text"
+                                    id="userInput"
+                                    placeholder="예: 매운 음식 추천해줘, 10,000원 이하"
+                            />
+
+                            <button onclick="sendInput()">입력 추천</button>
+                        </div>
+
+
                         <a href="{% url 'start' %}"><button class="button_test">입맛 테스트</button></a>
 
                     </div>
@@ -55,5 +68,29 @@
     </div>
     <!-- JS 연결 -->
     <script src="{% static 'javascript/main.js' %}"></script>
+    <script>
+        function sendInput() {
+            const input = document.getElementById('userInput').value.trim();
+            if (!input) {
+                alert("추천받고 싶은 내용을 입력해주세요!");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                function (pos) {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+
+                    // URL로 이동
+                    const url = `/recommend_input/?text=${encodeURIComponent(input)}&lat=${lat}&lng=${lng}`;
+                    window.location.href = url;
+                },
+                function (error) {
+                    alert("위치 정보를 가져올 수 없습니다.");
+                }
+            );
+        }
+    </script>
+
 </body>
 </html>

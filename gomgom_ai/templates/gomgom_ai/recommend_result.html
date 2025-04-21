@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>추천 결과</title>
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #FAF0D7;
+            padding: 50px;
+            text-align: center;
+        }
+        .card {
+            max-width: 400px;
+            margin: auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .card h2 {
+            color: #BEA397;
+        }
+        .card p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .btn {
+            display: inline-block;
+            margin-top: 20px;
+            background-color: #8CC0DE;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .btn:hover {
+            background-color: #FFDBDA;
+            color: #FF908B;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>🍽️ 추천 결과</h2>
+    <p><strong>{{ result.recommendation }}</strong></p>
+    <p>신뢰도: {{ result.confidence }}</p>
+    <a href="/" class="btn">다시 추천받기</a>
+</div>
+</body>
+</html>

@@ -1,4 +1,5 @@
 /* 기본 리셋 및 애니메이션 */
+html, body { height: auto; }
 * {
     margin: 0;
     padding: 0;
@@ -7,7 +8,7 @@
 
 body#body {
     animation: fadein 2s;
-    overflow: hidden;
+    /*overflow: hidden;*/
 }
 
 @keyframes fadein {
@@ -66,13 +67,14 @@ body#body {
 /* 메인 박스 */
 .box {
     position: relative;
-    width: 1000px;
+    width: 90vw;
+    height: auto;
     max-width: 95vw;
-    height: 600px;
     background-color: white;
     box-shadow: 0px 10px 4px #AFADDA;
     border-radius: 20px;
     margin: 0 auto;
+    padding: 5rem;
 }
 
 /* 말풍선 */
@@ -120,17 +122,20 @@ body#body {
 /* 버튼 */
 .button_random,
 .button_test {
+    width: 150px;
+    height: 100px;
+    background-color: #FAF0D7;
+    color: #BEA397;
+    box-shadow: 0px 4px 4px #D6CFCC;
+    border: none;
+    border-radius: 20px;
     font-family: 'Noto Sans KR', sans-serif;
     font-size: 18px;
     font-weight: bold;
-    width: 150px;
-    height: 100px;
-    border: none;
-    border-radius: 20px;
-    z-index: 100;
+    cursor: pointer;
     transition: all 0.3s ease;
-    position: absolute;
 }
+
 
 .button_random {
     top: 65%;
@@ -177,11 +182,18 @@ body#body {
 
     .button_random,
     .button_test {
-        position: static;
-        width: 80%;
-        height: 60px;
-        margin: 10px auto;
-        display: block;
+        width: 150px;
+        height: 100px;
+        background-color: #FAF0D7;
+        color: #BEA397;
+        box-shadow: 0px 4px 4px #D6CFCC;
+        border: none;
+        border-radius: 20px;
+        font-family: 'Noto Sans KR', sans-serif;
+        font-size: 18px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
     }
 
     .button_random {
@@ -191,4 +203,45 @@ body#body {
     .button_test {
         background-color: #FAF0D7;
     }
+}
+.input-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 30px;
+    flex-direction: column;
+}
+
+.input-box input {
+    height: 45px;
+    padding: 10px;
+    border: 2px solid #BEA397;
+    border-radius: 10px;
+    font-size: 1rem;
+    margin-bottom: 10px;
+    font-family: 'Noto Sans KR', sans-serif;
+}
+
+.input-box button {
+    width: 120px;
+    height: 40px;
+    background-color: #8CC0DE;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.input-box button:hover {
+    background-color: #FFDBDA;
+    color: #FF908B;
+}
+.button-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 30px;
+    gap: 20px; /* 버튼 간 간격 */
 }
