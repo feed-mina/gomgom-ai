@@ -1,18 +1,19 @@
+{% load static %}
 <!DOCTYPE html>
 
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <title>밥꾹_랜덤밥상</title>
-    <link href="../css/randomfood.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="{% static 'css/randomfood.css' %}">
 
 </head>
 <body>
     <div class="background">
         <div class="header">
             <h3>
-                <a href="main.html">
-                    <img id="logo" src="../image/로고.png" alt="logo">
+                <a href="{% url 'main' %}">
+                   <img id="logo" src="{% static 'image/로고.png' %}" alt="토끼">
                     <span id="header_text">&nbsp;CLICK YOUR TASTE!</span>
                 </a>
             </h3>
@@ -24,17 +25,21 @@
                 </div>
                 <div class="situation">
                     <div class="situationItem first" id="yesSoup">
-                        <img src="../image/상체.png" />
-                        <a href="situation4.html">국물O</a>
+                        <img src="{% static 'image/상체.png' %}" />
+                        <a href="{% url 'situation4' %}">국물O</a>
                     </div>
                     <div class="situationItem second" id="noSoup">
-                        <img src="../image/상체.png" />
-                        <a href="situation4.html">국물X</a>
+                        <img src="{% static 'image/상체.png' %}" />
+                        <a href="{% url 'situation4' %}">국물X</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script>
+        const situation4Url = "{% url 'situation4' %}";
+    </script>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script language="javascript">
@@ -66,8 +71,8 @@
     var sit3 = "0123";
 
 
-    var sending = function sendFunc( aValue ){
-        location.href=`situation4.html?${sit1}=${sit1_name}&${sit2}=${sit2_name}&${sit3}=${sit3_name}`;
+    var sending = function sendFunc(){
+        location.href = `${situation4Url}?${sit1}=${sit1_name}&${sit2}=${sit2_name}&${sit3}=${sit3_name}`;
 
     }
 
@@ -75,17 +80,17 @@
     $("#yesSoup").click(function(){
       sit3 = "id3";
       sit3_name = "soup_yes";
-      sending('1:3:1:1');
+      sending();
     });
     $("#noSoup").click(function(){
       sit3 =  "id3";
       sit3_name = "soup_no";
-      sending('1:3:1:1');
+      sending();
     });
 
 
     </script>
-    <script src="../javascript/randomfood.js"></script>
+    <script src="{% static 'javascript/randomfood.js' %}"></script>
 
 </body>
 </html>

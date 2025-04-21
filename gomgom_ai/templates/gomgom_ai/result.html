@@ -1,18 +1,20 @@
+{% load static %}
 <!DOCTYPE html>
 
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <title>밥꾹_랜덤밥상</title>
-    <link href="../css/randomfood.css" rel="stylesheet" type="text/css" />
-    <script src = "../javascript/elice.json" type="text/javascript"></script>
+    <link rel="stylesheet" href="{% static 'css/randomfood.css' %}">
+<!--    <script src = "../javascript/elice.json" type="text/javascript"></script>-->
 </head>
 <body>
     <div class="background">
         <div class="header">
             <h3>
-                <a href="main.html">
-                    <img class="logo" src="../image/로고.png" alt="logo">
+                <a href="{% url 'main' %}">
+                    <img id="logo" src="{% static 'image/로고.png' %}" alt="logo">
+
                     <span class="header_text">&nbsp;CLICK YOUR TASTE!</span>
                 </a>
             </h3>
@@ -25,15 +27,71 @@
                 <div class="result">
                  
                 </div>
-                <img class="resultImg" src="../image/상반신 요리사 토끼.png" />
-                <a href="situation.html"><button type="button" class="replayButton">다시하기</button></a>
+                <img class="resultImg" src="{% static 'image/상반신 요리사 토끼.png' %}" alt="토끼">
+                <a href="{% url 'situation' %}"><button type="button" class="replayButton">다시하기</button></a>
                 <div type="button" class="othermenu"><button style="border:none;  background: none; font-weight: 400;
                     font-size: 30px;" class="othershow">다른 결과보기</button></div>
     </div>
 </div>
+    </div>
 <!-- 다른음식 보기 -> 음식이름만 새로 바뀌는 역할 -->
+<!--<script src="{% static 'javascript/result.js' %}"></script>-->
 
-<script src="../javascript/result.js"></script>
+    <script>
+        fetch("{% static 'javascript/elice.json' %}")
+            .then(response => response.json())
+            .then(elice => {
+                // 여기서 elice는 배열로 잘 들어옴!
+                console.log(elice);
+                console.log("받은 데이터:", elice);
+
+                // 이후 기존 코드 안으로 data 넘기기
+                runResultLogic(elice);
+            })
+            .catch(error => console.error('불러오기 오류:', error));
+
+
+
+        function runResultLogic(data) {
+            let elicedata = JSON.stringify(data);
+            console.log(data.length)
+
+            const newhref = window.location.href;
+            const url = new URL(newhref);
+            const urlParams = url.searchParams;
+            const id1  = urlParams.get('id1');
+            const id2 =  urlParams.get('id2');
+            const id3 =  urlParams.get('id3');
+            const id4 = urlParams.get('id4');
+
+            const result = document.querySelector('.result');
+            const result_text = document.createElement('p');
+            const othermenu = document.querySelector('.othershow');
+
+            let itemarray2 = [];
+            data.forEach((item) => {
+                let arr1 = item.id1.split(', ');
+                let arr4 = item.id4.split(', ');
+
+                if (arr1.includes(id1) && item.id2 === id2 && item.id3 === id3 && arr4.includes(id4)) {
+                    itemarray2.push(item.menu);
+                }
+            });
+
+            if (itemarray2.length > 0) {
+                const menu_randomindex = Math.floor(Math.random() * itemarray2.length);
+                const random_menu = itemarray2[menu_randomindex];
+                result_text.style.fontSize = '2em';
+                result_text.textContent = `${random_menu}`;
+            } else {
+                result_text.style.fontSize = '2em';
+                result_text.textContent = '결과가 없습니다. 다시 시도해주세요.';
+            }
+
+            result.appendChild(result_text);
+        }
+
+    </script>
 
 </body>
 </html>

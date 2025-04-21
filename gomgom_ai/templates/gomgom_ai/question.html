@@ -1,15 +1,16 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>탭 사이트 이름</title>
-    <link rel="stylesheet" href="../css/question.css">
+    <link rel="stylesheet" href="{% static 'css/question.css' %}">
     <meta name = "viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
     <header>
-        <a href="main.html">
-            <img id="logo" src="../image/로고.png" alt="logo">
+        <a href="{% url 'main' %}">
+            <img id="logo" src="{% static 'image/로고.png' %}" alt="logo">
             <span id="header_text">&nbsp;CLICK YOUR TASTE!</span>
         </a>
 
@@ -20,7 +21,7 @@
             <div class="main">
                 <div class="title">
                     <h2 class="title_text">입맛 테스트</h2>
-                    <img src="엘리스토끼_조리복국자(밑에 둥금) 1.png" alt="rabbit" style="width:200px; height: 285px; ">
+                     <img src="{% static 'image/elice_chef_rabbit_1.png' %}" alt="rabbit" style="width:200px; height: 285px; ">
                 </div>
 
                 <div class="Box">
@@ -33,6 +34,9 @@
         </section>
     </main>
     <footer></footer>
+    <script>
+        const question2_url = "{% url 'question2' %}";
+    </script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script language="javascript">
@@ -41,18 +45,18 @@
         var sit1_name = "";
 
         var sending = function sendFunc(aValue) {
-            location.href = `question2.html?${sit1}=${sit1_name}`;
+            location.href = `${question2_url}?${sit1}=${sit1_name}`;
         }
 
         $("#answerBox1").click(function () {
             sit1 = "id1";
             sit1_name = "answerA";
-            sending('1:3:1:1');
+            sending();
         });
         $("#answerBox2").click(function () {
             sit1 = "id1";
             sit1_name = "answerB";
-            sending('1:3:1:1');
+            sending();
         });
 
 

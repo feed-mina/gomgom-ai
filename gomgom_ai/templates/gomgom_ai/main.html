@@ -2,6 +2,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
+    <link rel="icon" href="{% static 'image/favicon.ico' %}" type="image/x-icon">
+
     <meta charset="utf-8" />
     <title>밥꾹</title>
 
@@ -16,7 +18,7 @@
     <header id="header">
         <h3>
             <a id="header_link" href="main.html">
-                <img src="{% static 'image/로고.png' %}" alt="토끼">
+                <img src="{% static 'image/로고.png' %}" alt="토끼" class="logo-img">
 
                 <span id="header_text">&nbsp;CLICK YOUR TASTE!</span>
             </a>
@@ -42,8 +44,9 @@
 
                     <!-- 버튼 -->
                     <div>
-                        <a href="situation.html"> <button class="button_random">랜덤메뉴 추천</button></a>
-                        <a href="start.html">   <button class="button_test">입맛 테스트</button></a>
+                        <a href="{% url 'situation' %}"><button class="button_random">랜덤메뉴 추천</button></a>
+                        <a href="{% url 'start' %}"><button class="button_test">입맛 테스트</button></a>
+
                     </div>
                 </article>
 

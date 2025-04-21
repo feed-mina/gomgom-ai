@@ -1,14 +1,15 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <title>탭 사이트 이름</title>
-    <link rel="stylesheet" href="../css/question.css">
+    <link rel="stylesheet" href="{% static 'css/question.css' %}">
 </head>
 <body>
     <header>
         <a href ="#">
-            <imag scr="로고.png" alt="logo">
+            <img src="{% static 'image/로고.png' %}" id="logo" alt="logo">
         </a>
 
     </header>
@@ -18,7 +19,7 @@
             <div class="main">
                 <div class = "title">
                     <h2 class="title_text">입맛 테스트</h2>
-                    <imag scr="엘리스토끼_조리복국자(밑에 둥금) 1.png" alt="rabbit">
+                    <img src="{% static 'image/elice_chef_rabbit_1.png' %}" alt="rabbit">
                 </div>
         
                 <div class="Box">
@@ -36,6 +37,8 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script language = "javascript">
+        const question5_url = "{% url 'question5' %}";
+
         const newhref = window.location.href;
         const url = new URL(newhref);
         const urlParams = url.searchParams;
@@ -61,8 +64,8 @@
     var sit4 = "0123";
     
 
-    var sending = function sendFunc( aValue ){
-        location.href =`question5.html?${sit1}=${sit1_name}&${sit2}=${sit2_name}&${sit3}=${sit3_name}&${sit4}=${sit4_name}`;    
+    var sending = function sendFunc(){
+        location.href =`${question5_url}?${sit1}=${sit1_name}&${sit2}=${sit2_name}&${sit3}=${sit3_name}&${sit4}=${sit4_name}`;
  
     }
  
@@ -70,12 +73,12 @@
     $("#answerBox1").click(function(){
       sit4 = "id4";
       sit4_name = "answerA";
-      sending('1:3:1:1');
+      sending();
     });
     $("#answerBox2").click(function(){
       sit4 = "id4";
       sit4_name = "answerB";
-      sending('1:3:1:1');
+      sending();
     });
  
 

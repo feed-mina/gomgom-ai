@@ -1,22 +1,22 @@
+{% load static %}
 <!DOCTYPE html>
 
 <html xml:lang="ko" lang="ko" xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <meta charset="utf-8" />
     <title>밥꾹</title>
-    <link rel="stylesheet" href="../css/test_result1.css">
+    <link rel="stylesheet" href="{% static 'css/test_result1.css' %}">
     <!-- 폰트 -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet">
-    <script src = "../javascript/elice.json" type="text/javascript"></script>
 
 </head>
 <body id="body">
     <header id="header">
         <h3>
-            <a href="main.html">
-                <img id="logo" src="../image/로고.png" alt="logo">
+            <a href="{% url 'main' %}">
+               <img id="logo" src="{% static 'image/로고.png' %}" alt="토끼">
                 <span id="header_text">&nbsp;CLICK YOUR TASTE!</span>
             </a>
         </h3>
@@ -36,7 +36,7 @@
                     <span class="choice"></span><h2>추천드려요~</h2>
                 </div>
 
-                <img id="rabbit" src="../image/엘리스토끼_조리복국자.png" alt="rabbit">
+                <img id="rabbit" src="{% static 'image/엘리스토끼_조리복국자.png' %}" alt="rabbit">
             </article>
 
     
@@ -44,10 +44,61 @@
 
 
     <div>
-          <a href="question.html">   <button class="button_again">다시하기</button></a>
+         <a href="{% url 'question' %}">   <button class="button_again">다시하기</button></a>
     </div>
-    <script src="../javascript/test_result.js"></script>
+<!--    <script src="{% static 'javascript/test_result.js' %}"></script>-->
+<script>
+    fetch('/static/javascript/elice.json')
+        .then(response => response.json())
+        .then(data => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const id1 = urlParams.get("id1");
+            const id2 = urlParams.get("id2");
+            const id3 = urlParams.get("id3");
+            const id4 = urlParams.get("id4");
+            const id5 = urlParams.get("id5");
+            const id6 = urlParams.get("id6");
 
+            let plus = 0;
+            if (id1 === 'answerA') plus++;
+            if (id2 === 'answerA') plus++;
+            if (id3 === 'answerA') plus++;
+            if (id4 === 'answerA') plus++;
+            if (id5 === 'answerA') plus++;
+            if (id6 === 'answerA') plus++;
+
+            let type = '';
+            if (plus === 1) type = 'gourmet';
+            else if (plus === 2) type = 'wellBeing';
+            else if (plus === 3) type = 'childTaste';
+            else if (plus === 4 && id3 === 'answerB') type = 'wellKnow';
+            else if (plus === 4) type = 'hipster';
+            else if (plus === 5) type = 'homeFood';
+
+            const result = document.querySelector('.result');
+            const result_text = document.createElement('p');
+            result_text.textContent = type;
+            result.appendChild(result_text);
+
+            const choice = document.querySelector('.choice');
+            const choice_text = document.createElement('p');
+
+            // 추천 메뉴 뽑기
+            const matched = data.filter(item => item.test_result.includes(type));
+            if (matched.length > 0) {
+                const randomIndex = Math.floor(Math.random() * matched.length);
+                choice_text.textContent = matched[randomIndex].menu;
+            } else {
+                choice_text.textContent = "추천 메뉴 없음";
+            }
+
+            choice.appendChild(choice_text);
+        })
+        .catch(error => {
+            console.error("JSON 불러오기 오류:", error);
+        });
+
+</script>
 
 
 </body>

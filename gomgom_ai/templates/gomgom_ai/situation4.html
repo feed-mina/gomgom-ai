@@ -1,18 +1,19 @@
+{% load static %}
 <!DOCTYPE html>
 
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <title>밥꾹_랜덤밥상</title>
-    <link href="../css/randomfood.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="{% static 'css/randomfood.css' %}">
 
 </head>
 <body>
     <div class="background">
         <div class="header">
             <h3>
-                <a href="main.html">
-                    <img class="logo" src="../image/로고.png" alt="logo">
+                <a href="{% url 'main' %}">
+                    <img class="logo" src="{% static 'image/로고.png' %}" alt="logo">
                     <span class="header_text">&nbsp;CLICK YOUR TASTE!</span>
                 </a>
             </h3>
@@ -24,25 +25,28 @@
                 </div>
                 <div class="situation">
                     <div class="situationItem first" id="diet">
-                        <img src="../image/상체.png" />
-                        <a href="result.html">다이어트</a>
+                        <img src="{% static 'image/상체.png' %}" />
+                       <a href="{% url 'result' %}">다이어트</a>
                     </div>
                     <div class="situationItem second" id="cheap">
-                        <img src="../image/상체.png" />
-                        <a href="result.html">저렴이</a>
+                        <img src="{% static 'image/상체.png' %}" />
+                       <a href="{% url 'result' %}">저렴이</a>
                     </div>
                     <div class="situationItem third" id="vegan">
-                        <img src="../image/상체.png" />
-                        <a href="result.html">비건</a>
+                        <img src="{% static 'image/상체.png' %}" />
+                       <a href="{% url 'result' %}">비건</a>
                     </div>
                     <div class="situationItem fourth" id="random">
-                        <img src="../image/상체.png" />
-                        <a href="result.html">랜덤</a>
+                        <img src="{% static 'image/상체.png' %}" />
+                       <a href="{% url 'result' %}">랜덤</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <script>
+        const resultUrl = "{% url 'result' %}";
+    </script>
 
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -71,35 +75,34 @@
     var sit4 = "0123";
 
 
-    var sending = function sendFunc( aValue ){
-        location.href=`result.html?${sit1}=${sit1_name}&${sit2}=${sit2_name}&${sit3}=${sit3_name}&${sit4}=${sit4_name}`;
-
+    var sending = function sendFunc(){
+        location.href = `${resultUrl}?${sit1}=${sit1_name}&${sit2}=${sit2_name}&${sit4}=${sit4_name}`;
     }
 
     $("#diet").click(function(){
       sit4 = "id4";
       sit4_name = "for_diet";
-      sending('1:3:1:1');
+      sending();
     });
     $("#cheap").click(function(){
       sit4 = "id4";
       sit4_name = "cheaper_food";
-      sending('1:3:1:1');
+      sending();
     });
     $("#vegan").click(function(){
       sit4 = "id4";
       sit4_name = "for_vegan";
-      sending('1:3:1:1');
+      sending();
     });
     $("#random").click(function(){
       sit4 = "id4";
       sit4_name = "I_dont_care";
-      sending('1:3:1:1');
+      sending();
     });
 
 
     </script>
-    <script src="../javascript/randomfood.js"></script>
+    <script src="{% static 'javascript/randomfood.js' %}"></script>
 
 </body>
 </html>
