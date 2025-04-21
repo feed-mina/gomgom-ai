@@ -1,53 +1,143 @@
-/* 결과 텍스트 (유형명) */
-.result p {
-    font-size: 2.5rem;
+/* 기본 설정 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #FAF0D7;
+    font-family: 'Inter', sans-serif;
+}
+
+/* 헤더 */
+#header {
+    width: 100%;
+    height: 60px;
+    background-color: #8CC0DE;
+    display: flex;
+    align-items: center;
+    padding-left: 20px;
+}
+
+#header h3 a {
+    text-decoration: none;
+    font-size: 1rem;
+    color: white;
+    display: flex;
+    align-items: center;
+}
+
+#logo {
+    width: 25px;
+    margin-right: 10px;
+    vertical-align: middle;
+}
+
+/* 컨테이너 */
+.container {
+    width: 100%;
+    min-height: 100vh;
+    background: #FAF0D7;
+    padding-top: 70px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 말풍선 */
+.text_box {
+    max-width: 600px;
+    height: 6rem;
+    background: #FFBEBB;
+    box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.5);
+    border-radius: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 30px auto;
+    text-align: center;
+}
+
+.text1 {
+    padding:2rem;
+    font-size: 1.5rem;
     font-weight: bold;
+    color: rgba(100, 26, 26, 0.8);
+}
+
+/* 큰 박스 */
+.elice {
+    width: 90%;
+    max-width: 900px;
+    background: #FFBEBB;
+    box-shadow: 0px 10px 4px 4px rgba(122, 118, 205, 0.5);
+    border-radius: 30px;
+    padding: 30px;
+    position: relative;
+    margin: 30px auto;
+}
+
+/* 토끼 이미지 */
+#rabbit {
+    position: absolute;
+    width: 35%;
+    max-width: 200px;
+    right: 20px;
+    bottom: 20px;
+}
+
+/* 흰색 안쪽 박스 */
+.white_box {
+    background: rgba(255, 255, 255, 0.86);
+    border-radius: 30px;
+    padding: 20px;
+}
+
+/* 텍스트 */
+h2 {
+    font-size: 2rem;
+    margin-bottom: 20px;
+    color: #000;
+}
+
+.result p {
+    font-size:  2rem;
+    font-weight: 700;
     color: #B85C8B;
     text-align: center;
     margin: 0;
 }
 
-/* "입니다." 문구 */
 .white_box h1 {
-    font-size: 2.2rem;
+    font-size: 2rem;
+    margin: 25px 0;
     color: #9f4c79;
-    margin: 20px 0;
     text-align: center;
+    font-weight: 600;
 }
-
-/* 추천 문구 */
 .choice p {
-    font-size: 1.5rem;
+    font-size: 3rem;
     font-weight: 600;
     color: #444;
     text-align: center;
-    margin: 20px 0 0 0;
+    margin: 20px 0 10px 0;
 }
-
-/* "추천드려요~" 문구 */
 .white_box h2:last-of-type {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
     color: #C26D8E;
     text-align: center;
     margin: 0;
     font-weight: 700;
 }
-
-/* 말풍선 텍스트 */
-.text1 {
-    font-size: 1.8rem;
-    font-weight: bold;
-    color: rgba(100, 26, 26, 0.8);
-}
-
-/* 다시하기 버튼 */
 .button_again {
     background-color: #FBD961;
     color: #333;
-    font-size: 1.1rem;
+    font-size: 1rem;
     width: 160px;
     height: 55px;
     border-radius: 25px;
+    font-weight: 700;
     transition: all 0.3s ease;
     box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
 }
@@ -58,6 +148,33 @@
     transform: scale(1.05);
 }
 
+
+.button_before {
+    background-color: #8CC0DE;
+    color: white;
+}
+
+.button_before:hover {
+    background-color: #FFDBDA;
+    color: #FF908B;
+}
+
+.button_again {
+    background-color: #FBD961;
+    color: white;
+}
+/* 버튼 박스 정렬 */
+.button_area {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* 내부 여백 */
+.all {
+    padding: 1em;
+}
+
 /* 반응형 미디어쿼리 */
 @media (max-width: 768px) {
     .result p {
@@ -65,27 +182,28 @@
     }
 
     .white_box h1 {
-        font-size: 1.8rem;
-        margin: 15px 0;
-    }
-
-    .choice p {
-        font-size: 1.3rem;
-    }
-
-    .white_box h2:last-of-type {
-        font-size: 1.2rem;
+        font-size: 1.5rem;
     }
 
     .text1 {
+        padding:2rem;
         font-size: 1.5rem;
+        font-weight: bold;
+        color: rgba(100, 26, 26, 0.8);
+    }
+    .choice p {
+        font-size: 3rem;
+    }
+
+    .white_box h2:last-of-type {
+        font-size: 1rem;
     }
 
     .button_again {
         width: 80%;
-        font-size: 1rem;
+        max-width: 250px;
         height: 50px;
-        border-radius: 20px;
+        font-size: 1rem;
     }
 
     #rabbit {
@@ -101,5 +219,10 @@
 
     .white_box {
         padding: 15px;
+    }
+    #logo{
+        width: 30px;
+        height: auto;
+        margin-right: 10px;
     }
 }
