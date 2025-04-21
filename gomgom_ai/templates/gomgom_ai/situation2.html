@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>밥꾹_랜덤밥상</title>
+    <link href="../css/randomfood.css" rel="stylesheet" type="text/css" />
+
+</head>
+<body>
+    <div class="background">
+        <div class="header">
+            <h3>
+                <a href="main.html">
+                    <img class="logo" src="../image/로고.png" alt="logo">
+                    <span class="header_text">&nbsp;CLICK YOUR TASTE!</span>
+                </a>
+            </h3>
+        </div>
+        <div class="container">
+            <div class="main">
+                <div class="heading1">
+                    <h2>상황고르기</h2>
+                </div>
+                <div class="situation">
+                    <div class="situationItem first" id="korea">
+                        <img src="../image/상체.png" />
+                        <a href="situation3.html">한식</a>
+                    </div>
+                    <div class="situationItem second" id="western">
+                        <img src="../image/상체.png" />
+                        <a href="situation3.html">양식</a>
+                    </div>
+                    <div class="situationItem third" id="china">
+                        <img src="../image/상체.png" />
+                        <a href="situation3.html">중식</a>
+                    </div>
+                    <div class="situationItem fourth" id="japan">
+                        <img src="../image/상체.png" />
+                        <a href="situation3.html">일식</a>
+                    </div>
+                    <div class="situationItem fifth" id="snack">
+                        <img src="../image/상체.png" />
+                        <a href="situation3.html">간식</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script language="javascript">
+        //수신부
+
+        const newhref = window.location.href;
+        const url = new URL(newhref);
+        const urlParams = url.searchParams;
+        const id1 = urlParams.get('id1');
+        console.log(newhref);
+        console.log(id1)
+        var sit1_name = id1;
+        var sit1 = 'id1';
+
+
+    /*    alert(sit1_name + " " + sit1); */
+
+     
+
+        var sit2 = "0123";
+        var sit2_name = "";
+
+        var sending = function sendFunc(aValue) {
+            location.href = `situation3.html?${sit1}=${sit1_name}&${sit2}=${sit2_name}`;
+        }
+
+
+        $("#korea").click(function () {
+            sit2 = "id2";
+            sit2_name = "korea_food";
+            sending('1:3:1:1');
+        });
+        $("#western").click(function () {
+            sit2 = "id2";
+            sit2_name = "western_food";
+            sending('1:3:1:1');
+        });
+        $("#china").click(function () {
+            sit2 = "id2";
+            sit2_name = "china_food";
+            sending('1:3:1:1');
+        });
+        $("#japan").click(function () {
+            sit2 = "id2";
+            sit2_name = "japan_food";
+            sending('1:3:1:1');
+        });
+        $("#snack").click(function () {
+            sit2 = "id2";
+            sit2_name = "snack";
+            sending('1:3:1:1');
+        });
+
+    </script>
+    <script src="../javascript/randomfood.js"></script>
+</body>
+</html>
+

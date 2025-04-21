@@ -1,0 +1,172 @@
+# 🛠️ 서버개발일지: mindevprofile.kr Django + WordPress 통합 (2025.04.20~04.21)
+
+**날짜:** 2025-04-21
+**목표:** Django는 `/`, WordPress는 `/blog/`로 동시에 서비스되도록 구성
+**서버환경:** EC2 + Nginx + Django + WordPress + MySQL + PHP-FPM
+ 1. 서버 구성 목표
+
+메인 페이지 /는 Django 서비스 연결
+
+블로그 /blog/는 WordPress 연결
+
+SSL 인증서(Let's Encrypt), Nginx 리버스 프록시, Gunicorn 연동
+
+시스템 정보
+
+EC2 Ubuntu 22.04
+
+Django + Gunicorn + Nginx
+
+WordPress + PHP 8.3 + MariaDB (MySQL)
+
+도메인: https://mindevprofile.kr
+
+---
+
+## 📌 기존 상황과 문제점
+- Django 프로젝트는 이미 `/` 루트에서 운영 중 (`gunicorn` + `nginx` 프록시).
+- WordPress를 `/blog/` 하위 경로에 연결하려고 했지만, Django가 모든 URL을 가로채면서 `/blog/wp-login.php` 등 접속 시 **Django 404 오류** 발생.
+- `.htaccess`가 Nginx에서 무시되기 때문에 Apache처럼 자동 리디렉션되지 않음.
+
+---
+
+## 🧩 2. Nginx 설정 전략
+**🎯 핵심 분기 전략:** `/blog/` 경로는 WordPress에 넘기고, 나머지는 Django로 처리
+
+```nginx
+location /blog/ {
+    alias /var/www/html/wordpress/;
+    index index.php index.html;
+    try_files $uri $uri/ /index.php?$args;
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $request_filename;
+    }
+}
+location / {
+    proxy_pass http://127.0.0.1:8000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+---
+
+## ⚙️ 3. 주요 설정 경로 정보
+
+   설정 항목
+
+   경로
+
+   Nginx 설정
+
+   /etc/nginx/sites-available/default
+
+   WordPress 경로
+
+   /var/www/html/wordpress
+
+   Django 프로젝트
+
+   /home/ubuntu/gomgom-ai
+
+   가상환경
+
+   /home/ubuntu/venv
+---
+
+##
+⚠️ 4. 발생한 오류 및 해결 기록
+
+4-1. HTTPS 접속 시 ERR_CONNECTION_REFUSED
+
+🔍 원인: nginx가 443 포트를 열지 않음, 인증서 미지정
+
+✅ 해결: /etc/nginx/sites-available/default에서 listen 443 ssl; 설정 및 인증서 경로 추가
+
+4-2. 403 Forbidden 오류 (/blog/ 경로)
+
+🔍 원인: Nginx에서 alias 경로 가운데 권한 문제 또는 잘못된 설정
+
+✅ 해결:
+
+location /blog/ {
+    alias /var/www/html/wordpress/;
+    index index.php;
+    try_files $uri $uri/ /index.php?$args;
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $request_filename;
+    }
+}
+
+4-3. WordPress 로그인 후 404 발생 (https://mindevprofile.kr/wp-login.php)
+
+🔍 원인: 기본 루트(/)요청은 Django가 처리 → WordPress 경로가 /blog/ 아래로 가야함
+
+✅ 해결:
+
+WordPress 로그인 경로는 /blog/wp-login.php로 접근
+
+Django의 / 경로와 WordPress의 /blog/를 명확히 나누기
+
+4-4. Nginx 설정 중 conflicting server name 경고
+
+🔍 원인: 동일한 server_name을 여러 서버 블록에서 중복 설정
+
+4-5. Django 실행 후 ModuleNotFoundError: No module named 'django'
+
+🔍 원인: 가상환경 미활성화 or Django 미설치
+
+✅ 해결:
+
+source venv/bin/activate
+pip install django
+
+4-6. gunicorn 실행은 되지만 Django 404 발생
+
+🔍 원인: ALLOWED_HOSTS 누르가 or proxy_pass 미여부
+
+✅ 해결:
+
+ALLOWED_HOSTS = ['mindevprofile.kr', 'www.mindevprofile.kr']
+
+nginx location /에 proxy_pass 설정 확인
+
+ 4-7.  이전 설정한 DB 계정 정보 잊음
+
+✅ 해결:
+
+새로운 사용자 생성 및 권한 부여
+
+CREATE USER 'wpuser'@'localhost' IDENTIFIED BY '비밀번호';
+GRANT ALL PRIVILEGES ON wordpress.* TO 'wpuser'@'localhost';
+FLUSH PRIVILEGES;
+
+wp-config.php에 DB 정보 수정
+
+
+📦 4. WordPress 설치 진행
+- 기존에 `wordpress` DB가 존재하여 “이미 설치됨” 메시지 확인됨.
+- 로그인 화면은 `/blog/wp-login.php`에서 정상 출력됨.
+- 관리자 대시보드로 이동 성공 후, Django와 WordPress가 분리되었는지 확인 완료.
+
+---
+
+## ✅ 최종 확인
+- `https://mindevprofile.kr/` → Django 홈화면 (`Hello, Gomgom!`)
+- `https://mindevprofile.kr/blog/` → WordPress 블로그 화면
+- `https://mindevprofile.kr/blog/wp-login.php` → 로그인 성공
+- `.php` 파일 요청은 PHP-FPM에서 처리, 나머지는 Django 처리
+
+📌 마무리 메모
+
+Nginx의 alias vs root 차이 정확히 이해하기
+
+location /blog/은 »  (alias)마지막에 “/”까지 포함해야 alias 정상 작동
+

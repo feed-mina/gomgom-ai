@@ -1,0 +1,91 @@
+body{
+    background-color: #FAF0D7;
+
+}
+
+header {
+    position: absolute;
+    width: 100%;
+    height: 9vh;
+    left: 0px;
+    top: 0px;
+
+    background: #8CC0DE;
+
+}
+.main{
+    position: absolute;
+    width: 70%;
+    height: 75%;
+
+    margin:auto;
+    top:0;
+    left:0;
+    bottom:0;
+    right:0;
+
+    background: #FFBEBB;
+    box-shadow: 0px 10px 4px 4px rgba(122, 118, 205, 0.5);
+    border-radius: 39px;
+
+
+}
+.title{
+    position: absolute;
+    width: 80%;
+    height: 13vmin;
+    margin:auto;
+    top:-80%;
+    left:0;
+    bottom:0;
+    right:0;
+    
+
+    background: #FAD5D6;
+    box-shadow: inset 0px 4px 4px rgba(0, 0, 0, 0.25);
+    border-radius: 40px;
+
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 100;
+    font-size: 5vmin;
+    line-height: 10px;
+    text-align: center;
+    color: rgba(100, 26, 26, 0.8);
+}
+.button{
+    position: absolute;
+    width: 40vw;
+    height: 7vh;
+
+    margin: auto;
+    top: 68vh;
+    left: 0;
+    bottom:0;
+    right: 0;
+    
+    background: rgba(139, 135, 226, 0.42);
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.5);
+    border-radius: 60px;
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 4vw;
+    line-height: 36px;
+
+    color: #000000;
+}
+
+a {
+    position: absolute;
+    left: 40px;
+    top: 7px;
+}
+
+.Box{
+    position: absolute;
+    left: 6vw;
+    margin: auto;
+    top: 13%;
+}
+

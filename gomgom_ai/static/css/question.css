@@ -1,0 +1,97 @@
+body{
+    background-color: #FAF0D7;
+
+}
+.title{
+    position: absolute;
+    width: 477px;
+    height: 104px;
+    left: 390px;
+    top: 134px;
+    
+
+    background: #FFBEBB;
+    box-shadow: inset 0px 4px 10px rgba(0, 0, 0, 0.5);
+    border-radius: 30px;
+    text-align: center;
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 40px;
+    line-height: 0px;
+    color: rgba(100, 26, 26, 0.8);
+}
+header {
+    position: absolute;
+    width: 100%;
+    height: 9vh;
+    left: 0px;
+    top: 0px;
+
+    background: #8CC0DE;
+
+}
+.button{
+    position: absolute;
+    width: 189px;
+    height: 83px;
+    left: 534px;
+    top: 901px;
+
+    background: rgba(139, 135, 226, 0.42);
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.5);
+    border-radius: 60px;
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-size: 30px;
+    line-height: 36px;
+
+    color: #000000;
+}
+.Box{
+    position: absolute;
+    width: 970px;
+    height: 586px;
+    left: 145px;
+    top: 284px;
+
+    background: #FFBEBB;
+    box-shadow: 0px 10px 4px 4px rgba(122, 118, 205, 0.5);
+    border-radius: 39px;
+}
+
+.qBox{
+    position: absolute;
+    width: 853px;
+    height: 149px;
+    left: 54px;
+    top: 35px;
+
+    background: rgba(178, 174, 255, 0.59);
+    border-radius: 30px;
+}
+
+.answerBox{
+    position: absolute;
+    width: 383px;
+    height: 345px;
+    left: 54px;
+    top: 216px;
+
+    background: #FFF6F5;
+    border-radius: 45px;
+}
+
+a {
+    position: absolute;
+    width: 60px;
+    height: 80px;
+    left: 40px;
+    top: 7px;
+    
+    text-decoration: none;
+    font-size: 15px;
+    color: white;
+    vertical-align: middle;
+}

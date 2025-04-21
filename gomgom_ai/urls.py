@@ -1,9 +1,10 @@
-# gomgom-ai/gomgom_ai/urls.py
+# gomgom_ai/urls.py
+
 from django.contrib import admin
-from django.urls import path
-from .views import home
+from django.urls import path, include
+from . import views
 
 urlpatterns = [
-    path('', home),
     path('admin/', admin.site.urls),
+    path('', views.main, name='main'),
 ]
