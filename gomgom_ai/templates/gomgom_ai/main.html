@@ -54,42 +54,109 @@
                                     placeholder="예: 매운 음식 추천해줘, 10,000원 이하"
                             />
 
-                            <button onclick="sendInput()">입력 추천</button>
+                            <button onclick="handleRecommend()">입력 추천</button>
                         </div>
 
+                        <button class="button_test">입맛 테스트</button>
 
-                        <a href="{% url 'start' %}"><button class="button_test">입맛 테스트</button></a>
 
                     </div>
                 </article>
-
             </div>
         </main>
+        <!-- 모달창 -->
+        <div id="confirmModal" class="modal">
+            <div class="modal-content">
+                <p>입맛 테스트도 해보시겠어요?</p>
+                <button id="testYes">네</button>
+                <button id="testNo">아니요</button>
+            </div>
+        </div>
+
+
+        <!-- ✨ 모달창 2 : 테스트 버튼 클릭 시 입력값 없이 진행할지 묻기 -->
+        <div id="emptyInputModal" class="modal">
+            <div class="modal-content">
+                <p>바로 입맛 테스트를 진행할까요?</p>
+                <button id="emptyYes">네</button>
+                <button id="emptyNo">아니요</button>
+            </div>
+        </div>
     </div>
     <!-- JS 연결 -->
     <script src="{% static 'javascript/main.js' %}"></script>
     <script>
-        function sendInput() {
-            const input = document.getElementById('userInput').value.trim();
-            if (!input) {
-                alert("추천받고 싶은 내용을 입력해주세요!");
-                return;
+        let latestLat = null;
+        let latestLng = null;
+        let geoReady = false;
+
+
+        navigator.geolocation.getCurrentPosition(
+            function (pos) {
+                latestLat = pos.coords.latitude;
+                latestLng = pos.coords.longitude;
+                geoReady = true;
+                console.log("위치정보 받음:", latestLat, latestLng);
+            },
+            function () {
+                alert("위치 정보를 가져올 수 없습니다.");
             }
+        );
 
-            navigator.geolocation.getCurrentPosition(
-                function (pos) {
-                    const lat = pos.coords.latitude;
-                    const lng = pos.coords.longitude;
-
-                    // URL로 이동
-                    const url = `/recommend_input/?text=${encodeURIComponent(input)}&lat=${lat}&lng=${lng}`;
-                    window.location.href = url;
-                },
-                function (error) {
-                    alert("위치 정보를 가져올 수 없습니다.");
-                }
-            );
+        function waitForGeolocation(callback) {
+            if (geoReady) {
+                callback();
+            } else {
+                setTimeout(() => waitForGeolocation(callback), 200); // 0.2초 간격으로 다시 시도
+            }
         }
+
+        function handleRecommend() {
+            waitForGeolocation(() => {
+                const input = document.getElementById('userInput').value.trim();
+                const modal = document.getElementById("confirmModal");
+
+                modal.style.display = "block";
+
+                document.getElementById("testYes").onclick = function () {
+                    modal.style.display = "none";
+                    window.location.href = `/start/?text=${encodeURIComponent(input)}&lat=${latestLat}&lng=${latestLng}`;
+                };
+
+                document.getElementById("testNo").onclick = function () {
+                    modal.style.display = "none";
+                    if (!input) {
+                        alert("추천을 받기 위해서는 입력값이 필요해요!");
+                        return;
+                    }
+                    window.location.href = `/recommend_input/?text=${encodeURIComponent(input)}&lat=${latestLat}&lng=${latestLng}`;
+                };
+            });
+        }
+
+        // 입맛 테스트 버튼 클릭 시
+        document.querySelector(".button_test").addEventListener("click", function () {
+            waitForGeolocation(() => {
+                const input = document.getElementById('userInput').value.trim();
+
+                if (!input) {
+                    const modal = document.getElementById("emptyInputModal");
+                    modal.style.display = "block";
+
+                    document.getElementById("emptyYes").onclick = function () {
+                        modal.style.display = "none";
+                        window.location.href = `/start/?text=&lat=${latestLat}&lng=${latestLng}`;
+                    };
+
+                    document.getElementById("emptyNo").onclick = function () {
+                        modal.style.display = "none";
+                    };
+                } else {
+                    window.location.href = `/start/?text=${encodeURIComponent(input)}&lat=${latestLat}&lng=${latestLng}`;
+                }
+            });
+        });
+
     </script>
 
 </body>

@@ -244,4 +244,43 @@ body#body {
     align-items: center;
     margin-top: 30px;
     gap: 20px; /* 버튼 간 간격 */
+}.modal {
+     display: none;
+     position: fixed;
+     z-index: 1000;
+     left: 0;
+     top: 0;
+     width: 100vw;
+     height: 100vh;
+     background: rgba(0, 0, 0, 0.4);
+ }
+
+.modal-content {
+    background-color: #fffaf0;
+    padding: 2rem;
+    border-radius: 1.5rem;
+    width: 300px;
+    text-align: center;
+    margin: 20% auto;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content p {
+    font-size: 1.1rem;
+    margin-bottom: 1.2rem;
+    font-weight: bold;
+}
+
+.modal-content button {
+    margin: 0 0.5rem;
+    padding: 0.5rem 1.2rem;
+    font-size: 1rem;
+    background-color: #FFBEBB;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.modal-content button:hover {
+    background-color: #fbaaa7;
 }

@@ -30,6 +30,10 @@ def result_view(request):
     return render(request, 'gomgom_ai/result.html')
 # 입맛 테스트
 def start_view(request):
+    print("넘어온 text:", request.GET.get('text'))
+    print("넘어온 lat:", request.GET.get('lat'))
+    print("넘어온 lng:", request.GET.get('lng'))
+
     return render(request, 'gomgom_ai/start.html')
 
 def question_view(request):

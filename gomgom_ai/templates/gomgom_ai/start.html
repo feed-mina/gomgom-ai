@@ -35,5 +35,25 @@
     <footer></footer>
 <!--    <script src="{% static 'javascript/data.js' %}"></script>-->
     <script src="{% static 'javascript/start.js' %}"></script>
+    <script>
+
+        window.addEventListener("DOMContentLoaded", () => {
+            const params = new URLSearchParams(window.location.search);
+            const inputText = decodeURIComponent(params.get("text") || '');
+            const lat = params.get("lat");
+            const lng = params.get("lng");
+
+            console.log("⭐ 입력값:", inputText);
+            console.log("📍 위도(lat):", lat);
+            console.log("📍 경도(lng):", lng);
+
+            // 테스트: 비어 있으면 알려주기
+            if (!lat || !lng) {
+                alert("⚠️ 위치 정보가 없습니다!");
+            }
+        });
+    </script>
+
+
 </body>
 </html>
