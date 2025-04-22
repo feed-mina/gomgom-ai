@@ -1,13 +1,35 @@
 # gomgom_ai/views.py
 from django.shortcuts import render
+import openai
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 import requests
 from django.conf import settings
 import os
+openai.api_key = settings.OPENAI_API_KEY
 
 
-print("TEMPLATE DIRS:", settings.TEMPLATES[0]['DIRS'])
-print("BASE_DIR/templates:", os.path.join(settings.BASE_DIR, 'templates'))
+# print("TEMPLATE DIRS:", settings.TEMPLATES[0]['DIRS'])
+# print("BASE_DIR/templates:", os.path.join(settings.BASE_DIR, 'templates'))
+
+
+@csrf_exempt
+def recommend_food(request):
+    if request.method == 'POST':
+        body = json.loads(request.body)
+        user_text = body.get('text', '')
+
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "당신은 음식 추천 전문가입니다."},
+                {"role": "user", "content": f"{user_text} 조건에 맞는 음식을 추천해줘. 간단한 설명도 함께 부탁해."}
+            ]
+        )
+
+        result = response['choices'][0]['message']['content']
+        return JsonResponse({'recommendation': result})
 
 def home_view(request):
     return render(request, 'gomgom_ai/home.html')

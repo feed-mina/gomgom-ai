@@ -23,4 +23,5 @@ urlpatterns = [
     path('question6/', views.question6_view, name='question6'),
     path('test_result/', views.test_result_view, name='test_result'),
     path('recommend_input/', views.recommend_input, name='recommend_input'),
+    path('api/recommend/', views.recommend_food),
 ]
