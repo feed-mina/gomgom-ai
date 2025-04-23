@@ -15,6 +15,21 @@ from konlpy.tag import Okt # 한국어 문장 분석기를 준비하는 코드
 okt = Okt()
 # print(okt.nouns("짬뽕지존-봉천점"))
 
+
+def is_related(text, result):
+    text = text.lower()
+    return (
+            text in result.get("store", "").lower() or
+            text in result.get("category", "").lower() or
+            any(text in kw.lower() for kw in result.get("keywords", []))
+    )
+
+
+def is_similar_store_name(store1, store2):
+    store1 = store1.replace(" ", "").lower()
+    store2 = store2.replace(" ", "").lower()
+    return store1 in store2 or store2 in store1
+
 # name문자열을 형태소 분석해서 (단어,품사)로 나눔, pos == 'Noun' 명사인 단어만 고름
 # len(w) > 1 너무 짧은 단어 (예 : '의','가')는 빼고 두글자 이상만
 def extract_keywords_from_store_name(name):
@@ -91,16 +106,23 @@ def generate_emotional_description(food_name, tags):
 
 @csrf_exempt
 def ask_gpt_to_choose(food_list, food_data_dict=None):
+    content = ""  # content 미리 정의
     prompt = f"""
-    이 음식 중 오늘 사용자에게 가장 어울리는 음식을 골라줘:
-    {', '.join(food_list)}
-
+    다음 사용자 기분 태그 목록에 맞는 배달 음식점 하나만 골라줘:
+    {', '.join(score.keys())}
+    
+    - 이 기분은 사용자가 먹고 싶어할 맛의 방향성을 의미해
+    - 아래는 배달 가능한 음식점 리스트와 주요 키워드야:
+    {chr(10).join(store_keywords_list[:10])}
+    
     조건:
-    - 사용자 기분을 좋게 할 만한 음식
-    - 추천 이유를 감성적으로 한 줄로 설명해줘
-    - 결과는 JSON 형식으로 줘
-    예: {{"food": "김치찌개", "description": "익숙한 매콤함이 오늘 하루를 위로해줄 거예요."}}
-    주의: JSON 키와 문자열에는 반드시 "쌍따옴표"를 사용해주세요.
+    - 추천 결과는 JSON으로:
+    {{
+      "store": 음식점 이름,
+      "description": 추천 이유 (감성 한 줄),
+      "category": 대표 카테고리,
+      "keywords": [키워드1, 키워드2, ...]
+    }}
     """
 
     try:
@@ -113,7 +135,7 @@ def ask_gpt_to_choose(food_list, food_data_dict=None):
         return json.loads(content)
 
     except json.JSONDecodeError:
-        print(" GPT 응답 JSON 파싱 실패! 응답 내용:")
+        print("⚠️ GPT 응답 JSON 파싱 실패! 응답 내용:", content)
         # print(content)
 
     except Exception as e:
@@ -174,10 +196,11 @@ def test_result_view(request):
 
 
     # 요기요 카테고리 추출
-    recommended_categories = set()
-    for tag in score:
-        if score[tag] >= 2 and tag in tag_to_category:
-            recommended_categories.update(tag_to_category[tag])
+
+    recommended_categories = {
+        cat for tag in score if score.get(tag, 0) >= 2 and tag in tag_to_category
+        for cat in tag_to_category[tag]
+    }
 
     if not candidates:
         candidates = [
@@ -212,24 +235,8 @@ def start_view(request):
 
 def test_view(request):
     return render(request, 'gomgom_ai/test.html')
-
-def is_similar_store_name(store1, store2):
-    return store1.replace(" ", "").lower() in store2.replace(" ", "").lower()
-
-def is_related(text, result):
-    keywords = result.get("keywords", [])
-    category = result.get("category", "")
-    store = result.get("store", "")
-
-    text = text.lower()
-    return (
-            text in store.lower() or
-            text in category.lower() or
-            any(text in kw.lower() for kw in keywords)
-    )
-
 @csrf_exempt
-def recommend_input(request):
+def recommend_result(request):
     text = request.GET.get('text')
     lat = request.GET.get('lat')
     lng = request.GET.get('lng')
@@ -242,15 +249,9 @@ def recommend_input(request):
     restaurants_data = get_yogiyo_restaurants(lat, lng)
     raw_restaurants = restaurants_data.get("restaurants", []) if isinstance(restaurants_data, dict) else restaurants_data
     # 2. NLP 키워드 추출 (상호명 기반)
-    store_keywords_list = []
-    for r in raw_restaurants:
-        name = r.get("name", "")
-        keywords = extract_keywords_from_store_name(name)
-        # ex: "짬뽕지존 - 짬뽕, 지존, 봉천"
-        store_keywords_list.append(f"{name}: {', '.join(keywords)}")
 
-    # 3. GPT 프롬프트 구성
-    random.shuffle(store_keywords_list)  # 다양성 확보
+    store_keywords_list = [f"{r.get('name')}: {', '.join(extract_keywords_from_store_name(r.get('name', '')))}" for r in raw_restaurants]
+    random.shuffle(store_keywords_list)
 
     # GPT 프롬프트
     prompt = f"""
@@ -280,68 +281,45 @@ def recommend_input(request):
             messages=[{"role": "user", "content": prompt}]
         )
         gpt_text = response.choices[0].message.content.strip()
-
         print("✅ GPT 응답:", gpt_text)
-
         result = json.loads(gpt_text)
         print('result: ',result)
 
-        if not is_related(text, result):
-            print("⚠️ 결과가 입력값과 연관성이 낮음. fallback 작동")
-            fallback = random.choice(raw_restaurants)
-            result = {
-                "store": fallback.get("name", "추천 없음"),
-                "description": f"'{text}'와 관련된 가게를 찾지 못했어요. 근처 인기 가게를 추천할게요!",
-                "category": ", ".join(fallback.get("categories", [])),
-                "keywords": extract_keywords_from_store_name(fallback.get("name", ""))
-            }
 
-    # fallback: 상호명에서 키워드 추출해서 넣어주기!
+        if not is_related(text, result):
+            raise ValueError("GPT 결과가 입력값과 관련 없음")
+        # fallback: 상호명에서 키워드 추출해서 넣어주기!
         if "keywords" not in result:
             result["keywords"] = extract_keywords_from_store_name(result.get("store", ""))
 
-    except json.JSONDecodeError:
-        print("⚠️ GPT 응답 파싱 실패. 응답 원문:")
-        print(gpt_text)
 
+
+    except:
         fallback = random.choice(raw_restaurants)
         result = {
             "store": fallback.get("name", "추천 없음"),
-            "description": "기분을 달래줄 음식점을 대신 골랐어요!",
-            "category": "기타"
+            "description": f"'{text}'와 관련된 근처 인기 가게를 추천할게요!",
+            "category": ", ".join(fallback.get("categories", [])),
+            "keywords": extract_keywords_from_store_name(fallback.get("name", ""))
         }
 
-    except Exception as e:
-        print("❌ GPT 호출 오류:", e)
-        fallback = random.choice(raw_restaurants)
-        result = {
-            "store": fallback.get("name", "추천 없음"),
-            "description": "맛있는 음식으로 위로받길 바랄게요!",
-            "category": "기타"
-        }
-
-
-
-    # 4. 결과 가게만 필터링해서 다시 매칭
     matched_restaurants = [
         {
             "name": r.get("name"),
-            "review_avg": r.get("review_avg"),
+            "review_avg": r.get("review_avg", "5점"),
             "address": "카테고리: " + ", ".join(r.get("categories", []))
         }
         for r in raw_restaurants
         if is_similar_store_name(result.get("store", ""), r.get("name", ""))
     ]
+
     if not matched_restaurants:
-        print("📌 GPT 결과만 보여줌 (요기요 매칭 실패)")
         matched_restaurants = [{
-            "name": result.get("store", "추천 가게"),
-            "review_avg": 0.0,
-            "address": f"카테고리: {result.get('category', '기타')}"
+            "name": result.get("store", "추천 없음"),
+            "review_avg": "5점",
+            "address": f"카테고리: {result.get('category', '없음')}"
         }]
 
-
-    print('matched_restaurants: ',matched_restaurants)
     return render(request, 'gomgom_ai/recommend_result.html', {
         "result": result,
         "restaurants": matched_restaurants,

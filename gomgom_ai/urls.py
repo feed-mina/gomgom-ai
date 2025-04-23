@@ -9,6 +9,6 @@ urlpatterns = [
     path('start/', views.start_view, name='start'),
     path('test/', views.test_view, name='test'),
     path('test_result/', views.test_result_view, name='test_result'),
-    path('recommend_input/', views.recommend_input, name='recommend_input'),
+    path('recommend_result/', views.recommend_result, name='recommend_result'),
     path('restaurant_list/', views.restaurant_list_view, name='restaurant_list'),
 ]
