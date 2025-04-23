@@ -1,105 +1,120 @@
 {% load static %}
 <!DOCTYPE html>
 
-<html xml:lang="ko" lang="ko" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="ko">
 <head>
-    <meta charset="utf-8" />
-    <title>밥꾹</title>
-    <link rel="stylesheet" href="{% static 'css/test_result1.css' %}">
-    <!-- 폰트 -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR&display=swap" rel="stylesheet">
-
+    <meta charset="UTF-8">
+    <title>밥꾹_랜덤밥상</title>
+    <link rel="stylesheet" href="{% static 'css/randomfood.css' %}">
+    <!--    <script src = "../javascript/elice.json" type="text/javascript"></script>-->
 </head>
-<body id="body">
-    <header id="header">
+<body>
+<div class="background">
+    <div class="header">
         <h3>
             <a href="{% url 'main' %}">
-               <img id="logo" src="{% static 'image/로고.png' %}" alt="토끼">
-                <span id="header_text">&nbsp;CLICK YOUR TASTE!</span>
+                <img id="logo" src="{% static 'image/로고.png' %}" alt="logo">
+
+                <span class="header_text">&nbsp;CLICK YOUR TASTE!</span>
             </a>
         </h3>
-    </header>
-
+    </div>
     <div class="container">
-
-        <div class="all">
-            <div class="text_box"> 
-                <a class="text1">입맛 테스트 결과</a>
+        <div class="main">
+            <div class="heading2">
+                <h2>당신에게 딱 맞는 음식은?</h2>
             </div>
+            <div class="result">
+                <h1>{{ food }}</h1>
+                <p>{{ description }}</p>
+
+            </div>
+            <img class="resultImg" src="{% static 'image/상반신 요리사 토끼.png' %}" alt="토끼">
+            <a href="{% url 'start' %}"><button type="button" class="replayButton">다시하기</button></a>
+            <div type="button" class="othermenu"><button style="border:none;  background: none; font-weight: 400;
+                    font-size: 30px;" class="othershow">다른 결과보기</button></div>
         </div>
-            <article class="elice">
-                <div class="white_box">
-                    <h2>당신의 유형은</h2>
-                    <span class="result"></span><h1>입니다.</h1>
-                    <span class="choice"></span><h2>추천드려요~</h2>
-                </div>
-
-                <img id="rabbit" src="{% static 'image/엘리스토끼_조리복국자.png' %}" alt="rabbit">
-            </article>
-
-    
     </div>
+</div>
+<!-- 다른음식 보기 -> 음식이름만 새로 바뀌는 역할 -->
+<!--<script src="{% static 'javascript/result.js' %}"></script>-->
 
-
-    <div>
-         <a href="{% url 'question' %}">   <button class="button_again">다시하기</button></a>
-    </div>
-<!--    <script src="{% static 'javascript/test_result.js' %}"></script>-->
 <script>
-    fetch('/static/javascript/elice.json')
+    fetch("{% static 'javascript/elice.json' %}")
         .then(response => response.json())
-        .then(data => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const id1 = urlParams.get("id1");
-            const id2 = urlParams.get("id2");
-            const id3 = urlParams.get("id3");
-            const id4 = urlParams.get("id4");
-            const id5 = urlParams.get("id5");
-            const id6 = urlParams.get("id6");
+        .then(elice => {
+            // 여기서 elice는 배열로 잘 들어옴!
+            console.log(elice);
+            console.log("받은 데이터:", elice);
 
-            let plus = 0;
-            if (id1 === 'answerA') plus++;
-            if (id2 === 'answerA') plus++;
-            if (id3 === 'answerA') plus++;
-            if (id4 === 'answerA') plus++;
-            if (id5 === 'answerA') plus++;
-            if (id6 === 'answerA') plus++;
-
-            let type = '';
-            if (plus === 1) type = 'gourmet';
-            else if (plus === 2) type = 'wellBeing';
-            else if (plus === 3) type = 'childTaste';
-            else if (plus === 4 && id3 === 'answerB') type = 'wellKnow';
-            else if (plus === 4) type = 'hipster';
-            else if (plus === 5) type = 'homeFood';
-
-            const result = document.querySelector('.result');
-            const result_text = document.createElement('p');
-            result_text.textContent = type;
-            result.appendChild(result_text);
-
-            const choice = document.querySelector('.choice');
-            const choice_text = document.createElement('p');
-
-            // 추천 메뉴 뽑기
-            const matched = data.filter(item => item.test_result.includes(type));
-            if (matched.length > 0) {
-                const randomIndex = Math.floor(Math.random() * matched.length);
-                choice_text.textContent = matched[randomIndex].menu;
-            } else {
-                choice_text.textContent = "추천 메뉴 없음";
-            }
-
-            choice.appendChild(choice_text);
+            // 이후 기존 코드 안으로 data 넘기기
+            runResultLogic(elice);
         })
-        .catch(error => {
-            console.error("JSON 불러오기 오류:", error);
+        .catch(error => console.error('불러오기 오류:', error));
+
+
+
+    function runResultLogic(data) {
+        let elicedata = JSON.stringify(data);
+        console.log(data.length)
+
+        const newhref = window.location.href;
+        const url = new URL(newhref);
+        const urlParams = url.searchParams;
+        const id1  = urlParams.get('id1');
+        const id2 =  urlParams.get('id2');
+        const id3 =  urlParams.get('id3');
+        const id4 = urlParams.get('id4');
+
+        const result = document.querySelector('.result');
+        const result_text = document.createElement('p');
+        const othermenu = document.querySelector('.othershow');
+
+        let itemarray2 = [];
+        data.forEach((item) => {
+            let arr1 = item.id1.split(', ');
+            let arr4 = item.id4.split(', ');
+
+            if (arr1.includes(id1) && item.id2 === id2 && item.id3 === id3 && arr4.includes(id4)) {
+                itemarray2.push(item.menu);
+            }
         });
+console.log('data: ', data);
+
+        // if (itemarray2.length > 0) {
+        //     const menu_randomindex = Math.floor(Math.random() * itemarray2.length);
+        //     const random_menu = itemarray2[menu_randomindex];
+        //     result_text.style.fontSize = '2em';
+        //     result_text.textContent = `${random_menu}`;
+        //     console.log('menu_randomindex: ', menu_randomindex);
+        // } else {
+        //     result_text.style.fontSize = '2em';
+        //     result_text.textContent = '결과가 없습니다. 다시 시도해주세요.';
+        // }
+
+        result.appendChild(result_text);
+
+        console.log('itemarray2: ', itemarray2);
+
+    }
+    function getFoodRecommendation(types) {
+        const typeScore = {};
+
+        // 점수 누적
+        types.forEach((type) => {
+            typeScore[type] = (typeScore[type] || 0) + 1;
+        });
+
+        // 간단한 추천 조건
+        if (typeScore.spicy >= 2 && typeScore.rich >= 1) return '마라탕';
+        if (typeScore.mild >= 2 && typeScore.light >= 1) return '닭죽';
+        if (typeScore.adventurous >= 2) return '비빔밥';
+        if (typeScore.safe >= 2) return '갈비탕';
+        return '김치찌개'; // 기본 추천
+    }
 
 </script>
 
-
 </body>
 </html>
+

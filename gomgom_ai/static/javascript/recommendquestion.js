@@ -1,0 +1,76 @@
+const qnaList = [
+    {
+        q: '1. 혼밥을 하러 갔을 때, 어떤 분위기의 식당을 더 좋아하나요?',
+        a: [
+            { answer: 'a. 사람 많고 북적북적한 식당', type: 'active' },
+            { answer: 'b. 조용하고 아늑한 식당', type: 'calm' }
+        ]
+    },
+    {
+        q: '2. 메뉴를 고를 때 나는...',
+        a: [
+            { answer: 'a. 항상 새로운 음식을 도전해본다', type: 'adventurous' },
+            { answer: 'b. 내가 좋아하는 익숙한 메뉴를 고른다', type: 'familiar' }
+        ]
+    },
+    {
+        q: '3. 음식에 대해 나는...',
+        a: [
+            { answer: 'a. 매콤하거나 자극적인 맛을 좋아한다', type: 'spicy' },
+            { answer: 'b. 담백하고 순한 맛을 선호한다', type: 'mild' }
+        ]
+    },
+    {
+        q: '4. 국물 있는 음식을 고를 때 나는...',
+        a: [
+            { answer: 'a. 진하고 기름진 국물이 좋다', type: 'rich' },
+            { answer: 'b. 맑고 깔끔한 국물이 좋다', type: 'light' }
+        ]
+    },
+    {
+        q: '5. 음식을 먹고 나면...',
+        a: [
+            { answer: 'a. 입가심으로 음료를 마신다', type: 'drink' },
+            { answer: 'b. 디저트로 케이크나 아이스크림을 먹는다', type: 'dessert' }
+        ]
+    },
+    {
+        q: '6. 친구가 나에게 추천을 부탁할 때 나는...',
+        a: [
+            { answer: 'a. 요즘 핫한 음식을 추천한다', type: 'trendy' },
+            { answer: 'b. 무난하고 실패 없는 음식을 추천한다', type: 'safe' }
+        ]
+    }
+];
+
+let current = 0;
+const selectedTypes = [];
+
+function goNextQuestion() {
+    if (current >= qnaList.length) {
+        // 결과로 이동
+        const query = selectedTypes.map((t, i) => `type${i + 1}=${t}`).join('&');
+        window.location.href = `/test_result/?${query}`;
+        return;
+    }
+
+    const q = qnaList[current];
+    document.getElementById('questionText').innerText = q.q;
+
+    const answerBox = document.getElementById('answerButtons');
+    answerBox.innerHTML = ''; // 초기화
+
+    q.a.forEach((opt) => {
+        const btn = document.createElement('button');
+        btn.innerText = opt.answer;
+        btn.className = 'answerBtn';
+        btn.onclick = () => {
+            selectedTypes.push(opt.type);
+            current++;
+            goNextQuestion();
+        };
+        answerBox.appendChild(btn);
+    });
+}
+
+window.onload = goNextQuestion;

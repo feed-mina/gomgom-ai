@@ -26,15 +26,20 @@
                     <img src="{% static 'image/elice_chef_rabbit_1.png' %}" alt="rabbit" style = "width:60vw; height: 60vh; max-width:450px; max-height:450px;" >
                 </div>
 
-                <div >
-                   <a href="{% url 'question' %}"> <button class="button" >시작하기</button></a>
-                </div>
+<!--                <div >-->
+<!--                   <a href="{% url 'question' %}"> <button class="button" >시작하기</button></a>-->
+<!--                </div>-->
+
+                <!-- templates/start.html -->
+                <h1>🐰 입맛 테스트에 오신 걸 환영합니다!</h1>
+                <button class="button"  onclick="location.href='{% url 'test' %}'">테스트 시작</button>
+
             </div>
         </section> 
     </main>
     <footer></footer>
-<!--    <script src="{% static 'javascript/data.js' %}"></script>-->
-    <script src="{% static 'javascript/start.js' %}"></script>
+    <script src="{% static 'javascript/recommand_data.js' %}"></script>
+<!--    <script src="{% static 'javascript/start.js' %}"></script>-->
     <script>
 
         window.addEventListener("DOMContentLoaded", () => {

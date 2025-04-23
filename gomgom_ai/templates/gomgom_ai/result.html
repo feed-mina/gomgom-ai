@@ -28,7 +28,7 @@
                  
                 </div>
                 <img class="resultImg" src="{% static 'image/상반신 요리사 토끼.png' %}" alt="토끼">
-                <a href="{% url 'situation' %}"><button type="button" class="replayButton">다시하기</button></a>
+                <a href="{% url 'start' %}"><button type="button" class="replayButton">다시하기</button></a>
                 <div type="button" class="othermenu"><button style="border:none;  background: none; font-weight: 400;
                     font-size: 30px;" class="othershow">다른 결과보기</button></div>
     </div>
@@ -90,6 +90,28 @@
 
             result.appendChild(result_text);
         }
+
+        function getFoodRecommendation(types) {
+            const typeScore = {};
+
+            // 점수 누적
+            types.forEach((type) => {
+                typeScore[type] = (typeScore[type] || 0) + 1;
+            });
+
+            // 간단한 추천 조건
+            if (typeScore.spicy >= 2 && typeScore.rich >= 1) return '마라탕';
+            if (typeScore.mild >= 2 && typeScore.light >= 1) return '닭죽';
+            if (typeScore.adventurous >= 2) return '비빔밥';
+            if (typeScore.safe >= 2) return '갈비탕';
+            return '김치찌개'; // 기본 추천
+        }
+
+
+        // 사용자가 선택한 답변에서 type 모으기
+        const selectedAnswers = ['active', 'adventurous', 'spicy', 'rich', 'drink', 'trendy']; // 예시
+        const result = getFoodRecommendation(selectedAnswers);
+        console.log(`추천 음식은: ${result}`);
 
     </script>
 

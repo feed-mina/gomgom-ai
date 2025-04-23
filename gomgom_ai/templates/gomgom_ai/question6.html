@@ -31,6 +31,9 @@
             </div>
         </section> 
     </main>
+
+    <button onclick="submitAnswers()">결과 보기</button>
+
     <footer></footer>
  
  
@@ -81,7 +84,11 @@
       sit6_name = "answerB";
       sending();
     });
- 
+
+        function submitAnswers() {
+            const queryString = selectedAnswers.map((t, i) => `type${i + 1}=${t}`).join('&');
+            window.location.href = `/test_result/?${queryString}`;
+        }
 
   </script>
  

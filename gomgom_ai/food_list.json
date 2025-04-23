@@ -1,0 +1,371 @@
+[
+  {
+    "name": "매운떡볶이",
+    "tags": [
+      "spicy",
+      "korean"
+    ],
+    "description": "매운떡볶이은(는) 매콤한 맛이 기분 전환에 딱이에요!"
+  },
+  {
+    "name": "매운갈비찜",
+    "tags": [
+      "spicy"
+    ],
+    "description": "매운갈비찜은(는) 매콤한 맛이 기분 전환에 딱이에요!"
+  },
+  {
+    "name": "매운짬뽕",
+    "tags": [
+      "spicy",
+      "foreign"
+    ],
+    "description": "매운짬뽕은(는) 매콤한 맛이 기분 전환에 딱이에요!"
+  },
+  {
+    "name": "불닭볶음면",
+    "tags": [
+      "spicy"
+    ],
+    "description": "불닭볶음면은(는) 매콤한 맛이 기분 전환에 딱이에요!"
+  },
+  {
+    "name": "매운닭발",
+    "tags": [
+      "spicy"
+    ],
+    "description": "매운닭발은(는) 매콤한 맛이 기분 전환에 딱이에요!"
+  },
+  {
+    "name": "매운짜장면",
+    "tags": [
+      "spicy",
+      "chinese"
+    ],
+    "description": "매운짜장면은(는) 매콤한 맛이 기분 전환에 딱이에요!"
+  },
+  {
+    "name": "매운쭈꾸미",
+    "tags": [
+      "spicy",
+      "korean"
+    ],
+    "description": "매운쭈꾸미은(는) 매콤한 맛이 기분 전환에 딱이에요!"
+  },
+  {
+    "name": "매운비빔면",
+    "tags": [
+      "spicy"
+    ],
+    "description": "매운비빔면은(는) 매콤한 맛이 기분 전환에 딱이에요!"
+  },
+  {
+    "name": "매운닭도리탕",
+    "tags": [
+      "spicy",
+      "korean"
+    ],
+    "description": "매운닭도리탕은(는) 매콤한 맛이 기분 전환에 딱이에요!"
+  },
+  {
+    "name": "매운고추잡채",
+    "tags": [
+      "spicy",
+      "chinese"
+    ],
+    "description": "매운고추잡채은(는) 매콤한 맛이 기분 전환에 딱이에요!"
+  },
+  {
+    "name": "닭죽",
+    "tags": [
+      "mild",
+      "korean"
+    ],
+    "description": "닭죽은(는) 부드럽고 편안한 한 끼를 원한다면 좋아요!"
+  },
+  {
+    "name": "계란찜",
+    "tags": [
+      "mild",
+      "korean"
+    ],
+    "description": "계란찜은(는) 부드럽고 편안한 한 끼를 원한다면 좋아요!"
+  },
+  {
+    "name": "미역국",
+    "tags": [
+      "mild",
+      "korean"
+    ],
+    "description": "미역국은(는) 부드럽고 편안한 한 끼를 원한다면 좋아요!"
+  },
+  {
+    "name": "우유라면",
+    "tags": [
+      "mild"
+    ],
+    "description": "우유라면은(는) 부드럽고 편안한 한 끼를 원한다면 좋아요!"
+  },
+  {
+    "name": "순두부찌개",
+    "tags": [
+      "mild",
+      "korean"
+    ],
+    "description": "순두부찌개은(는) 부드럽고 편안한 한 끼를 원한다면 좋아요!"
+  },
+  {
+    "name": "크림리조또",
+    "tags": [
+      "mild",
+      "western"
+    ],
+    "description": "크림리조또은(는) 부드럽고 편안한 한 끼를 원한다면 좋아요!"
+  },
+  {
+    "name": "소고기죽",
+    "tags": [
+      "mild",
+      "korean"
+    ],
+    "description": "소고기죽은(는) 부드럽고 편안한 한 끼를 원한다면 좋아요!"
+  },
+  {
+    "name": "오트밀죽",
+    "tags": [
+      "mild"
+    ],
+    "description": "오트밀죽은(는) 부드럽고 편안한 한 끼를 원한다면 좋아요!"
+  },
+  {
+    "name": "양송이스프",
+    "tags": [
+      "mild",
+      "western"
+    ],
+    "description": "양송이스프은(는) 부드럽고 편안한 한 끼를 원한다면 좋아요!"
+  },
+  {
+    "name": "두부덮밥",
+    "tags": [
+      "mild",
+      "korean"
+    ],
+    "description": "두부덮밥은(는) 부드럽고 편안한 한 끼를 원한다면 좋아요!"
+  },
+  {
+    "name": "부리또",
+    "tags": [
+      "adventurous",
+      "foreign"
+    ],
+    "description": "부리또은(는) 새로운 맛이 오늘 하루에 활력을 줄 거예요!"
+  },
+  {
+    "name": "쌀국수",
+    "tags": [
+      "adventurous",
+      "foreign"
+    ],
+    "description": "쌀국수은(는) 새로운 맛이 오늘 하루에 활력을 줄 거예요!"
+  },
+  {
+    "name": "나시고렝",
+    "tags": [
+      "adventurous",
+      "foreign"
+    ],
+    "description": "나시고렝은(는) 새로운 맛이 오늘 하루에 활력을 줄 거예요!"
+  },
+  {
+    "name": "에그인헬",
+    "tags": [
+      "adventurous",
+      "western"
+    ],
+    "description": "에그인헬은(는) 새로운 맛이 오늘 하루에 활력을 줄 거예요!"
+  },
+  {
+    "name": "카레우동",
+    "tags": [
+      "adventurous",
+      "japanese"
+    ],
+    "description": "카레우동은(는) 새로운 맛이 오늘 하루에 활력을 줄 거예요!"
+  },
+  {
+    "name": "꿔바로우",
+    "tags": [
+      "adventurous",
+      "chinese"
+    ],
+    "description": "꿔바로우은(는) 새로운 맛이 오늘 하루에 활력을 줄 거예요!"
+  },
+  {
+    "name": "파인애플볶음밥",
+    "tags": [
+      "adventurous",
+      "thai"
+    ],
+    "description": "파인애플볶음밥은(는) 새로운 맛이 오늘 하루에 활력을 줄 거예요!"
+  },
+  {
+    "name": "타코",
+    "tags": [
+      "adventurous",
+      "mexican"
+    ],
+    "description": "타코은(는) 새로운 맛이 오늘 하루에 활력을 줄 거예요!"
+  },
+  {
+    "name": "이국적타코야끼",
+    "tags": [
+      "adventurous",
+      "japanese"
+    ],
+    "description": "이국적타코야끼은(는) 새로운 맛이 오늘 하루에 활력을 줄 거예요!"
+  },
+  {
+    "name": "비빔밥",
+    "tags": [
+      "adventurous",
+      "korean"
+    ],
+    "description": "비빔밥은(는) 새로운 맛이 오늘 하루에 활력을 줄 거예요!"
+  },
+  {
+    "name": "김치찌개",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "김치찌개은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "된장찌개",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "된장찌개은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "갈비탕",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "갈비탕은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "제육볶음",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "제육볶음은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "삼겹살",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "삼겹살은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "오징어볶음",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "오징어볶음은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "잡채",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "잡채은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "불고기",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "불고기은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "감자탕",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "감자탕은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "콩나물국밥",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "콩나물국밥은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "토스트",
+    "tags": [
+      "mild",
+      "snack"
+    ],
+    "description": "토스트은(는) 부드럽고 편안한 한 끼를 원한다면 좋아요!"
+  },
+  {
+    "name": "라면",
+    "tags": [
+      "safe"
+    ],
+    "description": "라면은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "오므라이스",
+    "tags": [
+      "safe",
+      "fusion"
+    ],
+    "description": "오므라이스은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "카레라이스",
+    "tags": [
+      "safe",
+      "fusion"
+    ],
+    "description": "카레라이스은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "떡국",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "떡국은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "소고기무국",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "소고기무국은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  },
+  {
+    "name": "잡채밥",
+    "tags": [
+      "safe",
+      "korean"
+    ],
+    "description": "잡채밥은(는) 누구나 좋아하는 익숙한 맛으로 오늘을 위로해줘요!"
+  }
+]
