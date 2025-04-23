@@ -241,7 +241,6 @@ def test_result_view(request):
     return render(request, 'gomgom_ai/test_result.html', {
         "result": result,
         "restaurants": matched_restaurants,
-        "keyword": [result.get("store")]
     })
 
 

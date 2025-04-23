@@ -1,6 +1,6 @@
 {% load static %}
-<!DOCTYPE html>
 
+<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -40,8 +40,9 @@
 
 <!-- 아래 부분은 hidden으로 렌더링만 해놓고 JS에서 사용 -->
 <script id="restaurantData" type="application/json">
-    {{ restaurants|json_script:"restaurantData" }}
+    {{ restaurants|safe }}
 </script>
+
 
 <script>
     function showAnotherRestaurant() {
