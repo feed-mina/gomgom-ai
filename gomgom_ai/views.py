@@ -12,6 +12,17 @@ import json
 from pathlib import Path
 import random
 import re
+from konlpy.tag import Okt
+okt = Okt()
+from konlpy.tag import Okt
+
+okt = Okt()
+print(okt.nouns("짬뽕지존-봉천점"))
+
+def extract_keywords_from_store_name(name):
+    # '짬뽕지존-봉천점' → ['짬뽕', '지존', '봉천']
+    keywords = [w for w, pos in okt.pos(name) if pos == 'Noun' and len(w) > 1]
+    return keywords
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY") or settings.OPENAI_API_KEY)
 
@@ -212,29 +223,36 @@ def recommend_input(request):
     print("입력값:", text)
     print("위치:", lat, lng)
 
-
-
     # GPT에게 추천 요청
     food_list = load_food_list()
     food_names = [food['name'] for food in food_list]
     food_tags = {food['name']: food['tags'] for food in food_list}
 
-    gpt_result = ask_gpt_to_choose(food_names, food_tags)
-
-
-    # GPT에게 사용자 입력 반영한 프롬프트 구성
+    # GPT 프롬프트
     prompt = f"""
-    아래는 사용자의 상태입니다:
-    "{text}"
-
-    이 상태에 맞는 음식을 다음 중 하나에서 골라줘:
-    {', '.join(food_names)}
-
-    조건:
-    - 감성적이고 따뜻한 문장으로 이유를 설명해줘
-    - 결과는 반드시 JSON 형식으로 줘
-    예: {{"food": "김치찌개", "description": "익숙한 매콤함이 오늘 하루를 위로해줄 거예요."}}
+    사용자의 상태는 "{text}" 입니다.
+    
+    아래는 오늘 배달 가능한 요기요 카테고리 목록입니다:
+    {', '.join(uniqueCategories)}  
+    
+    이 중에서 오늘 기분에 가장 잘 어울리는 카테고리 하나를 골라주세요.
+    그리고 감성적인 이유도 한 문장으로 설명해주세요.
+    
+        1. 오늘 기분에 어울리는 음식을 하나 추천해줘.
+        2. 추천 이유를 감성적으로 한 문장으로 작성해줘.
+        3. 추천 음식과 관련된 키워드(연관 음식 이름/맛/카테고리/상호명에 들어갈 법한 단어) 3~5개도 알려줘.
+        4. 추천한 음식이 어떤 요기요 카테고리에 해당하는지 추정해서 알려줘.
+    
+    결과는 JSON 형식으로 주세요:
+    {{
+      "category": "도시락죽",
+      "description": "부드럽고 따뜻한 도시락이 지친 하루를 위로해줄 거예요!"
+          "category": "한식",
+          "keywords": ["짜장", "중식", "불", "매운", "짬뽕"] 
+    }}
+        **JSON 안의 키 이름에는 반드시 쌍따옴표를 사용하고, description은 한 줄로!** 
     """
+
 
     try:
         response = client.chat.completions.create(
@@ -244,11 +262,29 @@ def recommend_input(request):
         result = json.loads(response.choices[0].message.content)
     except Exception as e:
         print("GPT 오류:", e)
-        # 예외 시 랜덤 처리
         fallback = random.choice(food_names)
         result = {
             "food": fallback,
-            "description": generate_emotional_description(fallback, food_tags.get(fallback, []))
+            "description": generate_emotional_description(fallback, food_tags.get(fallback, [])),
+            "keywords": [fallback]  # 여기 추가! 키워드 fallback 처리
         }
 
-    return render(request, 'gomgom_ai/recommend_result.html', {"result": result})
+    # ✅ GPT 결과 처리 후, 항상 실행되게 요기요 호출!
+    restaurants_data = get_yogiyo_restaurants(lat, lng)
+    raw_restaurants = restaurants_data.get("restaurants", []) if isinstance(restaurants_data, dict) else restaurants_data
+
+    related_keywords = result.get("keywords", [result["food"]])
+
+    matched_restaurants = [
+        r for r in raw_restaurants
+        if isinstance(r, dict) and any(
+            kw in (r.get("name") or "") for kw in related_keywords
+        )
+    ]
+
+
+    return render(request, 'gomgom_ai/recommend_result.html', {
+            "result": result,
+            "restaurants": matched_restaurants,
+            "keyword": related_keywords
+        })
