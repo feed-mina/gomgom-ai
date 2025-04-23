@@ -74,18 +74,13 @@
 <h3>📍 오늘의 추천 메뉴</h3>
 <h3> {{ result.store }}</h3>
 <p><strong> {{ result.description }}</strong></p>
-<h3>{{ matched_restaurants.0.name }}</h3>
 
 <div class="card">
-    <p>📌 카테고리: {{ result.category }}</p>
-    {% if result.keywords %}
+    <p>📌 카테고리: {{ restaurants.0.categories }}</p>
     <p>🔍 관련 키워드: {{ result.keywords|join:", " }}</p>
-    {% endif %}
+    <p>⭐ 평점: {{ restaurants.0.review_avg }}</p>
+    <p>🏠 주소: {{ restaurants.0.address }}</p>
+<!--    <p>🆔 가게 ID: {{ restaurants.0.id }}</p>-->
 </div>
-{% if matched_restaurants %}
-<p>⭐ 평점: {{ matched_restaurants.0.review_avg|default:"정보 없음" }}</p>
-<p>{{ matched_restaurants.0.address }}</p>
-{% endif %}
-
 </body>
 </html>
