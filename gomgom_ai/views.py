@@ -213,6 +213,21 @@ def start_view(request):
 def test_view(request):
     return render(request, 'gomgom_ai/test.html')
 
+def is_similar_store_name(store1, store2):
+    return store1.replace(" ", "").lower() in store2.replace(" ", "").lower()
+
+def is_related(text, result):
+    keywords = result.get("keywords", [])
+    category = result.get("category", "")
+    store = result.get("store", "")
+
+    text = text.lower()
+    return (
+            text in store.lower() or
+            text in category.lower() or
+            any(text in kw.lower() for kw in keywords)
+    )
+
 @csrf_exempt
 def recommend_input(request):
     text = request.GET.get('text')
@@ -239,31 +254,25 @@ def recommend_input(request):
 
     # GPT 프롬프트
     prompt = f"""
-    사용자의 상태는 "{text}" 입니다.
+    사용자가 입력한 단어는 "{text}"입니다.
     이 단어는 먹고 싶은 음식일 가능성이 높습니다.
     
     아래는 오늘 배달 가능한 음식점들과, 각 가게 이름에서 추출한 주요 키워드입니다:
     {chr(10).join(store_keywords_list[:10])}
-    # 10개만 추려서 보냄
-  
-    목표:
-    - 위 음식점 중 사용자가 원하는 "{text}"와 가장 관련 있는 가게를 한 곳 추천해주세요.
-    - 추천 이유는 감성적 한 문장으로 설명해주세요.
-    - 가게의 대표 카테고리도 함께 알려주세요.
-    - 반드시 {text}와 의미적으로 가까운 키워드를 포함한 가게만 고르세요.
     
-    조건:
-    - 입력한 단어와 관련 없는 가게는 추천하지 마세요.
-    - 반드시 입력 키워드와 연관된 키워드를 포함한 가게 중에서 골라주세요.
-
+    당신의 임무는:
+    - 사용자가 원하는 "{text}"와 가장 관련 있는 가게를 하나 고르는 것입니다.
+    - 반드시 {text}와 의미적으로 가까운 키워드(예: 김밥 ↔ 분식, 커리 ↔ 인도음식 등)를 포함한 가게만 고르세요.
+    - 추천 이유는 감성적으로 한 줄로 설명해주세요.
+    - 가게의 대표 카테고리도 함께 알려주세요.
+    
     결과는 JSON 형식으로 다음처럼 주세요:
-    {{ "store": 음식점 이름, "description": 설명, "category": 카테고리, "keywords": [키워드1, 키워드2, ...] }}
-
-
+        {{ "store": 음식점 이름, "description": 설명, "category": 카테고리, "keywords": [키워드1, 키워드2, ...] }}
+    
     주의:
+    - 입력값과 연관 없는 가게는 추천하지 마세요.
     - 반드시 유사한 음식군에서만 추천하세요.
     """
-
 
     try:
         response = client.chat.completions.create(
@@ -312,16 +321,24 @@ def recommend_input(request):
         }
 
 
+
     # 4. 결과 가게만 필터링해서 다시 매칭
     matched_restaurants = [
         {
             "name": r.get("name"),
             "review_avg": r.get("review_avg"),
-            "address": "카테고리: " + ", ".join(r.get("categories", []))  # 임시 대체
+            "address": "카테고리: " + ", ".join(r.get("categories", []))
         }
         for r in raw_restaurants
-        if result.get("store") in r.get("name", "")
+        if is_similar_store_name(result.get("store", ""), r.get("name", ""))
     ]
+    if not matched_restaurants:
+        print("📌 GPT 결과만 보여줌 (요기요 매칭 실패)")
+        matched_restaurants = [{
+            "name": result.get("store", "추천 가게"),
+            "review_avg": 0.0,
+            "address": f"카테고리: {result.get('category', '기타')}"
+        }]
 
 
     print('matched_restaurants: ',matched_restaurants)

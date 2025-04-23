@@ -5,75 +5,95 @@
 <head>
     <meta charset="UTF-8">
     <title>추천 결과</title>
+    <!-- 스타일 -->
     <style>
         body {
             font-family: 'Noto Sans KR', sans-serif;
             background-color: #FAF0D7;
-            padding: 50px;
+            padding: 30px;
             text-align: center;
         }
+
+        h2, h3 {
+            color: #6B4E71;
+        }
+
         .card {
-            max-width: 400px;
-            margin: auto;
+            max-width: 450px;
+            margin: 0 auto;
             background: white;
             border-radius: 20px;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
             padding: 30px;
         }
-        .card h2 {
-            color: #BEA397;
-        }
+
         .card p {
-            font-size: 18px;
-            margin: 10px 0;
+            font-size: 16px;
+            line-height: 1.6;
+            color: #444;
         }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin-top: 15px;
+            background-color: #FFF2F2;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
         .btn {
             display: inline-block;
-            margin-top: 20px;
+            margin-top: 30px;
             background-color: #8CC0DE;
             color: white;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 10px;
             text-decoration: none;
             font-weight: bold;
+            transition: all 0.3s ease;
         }
+
         .btn:hover {
             background-color: #FFDBDA;
-            color: #FF908B;
+            color: #FF6F61;
         }
     </style>
+
 </head>
 <body>
-<header>
-    <a id="header_link" href="{% url 'main' %}">
-        <img src="{% static 'image/로고.png' %}" alt="logo" style="width:8vw; height:7vh; max-width:50px; max-height:80px;">
-        <span id="header_text">&nbsp;CLICK YOUR TASTE!</span>
-    </a>
 
-</header>
+<!-- 공통 헤더 -->
+{% include 'gomgom_ai/header.html' %}
+
 <h2>🍽 오늘의 추천 음식</h2>
-<h3>📍 오늘의 추천 매뉴 </h3>
+<h3>📍 오늘의 추천 메뉴</h3>
 <h3> {{ result.store }}</h3>
 <p><strong> {{ result.description }}</strong></p>
 
-{% if restaurants %}
-<ul>
-    {% for r in restaurants %}
-    <li>
-        {{ r.name }}<br>
-        📍 {{ r.address|default:"주소 정보 부족" }}<br>
-        ⭐ 평점: {{ r.review_avg|default:"별점 확인 불가"}}
-    </li>
-    {% endfor %}
-</ul>
-{% else %}
-<p>
-    <strong>
-        관련 키워드: {{ result.keywords|join:", " }}
-    </strong>
-</p>
-
+<div class="card">
+    {% if restaurants %}
+    <ul>
+        {% for r in restaurants %}
+        <li>
+            {{ r.name }}<br>
+            📍 {{ r.address|default:"주소 정보 부족" }}<br>
+            ⭐ 평점: {{ r.review_avg|default:"별점 확인 불가"}}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>
+        <strong>
+            관련 키워드: {{ result.keywords|join:", " }}
+        </strong>
+    </p>
     {% endif %}
+</div>
 
 </body>
 </html>
