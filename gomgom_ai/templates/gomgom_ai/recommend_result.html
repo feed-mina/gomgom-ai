@@ -52,20 +52,28 @@
 
 </header>
 <h2>🍽 오늘의 추천 음식</h2>
-<p><strong>{{ result.food }}</strong></p>
-<p>{{ result.description }}</p>
+<h3>📍 오늘의 추천 매뉴 </h3>
+<h3> {{ result.store }}</h3>
+<p><strong> {{ result.description }}</strong></p>
 
-<h3>📍 "{{ result.keywords }}" 관련 요기요 가게 목록</h3>
 {% if restaurants %}
 <ul>
     {% for r in restaurants %}
-    <li>{{ r.name }} - {{ r.address }} - ⭐ 평점: {{ r.review_avg }}</li>
+    <li>
+        {{ r.name }}<br>
+        📍 {{ r.address|default:"주소 정보 부족" }}<br>
+        ⭐ 평점: {{ r.review_avg|default:"별점 확인 불가"}}
+    </li>
     {% endfor %}
 </ul>
 {% else %}
-<p>관련 키워드: {{ result.keywords|join:", " }}</p>
+<p>
+    <strong>
+        관련 키워드: {{ result.keywords|join:", " }}
+    </strong>
+</p>
 
-{% endif %}
+    {% endif %}
 
 </body>
 </html>
