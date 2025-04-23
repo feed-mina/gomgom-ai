@@ -247,3 +247,9 @@ body {
     font-size: 0.95em;
     margin: 2px 0;
 }
+.result{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+
+}

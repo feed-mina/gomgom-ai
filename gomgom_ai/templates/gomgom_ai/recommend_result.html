@@ -76,10 +76,11 @@
 <p><strong> {{ result.description }}</strong></p>
 
 <div class="card">
-    <p>📌 카테고리: {{ restaurants.0.categories }}</p>
-    <p>🔍 관련 키워드: {{ result.keywords|join:", " }}</p>
-    <p>⭐ 평점: {{ restaurants.0.review_avg }}</p>
-    <p>🏠 주소: {{ restaurants.0.address }}</p>
+
+    <p>📌 <strong>카테고리: {{ restaurants.0.categories }}</strong></p>
+    <p>🔍 <strong>관련 키워드: {{ result.keywords|join:", " }}</strong> </p>
+    <p>⭐ <strong>평점: {{ restaurants.0.review_avg }}</strong> </p>
+    <p>🏠 <strong>주소: {{ restaurants.0.address }}</strong> </p>
 <!--    <p>🆔 가게 ID: {{ restaurants.0.id }}</p>-->
 </div>
 </body>

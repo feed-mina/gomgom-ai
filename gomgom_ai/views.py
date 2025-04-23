@@ -285,8 +285,6 @@ def recommend_result(request):
     # 사용자 입력 유형에 따라 프롬프트 생성
     prompt = create_yogiyo_prompt_with_options(text, store_keywords_list, score=None, input_type=user_input_category)
 
-
-
     try:
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -294,23 +292,23 @@ def recommend_result(request):
         )
         result = json.loads(response.choices[0].message.content)
 
-
         is_valid_result = is_related(text, result)
         if "keywords" not in result:
             result["keywords"] = extract_keywords_from_store_name(result.get("store", ""))
 
         # 여기가 핵심! GPT 결과와 가장 비슷한 요기요 가게 찾기
         best_match = match_gpt_result_with_yogiyo(result, raw_restaurants)
+        matched_restaurants = []
 
         if best_match:
             matched_restaurants = [{
                 "name": best_match.get("name"),
                 "review_avg": best_match.get("review_avg", "5점"),
-                "address": "카테고리: " + ", ".join(best_match.get("categories", []))
+                "address": best_match.get("address", "주소 정보 없음"),
+                "id": best_match.get("id", "ID 없음"),
+                "categories": ", ".join(best_match.get("categories", [])),
+                "logo": best_match.get("logo_url", "")
             }]
-        else:
-            matched_restaurants = []
-
 
     except Exception as e:
         print("GPT 호출 실패:", e)
@@ -320,23 +318,14 @@ def recommend_result(request):
             "category": "기타",
             "keywords": []
         }
-        is_valid_result = False
 
-    matched_restaurants = []
-
-    description_templates = [
-        f"'{text}'가 생각나는 날이에요. 이 메뉴라면 만족스러운 한 끼가 될 거예요!",
-        f"기분전환이 필요한 날엔 '{text}'! 이 메뉴 어때요?",
-        f"오늘 같은 날엔 '{text}'가 딱이죠! 이 가게 추천해요!",
-    ]
-    result["description"] = random.choice(description_templates)
-
+        matched_restaurants = []
 
     if not is_valid_result and not matched_restaurants:
         fallback = random.choice(raw_restaurants)
         result = {
             "store": fallback.get("name", "추천 없음"),
-            "description": result["description"],
+            "description": f"'{text}' 같은 기분일 때, 이런 음식이 도와줘요.",
             "category": ", ".join(fallback.get("categories", [])),
             "keywords": extract_keywords_from_store_name(fallback.get("name", ""))
         }

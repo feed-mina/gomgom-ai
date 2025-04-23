@@ -25,24 +25,23 @@
                 <h2>당신에게 딱 맞는 음식은?</h2>
             </div>
             <div class="result">
-                <h1 class="selected-store">{{ result.store }}</h1>
-                <p class="selected-description">{{ result.description }}</p>
 
                 <img class="resultImg" src="{% static 'image/상반신 요리사 토끼.png' %}" alt="토끼">
-
-                <a href="{% url 'start' %}"><button type="button" class="replayButton">다시하기</button></a>
-                    <button class="othermenu" onclick="showAnotherRestaurant()">다른 결과 보기</button>
+             <div class="sideinfo">
+                 <h1 class="selected-store">{{ result.store }}</h1>
+                 <p class="selected-description">{{ result.description }}</p>
+                 <a href="{% url 'main' %}"><button type="button" class="replayButton">다시하기</button></a>
+                 <button class="othermenu" onclick="showAnotherRestaurant()">다른 결과 보기</button>
+             </div>
             </div>
-
-            <img class="resultImg" src="{% static 'image/상반신 요리사 토끼.png' %}" alt="토끼">
-            <a href="{% url 'start' %}"><button type="button" class="replayButton">다시하기</button></a>
-           <button class="othermenu" onclick="showAnotherRestaurant()">다른 결과 보기</button>
         </div>
     </div>
 </div>
 
 <!-- 아래 부분은 hidden으로 렌더링만 해놓고 JS에서 사용 -->
-{% json_script restaurants as restaurantData %}
+<script id="restaurantData" type="application/json">
+    {{ restaurants|json_script:"restaurantData" }}
+</script>
 
 <script>
     function showAnotherRestaurant() {
