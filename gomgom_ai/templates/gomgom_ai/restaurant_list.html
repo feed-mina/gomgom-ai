@@ -1,0 +1,25 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>가게 리스트</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+</head>
+<body>
+<h1>📍 근처 배달 가능한 가게 목록</h1>
+<p>위치: {{ lat }}, {{ lng }}</p>
+
+{% for r in restaurants %}
+<div style="border:1px solid #ccc; padding:10px; margin:10px;">
+    <h2>{{ r.name }} (⭐ {{ r.review_avg }})</h2>
+    <p>카테고리: {{ r.categories|join:', ' }}</p>
+    <p>배달비: {{ r.delivery_fee_to_display.basic }}</p>
+    <p>리뷰 수: {{ r.review_count }}</p>
+    <img src="{{ r.logo_url }}" width="100" alt="{{ r.name }}">
+</div>
+{% empty %}
+<p>😢 근처 가게를 불러오지 못했어요.</p>
+{% endfor %}
+</body>
+</html>

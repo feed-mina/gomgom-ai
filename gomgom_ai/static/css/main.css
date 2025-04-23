@@ -284,3 +284,16 @@ body#body {
 .modal-content button:hover {
     background-color: #fbaaa7;
 }
+#checkyogiyo {
+    margin-top: 1rem;
+    margin-left: 1rem;
+    width: 120px;
+    height: 40px;
+    background-color: #8CC0DE;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}

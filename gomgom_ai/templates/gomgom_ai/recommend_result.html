@@ -43,9 +43,10 @@
 </head>
 <body>
 <div class="card">
-    <h2>🍽️ 추천 결과</h2>
-    <p><strong>{{ result.recommendation }}</strong></p>
-    <p>신뢰도: {{ result.confidence }}</p>
+    <h2>🍽 오늘의 추천 음식</h2>
+    <p><strong>{{ result.food }}</strong></p>
+    <p>{{ result.description }}</p>
+
     <a href="/" class="btn">다시 추천받기</a>
 </div>
 </body>

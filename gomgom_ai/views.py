@@ -15,6 +15,41 @@ import re
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY") or settings.OPENAI_API_KEY)
 
+def get_yogiyo_restaurants(lat, lng):
+    url = f"https://www.yogiyo.co.kr/api/v1/restaurants"
+    params = {
+        "lat": lat,
+        "lng": lng,
+        "page": 0,
+        "serving_type": "delivery",
+    }
+
+    headers = {
+        "User-Agent": "Mozilla/5.0",  # 중요! 요기요는 UA 없으면 차단됨
+        "Accept": "application/json",
+    }
+
+    try:
+        response = requests.get(url, params=params, headers=headers)
+        data = response.json()
+        return data
+    except Exception as e:
+        print("요기요 API 오류:", e)
+        return []
+
+def restaurant_list_view(request):
+    lat = request.GET.get("lat", "37.484934")  # 기본값 사당역 근처
+    lng = request.GET.get("lng", "126.981321")
+
+    data = get_yogiyo_restaurants(lat, lng)
+    restaurants = data if isinstance(data, list) else data.get("restaurants", [])
+
+    return render(request, "gomgom_ai/restaurant_list.html", {
+        "restaurants": restaurants,
+        "lat": lat,
+        "lng": lng,
+    })
+
 def load_food_list():
     path = Path(__file__).resolve().parent / 'food_list.json'
     with open(path, encoding='utf-8') as f:
@@ -63,8 +98,8 @@ def ask_gpt_to_choose(food_list, food_data_dict=None):
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}]
         )
-
-        content = response['choices'][0]['message']['content']
+        content = response.choices[0].message.content
+        # content = response['choices'][0]['message']['content']
         return json.loads(content)
 
     except json.JSONDecodeError:
@@ -90,11 +125,11 @@ def ask_gpt_to_choose(food_list, food_data_dict=None):
                 }
         except:
             pass
-
         return {"food": fallback_food, "description": fallback_desc}
 
 
 def test_result_view(request):
+
     types = [request.GET.get(f'type{i + 1}') for i in range(6)]
     score = {}
 
@@ -104,6 +139,21 @@ def test_result_view(request):
 
     food_list = load_food_list()
     food_data_dict = {item['name']: item['tags'] for item in food_list}
+    tag_to_category = {
+        "spicy": ["분식", "중식", "치킨"],
+        "mild": ["도시락죽", "한식"],
+        "adventurous": ["아시안", "일식돈까스", "회초밥", "카페디저트"],
+        "safe": ["한식", "프랜차이즈", "분식"],
+        "foreign": ["아시안", "중식", "일식돈까스"],
+        "japanese": ["일식돈까스", "회초밥"],
+        "korean": ["한식", "도시락죽"],
+        "chinese": ["중식"],
+        "western": ["피자양식"],
+        "thai": ["아시안"],
+        "mexican": ["아시안", "샌드위치"],
+        "snack": ["분식", "테이크아웃"],
+        "fusion": ["프랜차이즈"]
+    }
     candidates = []
 
     for food in food_list:
@@ -111,6 +161,13 @@ def test_result_view(request):
             if score.get(tag, 0) >= 2:
                 candidates.append(food['name'])
                 break
+
+
+    # 요기요 카테고리 추출
+    recommended_categories = set()
+    for tag in score:
+        if score[tag] >= 2 and tag in tag_to_category:
+            recommended_categories.update(tag_to_category[tag])
 
     if not candidates:
         candidates = [
@@ -125,32 +182,16 @@ def test_result_view(request):
 
     return render(request, 'gomgom_ai/test_result.html', {
         'food': food,
-        'description': description
+        'description': description,
+        'categories': list(recommended_categories)  # 요기요 API 연동용
     })
 
-
-# print("TEMPLATE DIRS:", settings.TEMPLATES[0]['DIRS'])
-# print("BASE_DIR/templates:", os.path.join(settings.BASE_DIR, 'templates'))
 
 def home_view(request):
     return render(request, 'gomgom_ai/home.html')
 def main(request):
     return render(request, 'gomgom_ai/main.html')
 
-# 랜덤 추천
-def situation_view(request):
-    return render(request, 'gomgom_ai/situation.html')
-
-def situation2_view(request):
-    return render(request, 'gomgom_ai/situation2.html')
-
-def situation3_view(request):
-    return render(request, 'gomgom_ai/situation3.html')
-def situation4_view(request):
-    return render(request, 'gomgom_ai/situation4.html')
-
-def result_view(request):
-    return render(request, 'gomgom_ai/result.html')
 # 입맛 테스트
 def start_view(request):
     print("넘어온 text:", request.GET.get('text'))
@@ -159,31 +200,10 @@ def start_view(request):
 
     return render(request, 'gomgom_ai/start.html')
 
-def question_view(request):
-    return render(request, 'gomgom_ai/question.html')
-
-def question2_view(request):
-    return render(request, 'gomgom_ai/question2.html')
-
-def question3_view(request):
-    return render(request, 'gomgom_ai/question3.html')
-
-def question4_view(request):
-    return render(request, 'gomgom_ai/question4.html')
-
-def question5_view(request):
-    return render(request, 'gomgom_ai/question5.html')
-
-def question6_view(request):
-    return render(request, 'gomgom_ai/question6.html')
-
-
-# def test_result_view(request):
-#     return render(request, 'gomgom_ai/test_result.html')
 def test_view(request):
     return render(request, 'gomgom_ai/test.html')
 
-
+@csrf_exempt
 def recommend_input(request):
     text = request.GET.get('text')
     lat = request.GET.get('lat')
@@ -192,10 +212,43 @@ def recommend_input(request):
     print("입력값:", text)
     print("위치:", lat, lng)
 
-    # 여기에 요기요 API나 LLM 처리 넣을 예정!
-    dummy_result = {
-        "recommendation": "떡볶이",
-        "confidence": "높음"
-    }
 
-    return render(request, 'gomgom_ai/recommend_result.html', {"result": dummy_result})
+
+    # GPT에게 추천 요청
+    food_list = load_food_list()
+    food_names = [food['name'] for food in food_list]
+    food_tags = {food['name']: food['tags'] for food in food_list}
+
+    gpt_result = ask_gpt_to_choose(food_names, food_tags)
+
+
+    # GPT에게 사용자 입력 반영한 프롬프트 구성
+    prompt = f"""
+    아래는 사용자의 상태입니다:
+    "{text}"
+
+    이 상태에 맞는 음식을 다음 중 하나에서 골라줘:
+    {', '.join(food_names)}
+
+    조건:
+    - 감성적이고 따뜻한 문장으로 이유를 설명해줘
+    - 결과는 반드시 JSON 형식으로 줘
+    예: {{"food": "김치찌개", "description": "익숙한 매콤함이 오늘 하루를 위로해줄 거예요."}}
+    """
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        result = json.loads(response.choices[0].message.content)
+    except Exception as e:
+        print("GPT 오류:", e)
+        # 예외 시 랜덤 처리
+        fallback = random.choice(food_names)
+        result = {
+            "food": fallback,
+            "description": generate_emotional_description(fallback, food_tags.get(fallback, []))
+        }
+
+    return render(request, 'gomgom_ai/recommend_result.html', {"result": result})

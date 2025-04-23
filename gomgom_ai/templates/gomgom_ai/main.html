@@ -25,6 +25,10 @@
         </h3>
     </header>
     <div class="container">
+        <div id="checkyogiyodiv">
+            <a href="{% url 'restaurant_list' %}">
+                <button id="checkyogiyo">내 주변 가게</button></a>
+        </div>
         <main>
             <div class="all">
                 <article class="box">
@@ -44,14 +48,13 @@
 
                     <!-- 버튼 -->
                     <div class="button-group">
-<!--                        <a href="{% url 'situation' %}"><button class="button_random">랜덤메뉴 추천</button></a>-->
 
                         <!-- 입력창 -->
                         <div class="input-box">
                             <input
                                     type="text"
                                     id="userInput"
-                                    placeholder="예: 매운 음식 추천해줘, 10,000원 이하"
+                                    placeholder="예: 매운 음식 추천해줘"
                             />
 
                             <button onclick="handleRecommend()">입력 추천</button>
