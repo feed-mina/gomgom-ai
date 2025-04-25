@@ -1,4 +1,4 @@
-def create_yogiyo_prompt_with_options(user_text, store_keywords_list, score=None):
+def create_yogiyo_prompt_with_testoptions(user_text, store_keywords_list, score=None):
     """
     사용자의 입력(user_text)과 요기요 가게 리스트(상호명 + 키워드), 그리고 기분 태그(score)를 기반으로
     GPT가 적절한 가게를 고를 수 있도록 조건을 강화한 프롬프트
