@@ -59,7 +59,7 @@ body#body {
 }
 
 #header_link img {
-    width: 30px; /* 로고 크기 줄임 */
+    width: 30px; /* logo 크기 줄임 */
     height: auto;
     margin-right: 10px;
 }

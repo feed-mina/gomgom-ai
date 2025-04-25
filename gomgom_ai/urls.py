@@ -1,5 +1,7 @@
 # gomgom-ai/gomgom_ai/urls.py
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 from gomgom_ai import views
 
 urlpatterns = [
@@ -13,3 +15,4 @@ urlpatterns = [
     path('restaurant_list/', views.restaurant_list_view, name='restaurant_list'),
     path('async-test/', views.async_test_view),
 ]
+urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
