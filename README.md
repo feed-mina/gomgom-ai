@@ -53,7 +53,7 @@ main.html
 
 | 메인화면                      | 테스트 결과                                          |
 |---------------------------|-------------------------------------------------|
-| ![main](https://mindevprofile.kr) | ![result](https://mindevprofile.kr/test_result) |
+| https://mindevprofile.kr/ | https://mindevprofile.kr/test_result |
 
 ---
 
@@ -88,9 +88,7 @@ python manage.py runserver
 |------|------|
 | 민예린  | 풀스택 개발, 기획, 디자인, 배포 |
 
-포트폴리오: https://justsaying.co.kr  
-GitHub: https://github.com/feed-mina
-
+포트폴리오: https://mindevprofile.kr/
 ---
 
 ## 추후 개선사항
