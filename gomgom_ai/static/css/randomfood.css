@@ -364,3 +364,16 @@ h3 strong, p strong {
 }
 
 
+.selected-description{
+    text-decoration-line: underline;
+}
+
+.sideinfo{
+    width:70%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.selected-description{
+    width:70%;
+}

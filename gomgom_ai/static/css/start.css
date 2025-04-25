@@ -44,10 +44,11 @@ a {
 
 /* 제목 박스 */
 .title {
-    width: 90%;
+    font-size: 6vw;
+    width: 65vw;
+    height:20vh;
     max-width: 600px;
     margin: -60px auto 30px auto;
-    padding: 20px;
     background: #FAD5D6;
     box-shadow: inset 0px 4px 4px rgba(0, 0, 0, 0.25);
     border-radius: 40px;
@@ -77,8 +78,7 @@ a {
 }
 /* 내부 박스 */
 .Box {
-    width: 90%;
-    max-width: 700px;
+    width: 70%;
     margin: 30px auto 0 auto;
     background: white;
     border-radius: 30px;
@@ -90,7 +90,18 @@ a {
 @media (max-width: 768px) {
     .title {
         font-size: 6vw;
-        padding: 15px;
+        padding:1rem;
+        width: 65vw;
+        max-width: 600px;
+        background: #FAD5D6;
+        box-shadow: inset 0px 4px 4px rgba(0, 0, 0, 0.25);
+        border-radius: 40px;
+
+        font-weight: 100;
+        font-size: 5vmin;
+        line-height: 1.5;
+        text-align: center;
+        color: rgba(100, 26, 26, 0.8);
     }
 
     .button {
@@ -102,9 +113,6 @@ a {
         padding: 20px 10px;
     }
 
-    .Box {
-        padding: 15px;
-    }
 
     header {
         height: 8vh;
@@ -143,4 +151,8 @@ a {
     font-family: 'Noto Sans KR', sans-serif;
     font-size: 18px;
     font-weight: bold;
+}
+
+#start_rabit{
+    height: 30vh;
 }
