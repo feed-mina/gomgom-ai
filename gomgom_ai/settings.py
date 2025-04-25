@@ -9,17 +9,34 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
+# settings.py 상단
+# settings.py 맨 위
 import os
-
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+BASE_DIR = Path(__file__).resolve().parent.parent
+load_dotenv(dotenv_path=BASE_DIR / ".env")
 
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+# 키가 None이 아니면 환경변수에 등록
+api_key_from_env = os.getenv("OPENAI_API_KEY")
+if api_key_from_env:
+    os.environ["OPENAI_API_KEY"] = api_key_from_env
+
+
+#redis
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache", # Redis 백엔드 사용
+        "LOCATION": "redis://127.0.0.1:6379/1",  # 로컬 Redis 서버
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production

@@ -205,6 +205,74 @@ body {
     }
 }
 
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background-color: #FAF0D7;
+    padding: 30px;
+    text-align: center;
+}
+
+h2, h3 {
+    color: #6B4E71;
+}
+
+.card {
+    max-width: 450px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+}
+
+.card p {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #444;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    margin-top: 15px;
+    background-color: #FFF2F2;
+    padding: 15px;
+    border-radius: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.btn {
+    display: inline-block;
+    margin-top: 30px;
+    background-color: #8CC0DE;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 10px;
+    text-decoration: none;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.btn:hover {
+    background-color: #FFDBDA;
+    color: #FF6F61;
+}
+.spinner {
+    border: 6px solid #eee;
+    border-top: 6px solid #3C8DBC;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
 .recommend-box {
     margin-top: 50px;
     text-align: center;

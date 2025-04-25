@@ -11,4 +11,5 @@ urlpatterns = [
     path('test_result/', views.test_result_view, name='test_result'),
     path('recommend_result/', views.recommend_result, name='recommend_result'),
     path('restaurant_list/', views.restaurant_list_view, name='restaurant_list'),
+    path('async-test/', views.async_test_view),
 ]

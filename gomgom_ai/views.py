@@ -1,25 +1,37 @@
-# gomgom_ai/views.py
-from django.shortcuts import render # HTML 화면을 보여줄때 사용하는 함수
-from openai import OpenAI #chatGPT 도구
-from django.http import JsonResponse # json형식으로 데이터를 응답할수있게한다.
-from django.views.decorators.csrf import csrf_exempt #  Django 기본 보안 기능 중 하나인 CSRP 를 임시로 꺼주는 장치
-import json # json데이터를 {'이름':'값'} 형태로 주고 받을때 사용
-import requests # 다른 웹사이트 api로부터 데이터를 가져올때 사용 (-요기요)
-from django.conf import settings # .env나 Django설정에서 저장된 값을 꺼낼때 사용
+import asyncio
+import httpx
+import json
 import os
-from .data import all_dishes
-from pathlib import Path # 파일경로를 쉽게 찾게 해줌
-import random # 무작위 음식 고를때 사용
-import re #정규표현식(문자에서 특정 패턴 찾을때 사용)
-from .match_gpt_result_with_yogiyo import match_gpt_result_with_yogiyo # gpt가 추천한 가게와 요기요 api 중 가장 비슷한 리스트
-from .create_yogiyo_prompt_with_options import create_yogiyo_prompt_with_options #gpt에게 요기요 api 가게리스트를 보여주고 직접 선택하게 하기
-from .classify_user_input import classify_user_input # 사용자가 적는 텍스트별 분기
-
-from konlpy.tag import Okt # 한국어 문장 분석기를 준비하는 코드
+import random
+import re
+import requests
 from concurrent.futures import ThreadPoolExecutor
+from django.core.cache import cache
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.views.decorators.cache import cache_page
+from django.views.decorators.csrf import csrf_exempt
+from konlpy.tag import Okt
+from openai import OpenAI
+from pathlib import Path
+
+from .classify_user_input import classify_user_input
+from .create_yogiyo_prompt_with_options import create_yogiyo_prompt_with_options
+from .match_gpt_result_with_yogiyo import match_gpt_result_with_yogiyo
 
 okt = Okt()
-# print(okt.nouns("짬뽕지존-봉천점"))
+print(okt.nouns("짬뽕지존-봉천점"))
+
+cache.set('hello', 'world', timeout=10)
+print(cache.get('hello'))  # → 'world' 나오면 OK
+
+
+# name문자열을 형태소 분석해서 (단어,품사)로 나눔, pos == 'Noun' 명사인 단어만 고름
+# len(w) > 1 너무 짧은 단어 (예 : '의','가')는 빼고 두글자 이상만
+def extract_keywords_from_store_name(name):
+    # '짬뽕지존-봉천점' → ['짬뽕', '지존', '봉천']
+    keywords = [w for w, pos in okt.pos(name) if pos == 'Noun' and len(w) > 1]
+    return keywords
 
 
 def is_related(text, result):
@@ -33,29 +45,7 @@ def is_related(text, result):
     )
 
 
-def is_similar_store_name(store1, store2):
-    def clean(s):
-        return re.sub(r"[^가-힣a-zA-Z0-9]", "", s).replace(" ", "").lower()
-    return clean(store1) in clean(store2) or clean(store2) in clean(store1)
-
-
-# name문자열을 형태소 분석해서 (단어,품사)로 나눔, pos == 'Noun' 명사인 단어만 고름
-# len(w) > 1 너무 짧은 단어 (예 : '의','가')는 빼고 두글자 이상만
-def extract_keywords_from_store_name(name):
-    # '짬뽕지존-봉천점' → ['짬뽕', '지존', '봉천']
-    keywords = [w for w, pos in okt.pos(name) if pos == 'Noun' and len(w) > 1]
-    return keywords
-
-def is_related_by_keywords(gpt_keywords, store_name):
-    store_keywords = extract_keywords_from_store_name(store_name)
-    return any(k in store_keywords for k in gpt_keywords)
-
-
-def keyword_overlap(gpt_keywords, store_name):
-    keywords_in_name = extract_keywords_from_store_name(store_name)
-    return any(k in keywords_in_name for k in gpt_keywords)
-
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY") or settings.OPENAI_API_KEY)
+# 요기요 API 데이터 요청
 
 def get_yogiyo_restaurants(lat, lng):
     url = f"https://www.yogiyo.co.kr/api/v1/restaurants"
@@ -80,23 +70,14 @@ def get_yogiyo_restaurants(lat, lng):
         print("요기요 API 오류:", e)
         return []
 
-def restaurant_list_view(request):
-    lat = request.GET.get("lat", "37.484934")  # 기본값 사당역 근처
-    lng = request.GET.get("lng", "126.981321")
 
-    data = get_yogiyo_restaurants(lat, lng)
-    restaurants = data if isinstance(data, list) else data.get("restaurants", [])
-
-    return render(request, "gomgom_ai/restaurant_list.html", {
-        "restaurants": restaurants,
-        "lat": lat,
-        "lng": lng,
-    })
-
+# 음식 리스트 로드
 def load_food_list():
     path = Path(__file__).resolve().parent / 'food_list.json'
     with open(path, encoding='utf-8') as f:
         return json.load(f)
+
+
 def generate_emotional_description(food_name, tags):
     # 태그 기반 기본 감성 문장
     tag_descriptions = {
@@ -120,6 +101,124 @@ def generate_emotional_description(food_name, tags):
         return f"{food_name}은(는) " + matched[0]
     else:
         return f"{food_name}은(는) 오늘을 특별하게 만들어줄 음식이에요!"
+
+
+def test_view(request):
+    return render(request, 'gomgom_ai/test.html')
+
+
+def home_view(request):
+    return render(request, 'gomgom_ai/home.html')
+
+
+def main(request):
+    return render(request, 'gomgom_ai/main.html')
+
+
+def index(request):
+    return render(request, 'index.html')  # 또는 HttpResponse("Hello 햄!")
+
+
+# 입맛 테스트
+def start_view(request):
+    print("넘어온 text:", request.GET.get('text'))
+    print("넘어온 lat:", request.GET.get('lat'))
+    print("넘어온 lng:", request.GET.get('lng'))
+
+    return render(request, 'gomgom_ai/start.html')
+
+
+def my_cached_view(request):
+    result = cache.get("my_custom_key")
+    if not result:
+        # 데이터 처리 또는 API 호출
+        result = "비싼 작업 결과"
+        cache.set("my_custom_key", result, timeout=60 * 5)  # 5분 캐시
+
+    return JsonResponse({"result": result})
+
+
+async def async_cached_view(request):
+    data = cache.get("async_test_key")
+    if not data:
+        # 느린 작업
+        await asyncio.sleep(1)
+        data = "async 처리 완료 결과"
+        cache.set("async_test_key", data, timeout=60)
+
+    return JsonResponse({"data": data})
+
+
+async def async_test_view(request):
+    await asyncio.sleep(1)
+    return JsonResponse({'message': 'Async works!'})
+
+
+def cache_test_view(request):
+    cache.set('hello', 'world', timeout=60)
+    value = cache.get('hello')
+    return JsonResponse({'cached_value': value})
+
+
+def is_similar_store_name(store1, store2):
+    def clean(s):
+        return re.sub(r"[^가-힣a-zA-Z0-9]", "", s).replace(" ", "").lower()
+
+    return clean(store1) in clean(store2) or clean(store2) in clean(store1)
+
+
+def is_related_by_keywords(gpt_keywords, store_name):
+    store_keywords = extract_keywords_from_store_name(store_name)
+    return any(k in store_keywords for k in gpt_keywords)
+
+
+def keyword_overlap(gpt_keywords, store_name):
+    keywords_in_name = extract_keywords_from_store_name(store_name)
+    return any(k in keywords_in_name for k in gpt_keywords)
+
+
+async def get_data():
+    async with httpx.AsyncClient() as client:
+        response = await client.get("https://www.yogiyo.co.kr/api/v1/restaurants")
+        return response.json()
+
+
+client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+
+
+async def fetch_yogiyo_data(lat, lng):
+    url = "https://www.yogiyo.co.kr/api/v1/restaurants"
+    params = {
+        "lat": lat,
+        "lng": lng,
+        "page": 0,
+        "serving_type": "delivery",
+    }
+    headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(url, params=params, headers=headers)
+            data = response.json()
+            # print("요기요 API data:", data)
+            return data
+        except Exception as e:
+            print("요기요 API 오류:", e)
+            return []
+
+
+def restaurant_list_view(request):
+    lat = request.GET.get("lat", "37.484934")  # 기본값 사당역 근처
+    lng = request.GET.get("lng", "126.981321")
+
+    data = get_yogiyo_restaurants(lat, lng)
+    restaurants = data if isinstance(data, list) else data.get("restaurants", [])
+
+    return render(request, "gomgom_ai/restaurant_list.html", {
+        "restaurants": restaurants,
+        "lat": lat,
+        "lng": lng,
+    })
 
 
 @csrf_exempt
@@ -177,33 +276,8 @@ def ask_gpt_to_choose(food_list, food_data_dict=None):
             pass
         return {"food": fallback_food, "description": fallback_desc}
 
-from concurrent.futures import ThreadPoolExecutor
-import json
-import random
-from django.shortcuts import render
-from django.views.decorators.csrf import csrf_exempt
-from .views import extract_keywords_from_store_name, is_related, get_yogiyo_restaurants, client
-from .create_yogiyo_prompt_with_options import create_yogiyo_prompt_with_options
-from .match_gpt_result_with_yogiyo import match_gpt_result_with_yogiyo
 
-
-# 입맛 테스트
-def start_view(request):
-    print("넘어온 text:", request.GET.get('text'))
-    print("넘어온 lat:", request.GET.get('lat'))
-    print("넘어온 lng:", request.GET.get('lng'))
-
-    return render(request, 'gomgom_ai/start.html')
-
-def test_view(request):
-    return render(request, 'gomgom_ai/test.html')
-
-def home_view(request):
-    return render(request, 'gomgom_ai/home.html')
-
-def main(request):
-    return render(request, 'gomgom_ai/main.html')
-
+@cache_page(60 * 5)  # 5분 동안 캐싱
 @csrf_exempt
 def test_result_view(request):
     text = request.GET.get("text")
@@ -232,7 +306,8 @@ def test_result_view(request):
         future_yogiyo = executor.submit(fetch_yogiyo)
         restaurants_data = future_yogiyo.result()
 
-        raw_restaurants = restaurants_data.get("restaurants", []) if isinstance(restaurants_data, dict) else restaurants_data
+        raw_restaurants = restaurants_data.get("restaurants", []) if isinstance(restaurants_data,
+                                                                                dict) else restaurants_data
 
         # 가게 키워드 리스트 준비
         store_keywords_list = [
@@ -287,6 +362,9 @@ def test_result_view(request):
         "result": result,
         "restaurants": matched_restaurants,
     })
+
+
+@cache_page(60 * 5)  # 5분 동안 캐싱
 @csrf_exempt
 def recommend_result(request):
     text = request.GET.get('text')
@@ -309,7 +387,8 @@ def recommend_result(request):
         future_yogiyo = executor.submit(fetch_yogiyo)
         restaurants_data = future_yogiyo.result()
 
-        raw_restaurants = restaurants_data.get("restaurants", []) if isinstance(restaurants_data, dict) else restaurants_data
+        raw_restaurants = restaurants_data.get("restaurants", []) if isinstance(restaurants_data,
+                                                                                dict) else restaurants_data
 
         store_keywords_list = [
             f"{r.get('name')}: {', '.join(extract_keywords_from_store_name(r.get('name', '')))}"
@@ -318,7 +397,8 @@ def recommend_result(request):
         random.shuffle(store_keywords_list)
         store_keywords_list = store_keywords_list[:10]  # ✅ 너무 많으면 GPT 느려져서 자르기
 
-        prompt = create_yogiyo_prompt_with_options(text, store_keywords_list, score=None, input_type=user_input_category)
+        prompt = create_yogiyo_prompt_with_options(text, store_keywords_list, score=None,
+                                                   input_type=user_input_category)
 
         # GPT 호출 병렬 실행
         future_gpt = executor.submit(ask_gpt, prompt)
@@ -365,4 +445,3 @@ def recommend_result(request):
         "restaurants": matched_restaurants,
         "keyword": [result.get("store")]
     })
-
