@@ -5,6 +5,10 @@
 <head>
     <meta charset="UTF-8">
     <title>추천 결과</title>
+
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ac17c741aa8131e12604eac5e2d0441c&libraries=services&autoload=false"></script>
+
+
     <link rel="stylesheet" href="{% static 'css/randomfood.css' %}">
 </head>
 <body>
@@ -24,22 +28,41 @@
         <div class="spinner"></div>
     </div>
 
-    <h2>🍽 오늘의 추천 음식</h2>
-<h3>📍 오늘의 추천 메뉴</h3>
-<h3> {{ result.store }}</h3>
-<p><strong> {{ result.description }}</strong></p>
+    <div class="card">
+        <h3>오늘의 추천 가게</h3>
+        <h3> {{ result.store }}</h3>
+        <p><strong> {{ result.description }}</strong></p>
 
-<div class="card">
+        <!-- 현재 주소 출력 -->
+        <p id="current-address" style="font-weight: bold; font-size: 16px; color: #222;">
+            로딩 중...
+        </p>
+        <p><strong>내가 검색한 단어:</strong> {{ request.GET.text }}</p>
+        <p>📌 <strong>카테고리: {{ restaurants.0.categories }}</strong></p>
+        <p>🔍 <strong>관련 키워드: {{ result.keywords|join:", " }}</strong></p>
+        <p>⭐ <strong>평점: {{ restaurants.0.review_avg }}</strong></p>
+        <p>🏠 <strong>주소: {{ restaurants.0.address }}</strong></p>
+        <img src="{{ result.logo_url|default:'/static/image/default_store.png' }}" alt="추천 가게 로고" width="120">
+        <!--    <p>🆔 가게 ID: {{ restaurants.0.id }}</p>-->
+    </div>
+    {% if DEBUG %}
+    <div style="background-color:#f5f5f5; padding:10px; margin-top:20px;">
+        <h3>🧪 디버깅 정보</h3>
+        <p><strong>입력 텍스트:</strong> {{ text }}</p>
+        <p><strong>위치:</strong> 위도: {{ lat }}, 경도: {{ lng }}</p>
+        <p><strong>기분 태그:</strong> {{ types }}</p>
+        <p><strong>태그 점수:</strong> {{ score }}</p>
+        <p><strong>추천 가게:</strong> {{ result.store }}</p>
+        <p><strong>설명:</strong> {{ result.description }}</p>
+        <p><strong>카테고리:</strong> {{ result.category }}</p>
+        <p><strong>키워드:</strong> {{ result.keywords }}</p>
+    </div>
+    {% endif %}
 
-    <p>📌 <strong>카테고리: {{ restaurants.0.categories }}</strong></p>
-    <p>🔍 <strong>관련 키워드: {{ result.keywords|join:", " }}</strong> </p>
-    <p>⭐ <strong>평점: {{ restaurants.0.review_avg }}</strong> </p>
-    <p>🏠 <strong>주소: {{ restaurants.0.address }}</strong> </p>
-<!--    <p>🆔 가게 ID: {{ restaurants.0.id }}</p>-->
-</div>
 </div>
 
 </body>
+
 
 <script>
     // 페이지 로딩 시 애니메이션 보이기
@@ -51,5 +74,30 @@
     function showLoading() {
         document.getElementById('loading').style.display = 'flex';
     }
+
+    kakao.maps.load(function () {
+        // Django 템플릿 값이 숫자로 들어오도록 강제 변환
+        const lat = parseFloat("{{ lat|default:'37.484934' }}");
+        const lng = parseFloat("{{ lng|default:'126.981321' }}");
+
+        console.log("위도:", lat, "경도:", lng);
+
+        const geocoder = new kakao.maps.services.Geocoder();
+        const coord = new kakao.maps.LatLng(lat, lng);
+
+        geocoder.coord2Address(coord.getLng(), coord.getLat(), function (result, status) {
+            if (status === kakao.maps.services.Status.OK) {
+                const address = result[0].road_address
+                    ? result[0].road_address.address_name
+                    : result[0].address.address_name;
+
+                console.log("주소 변환 성공:", address);
+                document.getElementById("current-address").innerText = "현재 위치: " + address;
+            } else {
+                console.error("주소 변환 실패:", status);
+                document.getElementById("current-address").innerText = `위도: ${lat}, 경도: ${lng}`;
+            }
+        });
+    });
 </script>
 </html>

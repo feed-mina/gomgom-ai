@@ -50,7 +50,7 @@ function goNextQuestion() {
     if (current >= qnaList.length) {
         // 결과로 이동
         const query = selectedTypes.map((t, i) => `type${i + 1}=${t}`).join('&');
-        window.location.href = `/test_result/?${query}`;
+        window.location.href = `/test_result/?text=${encodeURIComponent(text)}&${query}&lat=${lat}&lng=${lng}`;
         return;
     }
 

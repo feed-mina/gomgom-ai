@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>탭 사이트 이름</title>
+    <title>입맛테스트</title>
     <link rel="stylesheet" href="{% static 'css/question.css' %}">
     <meta name = "viewport" content="width=device-width, initial-scale=1.0">
 </head>
@@ -34,9 +34,10 @@
 
 <footer></footer>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    const text = "{{ text|escapejs }}";  // 템플릿에서 'text' 값 받아오기
+</script>
 
-
-<!--<script src="{% static 'javascript/recommendquestion.js' %}"></script>-->
 <script>
     const qnaList = [
         {
@@ -90,7 +91,15 @@
         if (current >= qnaList.length) {
             // 결과로 이동
             const query = selectedTypes.map((t, i) => `type${i + 1}=${t}`).join('&');
-            window.location.href = `/test_result/?${query}`;
+            const urlParams = new URLSearchParams(window.location.search);
+
+            const text = urlParams.get('text');
+            const lat = urlParams.get('lat');
+            const lng = urlParams.get('lng');
+            // text 값도 URL로 넘기기
+            console.log(text)
+
+            window.location.href = `/test_result/?text=${encodeURIComponent(text)}&${query}&lat=${lat}&lng=${lng}`;
             return;
         }
 

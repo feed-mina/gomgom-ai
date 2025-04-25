@@ -5,6 +5,8 @@
 <head>
     <meta charset="UTF-8">
     <title>_랜덤밥상</title>
+
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ac17c741aa8131e12604eac5e2d0441c&libraries=services&autoload=false"></script>
     <link rel="stylesheet" href="{% static 'css/randomfood.css' %}">
     <!--    <script src = "../javascript/elice.json" type="text/javascript"></script>-->
 </head>
@@ -29,17 +31,46 @@
         <div class="main">
             <div class="heading2">
                 <h2>당신에게 딱 맞는 음식은?</h2>
+                <!-- 현재 주소 출력 -->
+                <p id="current-address" style="font-weight: bold; font-size: 16px; color: #222;">
+                    로딩 중...
+                </p>
+
             </div>
             <div class="result">
-
                 <img class="resultImg" src="{% static 'image/rabbit_chef_body2.png' %}" alt="토끼">
-             <div class="sideinfo">
-                 <h1 class="selected-store">{{ result.store }}</h1>
-                 <p class="selected-description">{{ result.description }}</p>
-                 <a href="{% url 'main' %}"><button type="button" class="replayButton">다시하기</button></a>
-                 <button class="othermenu" onclick="showAnotherRestaurant()">다른 결과 보기</button>
+                <div class="sideinfo">
+                 <h2>오늘의 추천 가게</h2>
+                 <h3 class="selected-store"> {{ result.store }}</h3>
+                 <p class="selected-description"><strong> {{ result.description }}</strong></p>
              </div>
             </div>
+            <div id="infotext">
+                <p><strong>입력 텍스트:</strong> {{ text }}</p>
+                <p><strong>테스트 결과:</strong> {{ types }}</p>
+                <p><strong>카테고리:</strong> <span id="categoryText">{{ result.category }}</span></p>
+                <p><strong>키워드:</strong> <span id="keywordsText">{{ result.keywords }}</span></p>
+            </div>
+
+            <a href="{% url 'main' %}"><button style="width:10rem;" class="othermenu">다시하기</button></a>
+            <button type="button"  class="replayButton" onclick="showAnotherRestaurant()">다른 추천보기</button>
+
+            <!-- 디버깅용 GPT 정보 표시 -->
+            {% if DEBUG %}
+            <div style="background-color:#FAF0D7; padding:10px; margin-top:20px;">
+                <h3>🧪 디버깅 정보</h3>
+                <!-- 디버깅용 텍스트 출력 -->
+                <p><strong>입력 텍스트:</strong> {{ text }}</p>
+                <p><strong>위치:</strong> 위도: {{ lat }}, 경도: {{ lng }}</p>
+                <p><strong>기분 태그:</strong> {{ types }}</p>
+                <p><strong>태그 점수:</strong> {{ score }}</p>
+                <p><strong>추천 가게:</strong> {{ result.store }}</p>
+                <p><strong>설명:</strong> {{ result.description }}</p>
+                <p><strong>카테고리:</strong> {{ result.category }}</p>
+                <p><strong>키워드:</strong> {{ result.keywords }}</p>
+            </div>
+            {% endif %}
+
         </div>
     </div>
 </div>
@@ -48,18 +79,34 @@
 <script id="restaurantData" type="application/json">
     {{ restaurants|safe }}
 </script>
-
+<script>
+    const text = "{{ text|escapejs }}";  // 템플릿에서 'text' 값을 JS로 넘기기
+</script>
 
 <script>
     function showAnotherRestaurant() {
         const data = JSON.parse(document.getElementById("restaurantData").textContent);
-        if (!Array.isArray(data) || data.length === 0) return;
+        console.log(data)
+        if (!Array.isArray(data) || data.length === 0) {
+            alert("다른 추천 가게가 없습니다 😢");
+            return;
+        }
 
         const random = data[Math.floor(Math.random() * data.length)];
+        // 선택된 가게 정보 업데이트
 
         document.querySelector(".selected-store").textContent = random.name || "추천 없음";
         document.querySelector(".selected-description").textContent =
             (random.address || "주소 없음") + " / 평점: " + (random.review_avg || "없음");
+
+        // ✅ category와 keyword도 바꾸기
+        document.getElementById("categoryText").textContent = Array.isArray(random.categories)
+            ? random.categories.join(', ')
+            : (random.category || "정보 없음");
+
+        document.getElementById("keywordsText").textContent = Array.isArray(random.keywords)
+            ? random.keywords.join(', ')
+            : (random.keywords || "정보 없음");
     }
 
     // 페이지 로딩 시 애니메이션 보이기
@@ -71,6 +118,60 @@
     function showLoading() {
         document.getElementById('loading').style.display = 'flex';
     }
+
+
+
+    kakao.maps.load(function () {
+        // Django 템플릿 값이 숫자로 들어오도록 강제 변환
+        const lat = parseFloat("{{ lat|default:'37.484934' }}");
+        const lng = parseFloat("{{ lng|default:'126.981321' }}");
+
+        console.log("위도:", lat, "경도:", lng);
+
+        const geocoder = new kakao.maps.services.Geocoder();
+        const coord = new kakao.maps.LatLng(lat, lng);
+
+        geocoder.coord2Address(coord.getLng(), coord.getLat(), function(result, status) {
+            if (status === kakao.maps.services.Status.OK) {
+                const address = result[0].road_address
+                    ? result[0].road_address.address_name
+                    : result[0].address.address_name;
+
+                console.log("주소 변환 성공:", address);
+                document.getElementById("current-address").innerText = "현재 위치: " + address;
+            } else {
+                console.error("주소 변환 실패:", status);
+                document.getElementById("current-address").innerText = `위도: ${lat}, 경도: ${lng}`;
+            }
+        });
+    });
+    function redirectWithLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                // lat, lng를 숨겨서 가져온다
+                const lat = new URLSearchParams(window.location.search).get('lat');
+                const lng = new URLSearchParams(window.location.search).get('lng');
+
+            // 결과로 이동
+                const query = selectedTypes.map((t, i) => `type${i + 1}=${t}`).join('&');
+                window.location.href = `/test_result/?${query}&lat=${lat}&lng=${lng}`;
+
+                const userText = document.getElementById("text-input")?.value || "";
+                window.location.href = `/test_result/?${query}&lat=${lat}&lng=${lng}`;
+                showAnotherRestaurant()
+            }, function (error) {
+                console.log("위치 정보를 가져올 수 없어요 😥");
+                window.location.href = `/test_result/?lat=37.484934&lng=126.981321`;  // 사당역
+
+            });
+        } else {
+            console.log("브라우저가 위치 정보를 지원하지 않아요.");
+            window.location.href = `/test_result/?lat=37.484934&lng=126.981321`;  // 사당역
+
+        }
+    }
+
+
 </script>
 
 </body>

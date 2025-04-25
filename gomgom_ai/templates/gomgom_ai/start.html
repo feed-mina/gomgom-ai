@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>탭 사이트 이름</title>
+    <title>입맛테스트</title>
     <link rel="stylesheet" href="{% static 'css/start.css' %}">
     <meta name = "viewport" content="width=device-width, initial-scale=1.0">
 </head>
@@ -28,16 +28,18 @@
 
                 <!-- templates/start.html -->
                 <h1>🐰 입맛 테스트에 오신 걸 환영합니다!</h1>
-                <button class="button"  onclick="location.href='{% url 'test' %}'">테스트 시작</button>
-
+                <p id="save_text"><strong>입력된 텍스트: {{ text }}</strong></p>  <!-- 텍스트 출력 -->
+                <button class="button" onclick="goNextQuestion()">다음으로</button>
             </div>
         </section> 
     </main>
     <footer></footer>
-    <script src="{% static 'javascript/recommand_data.js' %}"></script>
-<!--    <script src="{% static 'javascript/start.js' %}"></script>-->
     <script>
 
+        // 'text'를 URL 파라미터에서 받기
+        const urlParams = new URLSearchParams(window.location.search);
+        const text = urlParams.get('text');  // URL 파라미터에서 'text' 값 가져오기
+        console.log(text);  // 콘솔에서 값 확인하기
         window.addEventListener("DOMContentLoaded", () => {
             const params = new URLSearchParams(window.location.search);
             const inputText = decodeURIComponent(params.get("text") || '');
@@ -53,6 +55,20 @@
                 console.log("📍 ⚠️ 위치 정보가 없습니다");
             }
         });
+
+        function goNextQuestion() {
+                // 결과로 이동
+                const urlParams = new URLSearchParams(window.location.search);
+                const text = urlParams.get('text');
+                console.log(text);  // 콘솔에서 확인
+
+                const lat = urlParams.get('lat');
+                const lng = urlParams.get('lng');
+                // text 값도 URL로 넘기기
+                window.location.href = `/test/?text=${encodeURIComponent(text)}&lat=${lat}&lng=${lng}`;
+
+        }
+
     </script>
 
 

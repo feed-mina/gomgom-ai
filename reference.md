@@ -46,7 +46,7 @@ https://github.com/feed-mina/esgproject
 
 ---
 
-## ✅ 주요 기능
+##  주요 기능
 
 | 기능 | 설명 |
 |------|------|

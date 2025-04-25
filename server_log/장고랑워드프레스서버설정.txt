@@ -86,13 +86,13 @@ location / {
 
 🔍 원인: nginx가 443 포트를 열지 않음, 인증서 미지정
 
-✅ 해결: /etc/nginx/sites-available/default에서 listen 443 ssl; 설정 및 인증서 경로 추가
+ 해결: /etc/nginx/sites-available/default에서 listen 443 ssl; 설정 및 인증서 경로 추가
 
 4-2. 403 Forbidden 오류 (/blog/ 경로)
 
 🔍 원인: Nginx에서 alias 경로 가운데 권한 문제 또는 잘못된 설정
 
-✅ 해결:
+ 해결:
 
 location /blog/ {
     alias /var/www/html/wordpress/;
@@ -109,7 +109,7 @@ location /blog/ {
 
 🔍 원인: 기본 루트(/)요청은 Django가 처리 → WordPress 경로가 /blog/ 아래로 가야함
 
-✅ 해결:
+ 해결:
 
 WordPress 로그인 경로는 /blog/wp-login.php로 접근
 
@@ -123,7 +123,7 @@ Django의 / 경로와 WordPress의 /blog/를 명확히 나누기
 
 🔍 원인: 가상환경 미활성화 or Django 미설치
 
-✅ 해결:
+ 해결:
 
 source venv/bin/activate
 pip install django
@@ -132,7 +132,7 @@ pip install django
 
 🔍 원인: ALLOWED_HOSTS 누르가 or proxy_pass 미여부
 
-✅ 해결:
+ 해결:
 
 ALLOWED_HOSTS = ['mindevprofile.kr', 'www.mindevprofile.kr']
 
@@ -140,7 +140,7 @@ nginx location /에 proxy_pass 설정 확인
 
  4-7.  이전 설정한 DB 계정 정보 잊음
 
-✅ 해결:
+ 해결:
 
 새로운 사용자 생성 및 권한 부여
 
@@ -158,7 +158,7 @@ wp-config.php에 DB 정보 수정
 
 ---
 
-## ✅ 최종 확인
+##  최종 확인
 - `https://mindevprofile.kr/` → Django 홈화면 (`Hello, Gomgom!`)
 - `https://mindevprofile.kr/blog/` → WordPress 블로그 화면
 - `https://mindevprofile.kr/blog/wp-login.php` → 로그인 성공

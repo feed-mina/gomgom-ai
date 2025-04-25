@@ -59,28 +59,22 @@ a {
     color: rgba(100, 26, 26, 0.8);
 }
 
-/* 버튼 */
 .button {
-    width: 80%;
-    max-width: 400px;
-    height: 50px;
-    margin: 30px auto 0 auto;
-
-    background: rgba(139, 135, 226, 0.42);
-    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.5);
-    border-radius: 60px;
-
-    font-weight: 400;
-    font-size: 1.2rem;
-    line-height: 1.5;
-    color: #000000;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
+    width: 10rem;
+    height: 3rem;
+    background-color: #8CC0DE;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
+.button:hover {
+    background-color: #FFDBDA;
+    color: #FF908B;
+}
 /* 내부 박스 */
 .Box {
     width: 90%;
@@ -143,4 +137,10 @@ a {
 }
 .answerBtn:hover {
     background-color: #FFDAC1;
+}
+.save_text{
+    color: #BEA397;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 18px;
+    font-weight: bold;
 }

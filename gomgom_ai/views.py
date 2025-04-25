@@ -14,6 +14,10 @@ from django.views.decorators.csrf import csrf_exempt
 from konlpy.tag import Okt
 from openai import OpenAI
 from pathlib import Path
+from django.utils.safestring import mark_safe
+from django.views.decorators.http import require_GET
+from asgiref.sync import sync_to_async
+from django.conf import settings
 
 from .classify_user_input import classify_user_input
 from .create_yogiyo_prompt_with_options import create_yogiyo_prompt_with_options
@@ -64,10 +68,13 @@ def get_yogiyo_restaurants(lat, lng):
     try:
         response = requests.get(url, params=params, headers=headers)
         data = response.json()
+        # print("요기요 응답 상태코드:", response.status_code)
+        #print("요기요 응답 내용:", response.text[:500])
+        # 너무 길면 앞부분만 출력
         # print("요기요 API data:", data)
         return data
     except Exception as e:
-        print("요기요 API 오류:", e)
+        # print("요기요 API 오류:", e)
         return []
 
 
@@ -121,11 +128,16 @@ def index(request):
 
 # 입맛 테스트
 def start_view(request):
-    print("넘어온 text:", request.GET.get('text'))
-    print("넘어온 lat:", request.GET.get('lat'))
-    print("넘어온 lng:", request.GET.get('lng'))
+    text = request.GET.get("text")
+    lat = request.GET.get("lat")
+    lng = request.GET.get("lng")
 
-    return render(request, 'gomgom_ai/start.html')
+    return render(request, 'gomgom_ai/start.html', {
+        "text": text,
+        "lat": lat,
+        "lng": lng
+    })
+
 
 
 def my_cached_view(request):
@@ -177,6 +189,30 @@ def keyword_overlap(gpt_keywords, store_name):
     return any(k in keywords_in_name for k in gpt_keywords)
 
 
+def get_address_from_coords(lat, lng):
+    url = "https://dapi.kakao.com/v2/local/geo/coord2address.json"
+    headers = {
+        "Authorization": f"KakaoAK {os.getenv('KAKAO_REST_API')}"  # .env에서 읽어온 키
+    }
+    params = {
+        "x": lng,
+        "y": lat
+    }
+    # print(f"주소 변환 요청 보내는 중... x={lng}, y={lat}")
+
+    response = requests.get(url, headers=headers, params=params)
+    # print("카카오 API 응답코드:", response.status_code)
+    # print("카카오 API 응답내용:", response.text)
+    if response.status_code == 200:
+        result = response.json()
+        if result['documents']:
+            address = result['documents'][0]['address']['address_name']
+            # print("주소 가져옴:", address)
+            return address
+        else:
+            # print("⚠️ 카카오 API 요청 실패")
+            return "주소 정보를 가져올 수 없습니다."
+
 async def get_data():
     async with httpx.AsyncClient() as client:
         response = await client.get("https://www.yogiyo.co.kr/api/v1/restaurants")
@@ -187,32 +223,56 @@ client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
 
 
 async def fetch_yogiyo_data(lat, lng):
-    url = "https://www.yogiyo.co.kr/api/v1/restaurants"
+    url = "http://www.yogiyo.co.kr/api/v1/restaurants"
+    headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
     params = {
         "lat": lat,
         "lng": lng,
         "page": 0,
         "serving_type": "delivery",
     }
-    headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
-
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(follow_redirects=True) as client:
         try:
             response = await client.get(url, params=params, headers=headers)
-            data = response.json()
-            # print("요기요 API data:", data)
+            # print("🛰 상태코드:", response.status_code)
+            # print("📦 응답 내용 일부:", response.text[:300])  # 응답 내용 앞부분만 확인
+            data = response.json()  # 문제 생길 수 있음
             return data
         except Exception as e:
-            print("요기요 API 오류:", e)
-            return []
+            # print("❗요기요 API 오류:", e)
+            return {"restaurants": []}
 
+@require_GET
+@csrf_exempt
+async def restaurant_list_view(request):
+    lat = request.GET.get("lat")
+    lng = request.GET.get("lng")
 
-def restaurant_list_view(request):
-    lat = request.GET.get("lat", "37.484934")  # 기본값 사당역 근처
-    lng = request.GET.get("lng", "126.981321")
+    cache_key = f"restaurants:{lat}:{lng}"
+    cached_data = cache.get(cache_key)
+    # 주소 받아오기!
+    # address = get_address_from_coords(lat, lng) if lat and lng else None
 
-    data = get_yogiyo_restaurants(lat, lng)
-    restaurants = data if isinstance(data, list) else data.get("restaurants", [])
+    if cached_data:
+        # print("✅ Redis 캐시에서 가져옴")
+        return render(request, "gomgom_ai/restaurant_list.html", {
+            "restaurants": cached_data,
+            "lat": lat,
+            "lng": lng
+        })
+
+    # print("🌀 캐시에 없어서 새로 요청 중...")
+    data = await fetch_yogiyo_data(lat, lng)
+    restaurants = data.get("restaurants", []) if isinstance(data, dict) else data
+
+    cache.set(cache_key, restaurants, timeout=60 * 5)  # 5분 캐시
+
+    if not lat or not lng:
+        return render(request, "gomgom_ai/restaurant_list.html", {
+            "restaurants": [],
+            "lat": None,
+            "lng": None,
+        })
 
     return render(request, "gomgom_ai/restaurant_list.html", {
         "restaurants": restaurants,
@@ -222,7 +282,10 @@ def restaurant_list_view(request):
 
 
 @csrf_exempt
-def ask_gpt_to_choose(food_list, food_data_dict=None):
+def ask_gpt_to_choose(score,food_list, food_data_dict=None):
+    # print("score:", score)
+    # print("food_list:", food_list)
+    # print("food_data_dict:", food_data_dict)
     content = ""  # content 미리 정의
     prompt = f"""
     다음 사용자 기분 태그 목록에 맞는 배달 음식점 하나만 골라줘:
@@ -252,16 +315,19 @@ def ask_gpt_to_choose(food_list, food_data_dict=None):
         return json.loads(content)
 
     except json.JSONDecodeError:
-        print("⚠️ GPT 응답 JSON 파싱 실패! 응답 내용:", content)
+       print("⚠️ GPT 응답 JSON 파싱 실패! 응답 내용:", content)
         # print(content)
 
     except Exception as e:
-        print("GPT 호출 실패:", e)
+        # print("GPT 호출 실패:", e)
 
         fallback_food = random.choice(food_list)
         fallback_tags = food_data_dict.get(fallback_food, [])
         fallback_desc = generate_emotional_description(fallback_food, fallback_tags)
 
+        # print("fallback_food:", fallback_food)
+        # print("fallback_tags:", fallback_tags)
+        # print("fallback_desc:", fallback_desc)
         try:
             match = re.search(
                 r'"food"\s*:\s*"([^"]+)"\s*,\s*"description"\s*:\s*"([^"]+)"',
@@ -281,9 +347,16 @@ def ask_gpt_to_choose(food_list, food_data_dict=None):
 @csrf_exempt
 def test_result_view(request):
     text = request.GET.get("text")
-    lat = request.GET.get("lat", "37.484934")
-    lng = request.GET.get("lng", "126.981321")
+    lat = request.GET.get("lat")
+    lng = request.GET.get("lng")
+
+    if not lat or not lng:
+        lat = "37.484934"
+        lng = "126.981321"
+
     types = [request.GET.get(f"type{i + 1}") for i in range(6)]
+    # print("types:", types)
+    # print("text:", text)
 
     # 기분 태그 개수 세기
     score = {}
@@ -317,6 +390,7 @@ def test_result_view(request):
         random.shuffle(store_keywords_list)
         store_keywords_list = store_keywords_list[:10]  # GPT 입력은 짧게
 
+        # print("score:", score)
         # 프롬프트 생성
         prompt = create_yogiyo_prompt_with_options(text, store_keywords_list, score=score)
 
@@ -340,8 +414,13 @@ def test_result_view(request):
                 "logo": best_match.get("logo_url", ""),
             }] if best_match else []
 
+            # print("gpt_response:", gpt_response)
+
+            # print("GPT 호출 성공 result:", result)
+            # print("GPT 호출 성공 best_match:", best_match)
+            # print("GPT 호출 성공 matched_restaurants:", matched_restaurants)
         except Exception as e:
-            print("GPT 호출 실패:", e)
+            # print("GPT 호출 실패:", e)
             fallback = random.choice(raw_restaurants) if raw_restaurants else {}
             result = {
                 "store": fallback.get("name", "추천 없음"),
@@ -357,21 +436,31 @@ def test_result_view(request):
                 "categories": ", ".join(fallback.get("categories", [])),
                 "logo": fallback.get("logo_url", "")
             }]
-
+            # print("GPT 호출 성공 fallback:", result)
+            # print("GPT 호출 성공 fallback:", matched_restaurants)
     return render(request, 'gomgom_ai/test_result.html', {
         "result": result,
-        "restaurants": matched_restaurants,
+        "restaurants": mark_safe(json.dumps(matched_restaurants, ensure_ascii=False)),
+        "text": text,
+        "lat": lat,
+        "lng": lng,
+        "types": types,
+        "score": score,
+        "DEBUG": settings.DEBUG,  #  이거 추가!
     })
 
 
 @cache_page(60 * 5)  # 5분 동안 캐싱
 @csrf_exempt
 def recommend_result(request):
-    text = request.GET.get('text')
-    lat = request.GET.get('lat', '37.484934')
-    lng = request.GET.get('lng', '126.981321')
-
+    text = request.GET.get("text")
+    lat = request.GET.get("lat", "37.484934")
+    lng = request.GET.get("lng", "126.981321")
     user_input_category = classify_user_input(text)
+
+    if not lat or not lng:
+        lat = "37.484934"
+        lng = "126.981321"
 
     # === 병렬로 작업하기 위한 함수들 정의 ===
     def fetch_yogiyo():
@@ -395,7 +484,8 @@ def recommend_result(request):
             for r in raw_restaurants
         ]
         random.shuffle(store_keywords_list)
-        store_keywords_list = store_keywords_list[:10]  # ✅ 너무 많으면 GPT 느려져서 자르기
+        store_keywords_list = store_keywords_list[:10]  #  너무 많으면 GPT 느려져서 자르기
+        # print("store_keywords_list:", store_keywords_list)
 
         prompt = create_yogiyo_prompt_with_options(text, store_keywords_list, score=None,
                                                    input_type=user_input_category)
@@ -412,7 +502,14 @@ def recommend_result(request):
             is_valid_result = is_related(text, result)
 
             best_match = match_gpt_result_with_yogiyo(result, raw_restaurants)
+            result["logo_url"] = best_match.get("logo_url", "")
+
             matched_restaurants = []
+            # print("gpt_response:", gpt_response)
+
+            # print("GPT 호출 성공 result:", result)
+            # print("GPT 호출 성공 best_match:", best_match)
+            # print("GPT 호출 성공 matched_restaurants:", matched_restaurants)
             if best_match:
                 matched_restaurants = [{
                     "name": best_match.get("name"),
@@ -420,10 +517,11 @@ def recommend_result(request):
                     "address": best_match.get("address", "주소 정보 없음"),
                     "id": best_match.get("id", "ID 없음"),
                     "categories": ", ".join(best_match.get("categories", [])),
-                    "logo": best_match.get("logo_url", "")
+                    "logo": best_match.get("logo_url", ""),
+                    "logo_url" : best_match.get("logo_url", "")
                 }]
         except Exception as e:
-            print("GPT 호출 실패:", e)
+            # print("GPT 호출 실패:", e)
             fallback = random.choice(raw_restaurants) if raw_restaurants else {}
             result = {
                 "store": fallback.get("name", "추천 없음"),
@@ -443,5 +541,6 @@ def recommend_result(request):
     return render(request, 'gomgom_ai/recommend_result.html', {
         "result": result,
         "restaurants": matched_restaurants,
-        "keyword": [result.get("store")]
+        "keyword": [result.get("store")],
+        "DEBUG": settings.DEBUG,
     })

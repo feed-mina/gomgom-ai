@@ -23,7 +23,7 @@ api_key_from_env = os.getenv("OPENAI_API_KEY")
 if api_key_from_env:
     os.environ["OPENAI_API_KEY"] = api_key_from_env
 
-
+DEBUG = True
 #redis
 CACHES = {
     "default": {

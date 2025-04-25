@@ -17,8 +17,8 @@
 <body id="body">
     <header id="header">
         <h3>
-            <a id="header_link" href="main.html">
-                <img src="{% static 'image/logo.png' %}" alt="토끼" class="logo-img">
+            <a id="header_link" href="{% url 'main' %}">
+            <img src="{% static 'image/logo.png' %}" alt="토끼" class="logo-img">
 
                 <span id="header_text">&nbsp;CLICK YOUR TASTE!</span>
             </a>
@@ -26,8 +26,8 @@
     </header>
     <div class="container">
         <div id="checkyogiyodiv">
-            <a href="{% url 'restaurant_list' %}">
-                <button id="checkyogiyo">내 주변 가게</button></a>
+            <button id="checkyogiyo">내 주변 가게</button>
+
         </div>
         <main>
             <div class="all">
@@ -87,14 +87,14 @@
         </div>
     </div>
     <!-- JS 연결 -->
-    <script src="{% static 'javascript/main.js' %}"></script>
-    <script>
+    <script src="{% static 'javascript/main.js' %}"></script><script>
         let latestLat = null;
         let latestLng = null;
         let geoReady = false;
 
-
+        // 위치 정보 받기
         navigator.geolocation.getCurrentPosition(
+
             function (pos) {
                 latestLat = pos.coords.latitude;
                 latestLng = pos.coords.longitude;
@@ -102,16 +102,34 @@
                 console.log("위치정보 받음:", latestLat, latestLng);
             },
             function () {
-                alert("위치 정보를 가져올 수 없습니다.");
+                console.log("위치 정보를 가져올 수 없습니다.");
+                window.location.href = `/restaurant_list/?lat=37.484934&lng=126.981321`; // 사당역 기본값
             }
         );
+
+        // ✅ 여기가 잘못 들어갔던 부분! 함수 바깥에 있어야 함
+        document.getElementById("checkyogiyo").addEventListener("click", function () {
+            waitForGeolocation(() => {
+                const url = `/restaurant_list/?lat=${latestLat}&lng=${latestLng}`;
+                window.location.href = url;
+            });
+        });
 
         function waitForGeolocation(callback) {
             if (geoReady) {
                 callback();
+            } else if (retry > 20) {  // 약 4초 기다림
+                console.warn("위치 정보가 너무 오래 걸려요. 기본 위치로 이동합니다.");
+                window.location.href = `/restaurant_list/?lat=37.484934&lng=126.981321`;
             } else {
-                setTimeout(() => waitForGeolocation(callback), 200); // 0.2초 간격으로 다시 시도
+                setTimeout(() => waitForGeolocation(callback, retry + 1), 200);
             }
+            if (!latestLat || !latestLng) {
+                console.warn("위치 정보가 아직 없어요! 기본 위치로 이동합니다.");
+                window.location.href = `/restaurant_list/?lat=37.484934&lng=126.981321`;
+                return;
+            }
+
         }
 
         function handleRecommend() {
@@ -137,7 +155,6 @@
             });
         }
 
-        // 입맛 테스트 버튼 클릭 시
         document.querySelector(".button_test").addEventListener("click", function () {
             waitForGeolocation(() => {
                 const input = document.getElementById('userInput').value.trim();
@@ -159,8 +176,8 @@
                 }
             });
         });
-
     </script>
+
 
 </body>
 </html>

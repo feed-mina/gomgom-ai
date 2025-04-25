@@ -24,8 +24,8 @@ Chart.js로 직관적인 시각화를 제공합니다.
 
 5. 추천된 메뉴 및 이유를 사용자에게 반환 + Chart.js로 시각화
 
-✅ 1단계: 어떤 조건을 사용자가 입력할 수 있을지 정하기
-✅ 2단계: 그 조건들을 문장(프롬프트)으로 어떻게 묶을지 설계하기
+ 1단계: 어떤 조건을 사용자가 입력할 수 있을지 정하기
+ 2단계: 그 조건들을 문장(프롬프트)으로 어떻게 묶을지 설계하기
 ➡️ 3단계: Django에서 이걸 API로 만들기 (/api/recommend)
 ➡️ 4단계: 그 안에서 LLM 호출 + 결과 응답
 ➡️ 5단계: 결과를 화면에 표시 + 시각화
@@ -128,7 +128,7 @@ Chart.js로 직관적인 시각화를 제공합니다.
 - **배포**: AWS EC2 (mindevprofile.kr)
 
 ---
-✅ 요기요 클론 API 기반 메뉴 추천 시스템 개발 계획
+ 요기요 클론 API 기반 메뉴 추천 시스템 개발 계획
 
 1. 목표
 - 요기요 비공식 API를 Django에서 호출
@@ -183,7 +183,7 @@ Chart.js로 직관적인 시각화를 제공합니다.
 - Postman (API 테스트)
 - EC2 배포 예정 (도메인: mindevprofile.kr)
 
-✅ 다음 단계
+ 다음 단계
 → 요기요 API Django 코드부터 구현
 → 또는 LLM 프롬프트 자동 생성 로직부터 구현
 
@@ -199,6 +199,24 @@ Chart.js로 직관적인 시각화를 제공합니다.
 
 - 개발자: [햄 (Min Yerin)](https://github.com/feed-mina)
 - GitHub: https://github.com/feed-mina
+  [main.html]
+  └── (입맛 테스트 버튼 클릭)
+  → /start?text=...&lat=...&lng=...
+  → [start_view] start.html 화면
+  (여기서 "입맛 테스트 시작" 버튼 누르면)
+  → /test
+  → [test_view] test.html (문제 출제)
+  (모든 문제 답변하면)
+  → /test_result?type1=...&type2=...&lat=...&lng=...
+  → [test_result_view] test_result.html (최종 결과)
+  [main.html]
+  └→ /start (text, lat, lng)
+  └→ [start.html] (테스트 시작 버튼)
+  └→ /test (lat, lng)
+  └→ [test.html] (심리테스트 6문항)
+  └→ /test_result (type1~6 + lat + lng)
+  └→ [test_result.html] (최종 결과)
+
 
 
 

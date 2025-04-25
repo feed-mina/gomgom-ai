@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "✅ EC2 개발 환경 세팅 시작..."
+echo " EC2 개발 환경 세팅 시작..."
 
 # 시스템 패키지 업데이트
 sudo apt update

@@ -122,8 +122,8 @@ body#body {
 /* 버튼 */
 .button_random,
 .button_test {
-    width: 150px;
-    height: 100px;
+    width: 10rem;
+    height: 3rem;
     background-color: #FAF0D7;
     color: #BEA397;
     box-shadow: 0px 4px 4px #D6CFCC;
@@ -163,7 +163,7 @@ body#body {
     color: #FF908B;
 }
 
-/* ✅ 반응형 미디어쿼리 */
+/*  반응형 미디어쿼리 */
 @media (max-width: 768px) {
     .box {
         width: 90vw;
@@ -182,8 +182,8 @@ body#body {
 
     .button_random,
     .button_test {
-        width: 150px;
-        height: 100px;
+        width: 10rem;
+        height: 3rem;
         background-color: #FAF0D7;
         color: #BEA397;
         box-shadow: 0px 4px 4px #D6CFCC;
@@ -200,9 +200,6 @@ body#body {
         background-color: #8CC0DE;
     }
 
-    .button_test {
-        background-color: #FAF0D7;
-    }
 }
 .input-box {
     display: flex;
@@ -223,8 +220,8 @@ body#body {
 }
 
 .input-box button {
-    width: 120px;
-    height: 40px;
+    width: 10rem;
+    height: 3rem;
     background-color: #8CC0DE;
     color: white;
     border: none;

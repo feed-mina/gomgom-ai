@@ -4,22 +4,95 @@
 <head>
     <meta charset="UTF-8">
     <title>가게 리스트</title>
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ac17c741aa8131e12604eac5e2d0441c&libraries=services&autoload=false"></script>
+
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
 </head>
 <body>
 <h1>📍 근처 배달 가능한 가게 목록</h1>
-<p>위치: {{ lat }}, {{ lng }}</p>
+
+<!-- 현재 주소 출력 -->
+<p id="current-address" style="font-weight: bold; font-size: 16px; color: #222;">
+    로딩 중...
+</p>
+
 
 {% for r in restaurants %}
-<div style="border:1px solid #ccc; padding:10px; margin:10px;">
-    <h2>{{ r.name }} (⭐ {{ r.review_avg }})</h2>
-    <p>카테고리: {{ r.categories|join:', ' }}</p>
-    <p>배달비: {{ r.delivery_fee_to_display.basic }}</p>
-    <p>리뷰 수: {{ r.review_count }}</p>
-    <img src="{{ r.logo_url }}" width="100" alt="{{ r.name }}">
+<div class="store-card">
+    <img src="{{ r.logo_url }}" class="store-img" alt="{{ r.name }}">
+    <div class="store-info">
+        <div class="store-name">{{ r.name }} (⭐ {{ r.review_avg }})</div>
+        <div class="store-category">카테고리: {{ r.categories|join:', ' }}</div>
+        <div class="store-delivery">배달비: {{ r.delivery_fee_to_display.basic }}</div>
+        <div class="store-review">리뷰 수: {{ r.review_count }}</div>
+    </div>
 </div>
 {% empty %}
 <p>😢 근처 가게를 불러오지 못했어요.</p>
 {% endfor %}
+
 </body>
 </html>
+
+<style>
+    .store-card {
+        border: 1px solid #ccc;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 20px;
+        box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        background-color: #fff;
+    }
+
+    .store-info {
+        flex: 1;
+    }
+
+    .store-name {
+        font-size: 22px;
+        font-weight: bold;
+    }
+
+    .store-category,
+    .store-delivery,
+    .store-review {
+        margin: 4px 0;
+        color: #555;
+    }
+
+    .store-img {
+        border-radius: 8px;
+        width: 100px;
+        height: auto;
+    }
+
+</style>
+
+<script>
+    kakao.maps.load(function () {
+        const lat = parseFloat({{ lat|safe }});
+        const lng = parseFloat({{ lng|safe }});
+
+        console.log("위도:", lat, "경도:", lng);
+
+        const geocoder = new kakao.maps.services.Geocoder();
+        const coord = new kakao.maps.LatLng(lat, lng);
+
+        geocoder.coord2Address(coord.getLng(), coord.getLat(), function(result, status) {
+            if (status === kakao.maps.services.Status.OK) {
+                const address = result[0].road_address
+                    ? result[0].road_address.address_name
+                    : result[0].address.address_name;
+
+                console.log("주소 변환 성공:", address);
+                document.getElementById("current-address").innerText = "현재 위치: " + address;
+            } else {
+                console.error("주소 변환 실패:", status);
+                document.getElementById("current-address").innerText = `위도: ${lat}, 경도: ${lng}`;
+            }
+        });
+    });
+</script>
