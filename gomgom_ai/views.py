@@ -44,7 +44,7 @@ def check_login(request):
         decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
         user_id = decoded.get('userId')  # 토큰 안에 들어있던 userId 꺼내기
 
-        return JsonResponse({'message': f'로그인 성공! 어서와 햄({user_id})!'})
+        return JsonResponse({'message': f'로그인 성공! 어서와 ({user_id})!'})
 
     except jwt.ExpiredSignatureError:
         return JsonResponse({'error': 'Token expired'}, status=401)
