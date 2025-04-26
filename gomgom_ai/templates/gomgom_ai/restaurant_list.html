@@ -8,13 +8,15 @@
 
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
 </head>
-<body>
-<h1>📍 근처 배달 가능한 가게 목록</h1>
+<body style="background-color: #FAF0D7;">
+
+{% include 'gomgom_ai/loading.html' %}
+<h1 style="margin:1rem;  color: #222;">🥄 근처 배달 가능한 가게 목록</h1>
 
 <!-- 현재 주소 출력 -->
-<p id="current-address" style="font-weight: bold; font-size: 16px; color: #222;">
+<h2 id="current-address" style="margin:1rem; font-weight: bold; color: #222;">
     로딩 중...
-</p>
+</h2>
 
 
 {% for r in restaurants %}

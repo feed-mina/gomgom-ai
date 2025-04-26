@@ -18,7 +18,7 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.http import require_GET
 from asgiref.sync import sync_to_async
 from django.conf import settings
-
+import jwt
 from .classify_user_input import classify_user_input
 from .create_yogiyo_prompt_with_options import create_yogiyo_prompt_with_options
 from .match_gpt_result_with_yogiyo import match_gpt_result_with_yogiyo
@@ -29,6 +29,30 @@ print(okt.nouns("짬뽕지존-봉천점"))
 cache.set('hello', 'world', timeout=10)
 print(cache.get('hello'))  # → 'world' 나오면 OK
 
+# JWT 비밀 키는 justsaying(Spring) 서버에서 사용하는 거랑 똑같이 맞춰야 해!
+SECRET_KEY = '햄의-justsaying-서버-시크릿키'
+
+@csrf_exempt  # (테스트용) CSRF검증 무시
+def check_login(request):
+    auth_header = request.headers.get('Authorization')
+
+    if not auth_header:
+        return JsonResponse({'error': 'Authorization header missing'}, status=401)
+
+    try:
+        token = auth_header.split(' ')[1]  # "Bearer xxxxx" 형식
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=['HS256'])
+        user_id = decoded.get('userId')  # 토큰 안에 들어있던 userId 꺼내기
+
+        return JsonResponse({'message': f'로그인 성공! 어서와 햄({user_id})!'})
+
+    except jwt.ExpiredSignatureError:
+        return JsonResponse({'error': 'Token expired'}, status=401)
+    except jwt.InvalidTokenError:
+        return JsonResponse({'error': 'Invalid token'}, status=401)
+
+def login_page(request):
+    return render(request, 'gomgom_ai/login.html')
 
 # name문자열을 형태소 분석해서 (단어,품사)로 나눔, pos == 'Noun' 명사인 단어만 고름
 # len(w) > 1 너무 짧은 단어 (예 : '의','가')는 빼고 두글자 이상만

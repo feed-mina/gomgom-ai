@@ -1,0 +1,68 @@
+{% load static %}
+
+<!-- templates/gomgom_ai/loading.html -->
+<div id="global-loading" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+background: rgba(255, 255, 255, 0.8); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+
+    <!-- 귀여운 토끼 이미지 -->
+    <img src="{% static 'image/elice_rabbit_stand.png' %}" alt="로딩 토끼" style="width: 80px; height: 80px; animation: bounce 1.5s infinite;">
+
+    <!-- 로딩 텍스트 -->
+    <p style="margin-top: 20px; font-size: 1.4rem; color: #ff7f50; font-weight: bold;">
+        🍽️ 맛집 찾는 중...
+    </p>
+</div>
+<style>
+    /* 기존 스피너는 혹시 쓰는 경우 대비 남겨둬 */
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 6px solid #f3f3f3;
+        border-top: 6px solid #ff7f50;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    /* 회전 */
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* 토끼 깡충깡충 애니메이션 */
+    @keyframes bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+</style>
+
+
+<script>
+    function showLoading() {
+        const loading = document.getElementById('global-loading');
+        if (loading) {
+            loading.style.display = 'flex';
+        }
+    }
+
+    function hideLoading() {
+        const loading = document.getElementById('global-loading');
+        if (loading) {
+            loading.style.display = 'none';
+        }
+    }
+    document.addEventListener("DOMContentLoaded", function() {
+        hideLoading(); // 페이지 다 뜨면 로딩창 숨기기
+    });
+
+    window.addEventListener('load', function () {
+        hideLoading(); // 혹시 DOM이 늦게 뜨면 이쪽에서도 숨겨
+    });
+
+    // 페이지 들어오자마자 로딩창 보여주기
+    showLoading();
+</script>
+
