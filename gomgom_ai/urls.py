@@ -18,5 +18,6 @@ urlpatterns = [
     path('recommend_result/', views.recommend_result, name='recommend_result'),
     path('restaurant_list/', views.restaurant_list_view, name='restaurant_list'),
     path('async-test/', views.async_test_view),
+    path('api/ip-location/', views.get_ip_location),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])

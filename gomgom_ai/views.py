@@ -23,6 +23,9 @@ from .classify_user_input import classify_user_input
 from .create_yogiyo_prompt_with_options import create_yogiyo_prompt_with_options
 from .match_gpt_result_with_yogiyo import match_gpt_result_with_yogiyo
 
+ip_info = requests.get("https://ipinfo.io").json()
+print(ip_info)
+
 okt = Okt()
 print(okt.nouns("짬뽕지존-봉천점"))
 
@@ -30,7 +33,22 @@ cache.set('hello', 'world', timeout=10)
 print(cache.get('hello'))  # → 'world' 나오면 OK
 
 # JWT 비밀 키는 justsaying(Spring) 서버에서 사용하는 거랑 똑같이 맞춰야 해!
-SECRET_KEY = '햄의-justsaying-서버-시크릿키'
+SECRET_KEY = ''
+
+def get_ip_location(request):
+    try:
+        response = requests.get('https://ipinfo.io/json')
+        data = response.json()
+        return JsonResponse({
+            'ip': data.get('ip'),
+            'city': data.get('city'),
+            'region': data.get('region'),
+            'country': data.get('country'),
+            'loc': data.get('loc')  # 위도,경도 정보도 문자열로 줘!
+        })
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 @csrf_exempt  # (테스트용) CSRF검증 무시
 def check_login(request):

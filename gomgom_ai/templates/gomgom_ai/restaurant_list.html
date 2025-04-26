@@ -17,8 +17,6 @@
 <h2 id="current-address" style="margin:1rem; font-weight: bold; color: #222;">
     로딩 중...
 </h2>
-
-
 {% for r in restaurants %}
 <div class="store-card">
     <img src="{{ r.logo_url }}" class="store-img" alt="{{ r.name }}">
@@ -72,29 +70,61 @@
     }
 
 </style>
-
 <script>
-    kakao.maps.load(function () {
-        const lat = parseFloat({{ lat|safe }});
-        const lng = parseFloat({{ lng|safe }});
+    let lat = {{ lat|default:"null" }};
+    let lng = {{ lng|default:"null" }};
 
-        console.log("위도:", lat, "경도:", lng);
-
-        const geocoder = new kakao.maps.services.Geocoder();
-        const coord = new kakao.maps.LatLng(lat, lng);
-
-        geocoder.coord2Address(coord.getLng(), coord.getLat(), function(result, status) {
-            if (status === kakao.maps.services.Status.OK) {
-                const address = result[0].road_address
-                    ? result[0].road_address.address_name
-                    : result[0].address.address_name;
-
-                console.log("주소 변환 성공:", address);
-                document.getElementById("current-address").innerText = "현재 위치: " + address;
+    async function fetchLatLngFromIP() {
+        try {
+            const response = await fetch('https://mindevprofile.kr/api/ip-location/');
+            const data = await response.json();
+            console.log("IP로 가져온 위치:", data.loc);
+            if (data.loc) {
+                const [latitude, longitude] = data.loc.split(',');
+                lat = parseFloat(latitude);
+                lng = parseFloat(longitude);
+                console.log("IP기반 위도:", lat, "경도:", lng);
+                loadMap();  // 위치 받아오면 지도 그리기
             } else {
-                console.error("주소 변환 실패:", status);
-                document.getElementById("current-address").innerText = `위도: ${lat}, 경도: ${lng}`;
+                console.error('IP로 위치를 가져오지 못했어요');
             }
+        } catch (error) {
+            console.error('IP 위치 요청 실패', error);
+        }
+    }
+
+    function loadMap() {
+        kakao.maps.load(function () {
+            const coord = new kakao.maps.LatLng(lat, lng);
+
+            console.log("최종 지도 좌표:", coord);
+
+            const geocoder = new kakao.maps.services.Geocoder();
+
+            geocoder.coord2Address(coord.getLng(), coord.getLat(), function(result, status) {
+                if (status === kakao.maps.services.Status.OK) {
+                    const address = result[0].road_address
+                        ? result[0].road_address.address_name
+                        : result[0].address.address_name;
+
+                    console.log("주소 변환 성공:", address);
+                    document.getElementById("current-address").innerText = "현재 위치: " + address;
+                } else {
+                    console.error("주소 변환 실패:", status);
+                    document.getElementById("current-address").innerText = `위도: ${lat}, 경도: ${lng}`;
+                }
+            });
         });
+    }
+
+    // 페이지 열리자마자 자동 실행
+    window.addEventListener('load', () => {
+        if (lat === null || lng === null) {
+            console.log("lat, lng 없음 → IP로 대신 가져오기");
+            fetchLatLngFromIP();
+        } else {
+            console.log("lat, lng 이미 있음 → 바로 지도 그리기");
+            loadMap();
+        }
     });
 </script>

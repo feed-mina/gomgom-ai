@@ -46,7 +46,7 @@ CACHES = {
 SECRET_KEY = 'django-insecure-k3=p4i=(mu-)*2w4d6-_)3h+w(o&sk5*tl)c-#n^%7(!w6co8@'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'mindevprofile.kr', 'www.mindevprofile.kr', '43.202.138.165']
 
@@ -54,6 +54,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'mindevprofile.kr', 'www.mindevprofil
 
 INSTALLED_APPS = [
     'gomgom_ai',
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -63,6 +64,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -71,6 +73,11 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+CORS_ALLOW_ALL_ORIGINS=True
+# CORS_ALLOWED_ORIGINS = [
+#     "https://mindevprofile.kr",
+#     "http://127.0.0.1:8000",
+# ]
 
 ROOT_URLCONF = 'gomgom_ai.urls'
 
