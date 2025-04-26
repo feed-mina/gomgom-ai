@@ -22,6 +22,7 @@ import jwt
 from .classify_user_input import classify_user_input
 from .create_yogiyo_prompt_with_options import create_yogiyo_prompt_with_options
 from .match_gpt_result_with_yogiyo import match_gpt_result_with_yogiyo
+from .models import Recommendation  # models.py에서 Recommendation 가져오기
 
 ip_info = requests.get("https://ipinfo.io").json()
 print(ip_info)
@@ -34,6 +35,7 @@ print(cache.get('hello'))  # → 'world' 나오면 OK
 
 # JWT 비밀 키는 justsaying(Spring) 서버에서 사용하는 거랑 똑같이 맞춰야 해!
 SECRET_KEY = ''
+
 
 def get_ip_location(request):
     try:
@@ -384,21 +386,14 @@ def ask_gpt_to_choose(score,food_list, food_data_dict=None):
             pass
         return {"food": fallback_food, "description": fallback_desc}
 
-
 @cache_page(60 * 5)  # 5분 동안 캐싱
 @csrf_exempt
 def test_result_view(request):
     text = request.GET.get("text")
-    lat = request.GET.get("lat")
-    lng = request.GET.get("lng")
-
-    if not lat or not lng:
-        lat = "37.484934"
-        lng = "126.981321"
+    lat = request.GET.get("lat") or "37.484934"
+    lng = request.GET.get("lng") or "126.981321"
 
     types = [request.GET.get(f"type{i + 1}") for i in range(6)]
-    # print("types:", types)
-    # print("text:", text)
 
     # 기분 태그 개수 세기
     score = {}
@@ -417,14 +412,11 @@ def test_result_view(request):
         )
 
     with ThreadPoolExecutor() as executor:
-        # 요기요 먼저 실행
         future_yogiyo = executor.submit(fetch_yogiyo)
         restaurants_data = future_yogiyo.result()
 
-        raw_restaurants = restaurants_data.get("restaurants", []) if isinstance(restaurants_data,
-                                                                                dict) else restaurants_data
+        raw_restaurants = restaurants_data.get("restaurants", []) if isinstance(restaurants_data, dict) else restaurants_data
 
-        # 가게 키워드 리스트 준비
         store_keywords_list = [
             f"{r.get('name')}: {', '.join(extract_keywords_from_store_name(r.get('name', '')))}"
             for r in raw_restaurants
@@ -432,11 +424,8 @@ def test_result_view(request):
         random.shuffle(store_keywords_list)
         store_keywords_list = store_keywords_list[:10]  # GPT 입력은 짧게
 
-        # print("score:", score)
-        # 프롬프트 생성
         prompt = create_yogiyo_prompt_with_options(text, store_keywords_list, score=score)
 
-        # GPT 실행
         future_gpt = executor.submit(ask_gpt, prompt)
 
         try:
@@ -449,6 +438,7 @@ def test_result_view(request):
             is_valid_result = is_related(text, result)
 
             best_match = match_gpt_result_with_yogiyo(result, raw_restaurants)
+
             matched_restaurants = [{
                 "name": best_match.get("name"),
                 "review_avg": best_match.get("review_avg", "5점"),
@@ -456,30 +446,55 @@ def test_result_view(request):
                 "logo": best_match.get("logo_url", ""),
             }] if best_match else []
 
-            # print("gpt_response:", gpt_response)
+            # 추천 성공 기록 저장
+            Recommendation.objects.create(
+                input_text=text,
+                selected_types=score,
+                recommended_store=result.get('store', ''),
+                description=result.get('description', ''),
+                category=result.get('category', ''),
+                keywords=result.get('keywords', []),
+                latitude=float(lat) if lat else None,
+                longitude=float(lng) if lng else None,
+                user_ip=request.META.get('REMOTE_ADDR'),
+                is_success=True,
+                gpt_raw_response=gpt_response.choices[0].message.content if gpt_response else None,
+                matched_restaurant_id=best_match.get('id') if best_match else None
+            )
 
-            # print("GPT 호출 성공 result:", result)
-            # print("GPT 호출 성공 best_match:", best_match)
-            # print("GPT 호출 성공 matched_restaurants:", matched_restaurants)
         except Exception as e:
-            # print("GPT 호출 실패:", e)
             fallback = random.choice(raw_restaurants) if raw_restaurants else {}
             result = {
-                "store": fallback.get("name", "추천 없음"),
+                "store": fallback.get('name', "추천 없음"),
                 "description": f"'{text or '무작위'}'와 어울리는 인기 메뉴를 추천해요!",
-                "category": ", ".join(fallback.get("categories", [])),
-                "keywords": extract_keywords_from_store_name(fallback.get("name", ""))
+                "category": ", ".join(fallback.get('categories', [])),
+                "keywords": extract_keywords_from_store_name(fallback.get('name', ""))
             }
             matched_restaurants = [{
-                "name": fallback.get("name", "추천 없음"),
-                "review_avg": fallback.get("review_avg", "5점"),
-                "address": fallback.get("address", "주소 없음"),
-                "id": fallback.get("id", "없음"),
-                "categories": ", ".join(fallback.get("categories", [])),
-                "logo": fallback.get("logo_url", "")
+                "name": fallback.get('name', "추천 없음"),
+                "review_avg": fallback.get('review_avg', "5점"),
+                "address": fallback.get('address', "주소 없음"),
+                "id": fallback.get('id', "없음"),
+                "categories": ", ".join(fallback.get('categories', [])),
+                "logo": fallback.get('logo_url', "")
             }]
-            # print("GPT 호출 성공 fallback:", result)
-            # print("GPT 호출 성공 fallback:", matched_restaurants)
+
+            # 추천 실패 기록 저장
+            Recommendation.objects.create(
+                input_text=text,
+                selected_types=score,
+                recommended_store=result.get('store', ''),
+                description=result.get('description', ''),
+                category=result.get('category', ''),
+                keywords=result.get('keywords', []),
+                latitude=float(lat) if lat else None,
+                longitude=float(lng) if lng else None,
+                user_ip=request.META.get('REMOTE_ADDR'),
+                is_success=False,
+                gpt_raw_response=None,
+                matched_restaurant_id=fallback.get('id') if fallback else None
+            )
+
     return render(request, 'gomgom_ai/test_result.html', {
         "result": result,
         "restaurants": mark_safe(json.dumps(matched_restaurants, ensure_ascii=False)),
@@ -488,9 +503,8 @@ def test_result_view(request):
         "lng": lng,
         "types": types,
         "score": score,
-        "DEBUG": settings.DEBUG,  #  이거 추가!
+        "DEBUG": settings.DEBUG,
     })
-
 
 @cache_page(60 * 5)  # 5분 동안 캐싱
 @csrf_exempt
@@ -504,7 +518,6 @@ def recommend_result(request):
         lat = "37.484934"
         lng = "126.981321"
 
-    # === 병렬로 작업하기 위한 함수들 정의 ===
     def fetch_yogiyo():
         return get_yogiyo_restaurants(lat, lng)
 
@@ -518,22 +531,19 @@ def recommend_result(request):
         future_yogiyo = executor.submit(fetch_yogiyo)
         restaurants_data = future_yogiyo.result()
 
-        raw_restaurants = restaurants_data.get("restaurants", []) if isinstance(restaurants_data,
-                                                                                dict) else restaurants_data
+        raw_restaurants = restaurants_data.get("restaurants", []) if isinstance(restaurants_data, dict) else restaurants_data
 
         store_keywords_list = [
             f"{r.get('name')}: {', '.join(extract_keywords_from_store_name(r.get('name', '')))}"
             for r in raw_restaurants
         ]
         random.shuffle(store_keywords_list)
-        store_keywords_list = store_keywords_list[:10]  #  너무 많으면 GPT 느려져서 자르기
-        # print("store_keywords_list:", store_keywords_list)
+        store_keywords_list = store_keywords_list[:10]
 
-        prompt = create_yogiyo_prompt_with_options(text, store_keywords_list, score=None,
-                                                   input_type=user_input_category)
+        prompt = create_yogiyo_prompt_with_options(text, store_keywords_list, score=None, input_type=user_input_category)
 
-        # GPT 호출 병렬 실행
         future_gpt = executor.submit(ask_gpt, prompt)
+
         try:
             gpt_response = future_gpt.result()
             result = json.loads(gpt_response.choices[0].message.content)
@@ -547,11 +557,6 @@ def recommend_result(request):
             result["logo_url"] = best_match.get("logo_url", "")
 
             matched_restaurants = []
-            # print("gpt_response:", gpt_response)
-
-            # print("GPT 호출 성공 result:", result)
-            # print("GPT 호출 성공 best_match:", best_match)
-            # print("GPT 호출 성공 matched_restaurants:", matched_restaurants)
             if best_match:
                 matched_restaurants = [{
                     "name": best_match.get("name"),
@@ -560,25 +565,57 @@ def recommend_result(request):
                     "id": best_match.get("id", "ID 없음"),
                     "categories": ", ".join(best_match.get("categories", [])),
                     "logo": best_match.get("logo_url", ""),
-                    "logo_url" : best_match.get("logo_url", "")
+                    "logo_url": best_match.get("logo_url", "")
                 }]
+
+            # 추천 성공 저장
+            Recommendation.objects.create(
+                input_text=text,
+                selected_types={"input_category": user_input_category},
+                recommended_store=result.get('store', ''),
+                description=result.get('description', ''),
+                category=result.get('category', ''),
+                keywords=result.get('keywords', []),
+                latitude=float(lat) if lat else None,
+                longitude=float(lng) if lng else None,
+                user_ip=request.META.get('REMOTE_ADDR'),
+                is_success=True,
+                gpt_raw_response=gpt_response.choices[0].message.content if gpt_response else None,
+                matched_restaurant_id=best_match.get('id') if best_match else None
+            )
+
         except Exception as e:
-            # print("GPT 호출 실패:", e)
             fallback = random.choice(raw_restaurants) if raw_restaurants else {}
             result = {
-                "store": fallback.get("name", "추천 없음"),
+                "store": fallback.get('name', "추천 없음"),
                 "description": f"'{text or '무작위'}'와 어울리는 인기 메뉴를 추천해요!",
-                "category": ", ".join(fallback.get("categories", [])),
-                "keywords": extract_keywords_from_store_name(fallback.get("name", ""))
+                "category": ", ".join(fallback.get('categories', [])),
+                "keywords": extract_keywords_from_store_name(fallback.get('name', ""))
             }
             matched_restaurants = [{
-                "name": fallback.get("name", "추천 없음"),
-                "review_avg": fallback.get("review_avg", "5점"),
-                "address": fallback.get("address", "주소 없음"),
-                "id": fallback.get("id", "없음"),
-                "categories": ", ".join(fallback.get("categories", [])),
-                "logo": fallback.get("logo_url", "")
+                "name": fallback.get('name', "추천 없음"),
+                "review_avg": fallback.get('review_avg', "5점"),
+                "address": fallback.get('address', "주소 없음"),
+                "id": fallback.get('id', "없음"),
+                "categories": ", ".join(fallback.get('categories', [])),
+                "logo": fallback.get('logo_url', "")
             }]
+
+            # 추천 실패 저장
+            Recommendation.objects.create(
+                input_text=text,
+                selected_types={"input_category": user_input_category},
+                recommended_store=result.get('store', ''),
+                description=result.get('description', ''),
+                category=result.get('category', ''),
+                keywords=result.get('keywords', []),
+                latitude=float(lat) if lat else None,
+                longitude=float(lng) if lng else None,
+                user_ip=request.META.get('REMOTE_ADDR'),
+                is_success=False,
+                gpt_raw_response=None,
+                matched_restaurant_id=fallback.get('id') if fallback else None
+            )
 
     return render(request, 'gomgom_ai/recommend_result.html', {
         "result": result,

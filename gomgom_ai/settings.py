@@ -46,7 +46,8 @@ CACHES = {
 SECRET_KEY = 'django-insecure-k3=p4i=(mu-)*2w4d6-_)3h+w(o&sk5*tl)c-#n^%7(!w6co8@'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+
+DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'mindevprofile.kr', 'www.mindevprofile.kr', '43.202.138.165']
 
@@ -104,8 +105,12 @@ WSGI_APPLICATION = 'gomgom_ai.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',  # 또는 'mysql', 'sqlite3'
+        'NAME': 'gomgomdb',
+        'USER': 'postgres',
+        'PASSWORD': 'postgres1234',
+        'HOST': 'localhost',
+        'PORT': '5432',  # PostgreSQL 기본포트
     }
 }
 
