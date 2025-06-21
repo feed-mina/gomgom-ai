@@ -209,7 +209,7 @@ function TestResultContent() {
 
   const loadResult = async () => {
     try {
-      const response = await fetch(`/api/test_result?text=${encodeURIComponent(text || '')}&lat=${lat}&lng=${lng}&types=${types}`);
+      const response = await fetch(`/api/v1/test_result?text=${encodeURIComponent(text || '')}&lat=${lat}&lng=${lng}&types=${types}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

@@ -94,7 +94,7 @@ const EmptyMessage = styled.p`
   }
 `;
 
-function RestaurantListContent() {
+function RestaurantListPage() {
   const searchParams = useSearchParams();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [currentAddress, setCurrentAddress] = useState<string>('로딩 중...');
@@ -210,7 +210,7 @@ function RestaurantListContent() {
 export default function RestaurantList() {
   return (
     <Suspense fallback={<Loading />}>
-      <RestaurantListContent />
+      <RestaurantListPage />
     </Suspense>
   );
 } 

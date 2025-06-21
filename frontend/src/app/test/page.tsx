@@ -132,7 +132,7 @@ const AnswerButton = styled.button`
   }
 `;
 
-function TestContent() {
+function TestPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [currentQuestion, setCurrentQuestion] = useState(0);
@@ -195,7 +195,7 @@ function TestContent() {
 export default function Test() {
   return (
     <Suspense fallback={<Loading />}>
-      <TestContent />
+      <TestPage />
     </Suspense>
   );
 } 

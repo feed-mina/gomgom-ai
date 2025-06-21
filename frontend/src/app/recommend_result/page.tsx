@@ -94,7 +94,7 @@ const RetryButton = styled.button`
   }
 `;
 
-function RecommendResultContent() {
+function RecommendResultPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [result, setResult] = useState<TestResult | null>(null);
@@ -201,7 +201,7 @@ function RecommendResultContent() {
 export default function RecommendResult() {
   return (
     <Suspense fallback={<Loading />}>
-      <RecommendResultContent />
+      <RecommendResultPage />
     </Suspense>
   );
 } 
