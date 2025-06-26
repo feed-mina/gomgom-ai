@@ -23,8 +23,16 @@ export interface RecipeRecommendation {
   title: string;
   summary?: string;
   image_url?: string;
-  ingredients: RecipeIngredient[];
-  instructions: RecipeInstruction[];
+  image?: string;
+  readyInMinutes?: number;
+  cuisines?: string[];
+  dishTypes?: string[];
+  diets?: string[];
+  extendedIngredients?: ExtendedIngredient[];
+  sourceName?: string;
+  sourceUrl?: string;
+  ingredients?: RecipeIngredient[];
+  instructions?: RecipeInstruction[] | string;
   nutrition?: RecipeNutrition;
   cooking_time?: number;
   servings?: number;
@@ -32,6 +40,33 @@ export interface RecipeRecommendation {
   source: string;
   total_cost?: number;
   currency: string;
+  [key: string]: any;
+}
+
+export interface ExtendedIngredient {
+  id: number;
+  aisle?: string;
+  image?: string;
+  consistency?: string;
+  name: string;
+  nameClean?: string;
+  original: string;
+  originalName?: string;
+  amount: number;
+  unit: string;
+  meta?: string[];
+  measures?: {
+    us?: {
+      amount: number;
+      unitShort: string;
+      unitLong: string;
+    };
+    metric?: {
+      amount: number;
+      unitShort: string;
+      unitLong: string;
+    };
+  };
 }
 
 export interface RecipeSearchRequest {
@@ -48,4 +83,25 @@ export interface RecipeSearchResponse {
   recipes: RecipeRecommendation[];
   estimated_total_cost?: number;
   currency: string;
+}
+
+const tagMap: Record<string, string> = {
+  // cuisines
+  Chinese: '중식',
+  Asian: '아시아',
+  // dishTypes
+  'main course': '메인 코스',
+  'side dish': '사이드',
+  lunch: '점심',
+  dinner: '저녁',
+  // diets
+  'gluten free': '글루텐 프리',
+  'dairy free': '유제품 프리',
+  vegetarian: '채식',
+  vegan: '비건',
+  // ...필요한 만큼 추가
+};
+
+function translateTag(tag: string) {
+  return tagMap[tag] || tag;
 } 

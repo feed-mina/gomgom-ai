@@ -61,8 +61,8 @@ async def search_recipes_get(
         # 캐시에 없으면 API 호출
         result = await _search_recipes_impl(query, number, include_price_bool, max_cooking_time, cuisine_type)
         
-        # 결과를 캐시에 저장 (30분)
-        set_cache(cache_key, result, timeout=1800)
+        # 결과를 캐시에 저장 (1시간으로 연장)
+        set_cache(cache_key, result, timeout=3600)
         
         logger.info(f"레시피 검색 성공: {query}, {len(result.recipes)}개 결과")
         return result
@@ -99,8 +99,8 @@ async def search_recipes_post(
             request.cuisine_type
         )
         
-        # 결과를 캐시에 저장 (30분)
-        set_cache(cache_key, result, timeout=1800)
+        # 결과를 캐시에 저장 (1시간으로 연장)
+        set_cache(cache_key, result, timeout=3600)
         
         logger.info(f"POST 레시피 검색 성공: {request.query}, {len(result.recipes)}개 결과")
         return result
@@ -309,8 +309,8 @@ async def _search_recipes_impl(
     레시피 검색 구현부
     """
     try:
-        # Spoonacular API 호출
-        recipes = await spoonacular_client.search_recipes(query, number)
+        # Spoonacular API 호출 (한식 필터링 포함)
+        recipes = await spoonacular_client.search_recipes(query, number, cuisine_type)
         
         # 프론트엔드가 기대하는 형식으로 변환
         recipe_list = []

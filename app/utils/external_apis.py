@@ -16,15 +16,16 @@ class SpoonacularClient:
     def __init__(self):
         self.api_key = settings.SPOONACULAR_API_KEY
         self.base_url = "https://api.spoonacular.com/recipes"
-        # HTTP 클라이언트 설정 (연결 풀링 및 타임아웃)
-        self.timeout = httpx.Timeout(30.0, connect=10.0)
+        # HTTP 클라이언트 설정 (연결 풀링 및 타임아웃) - 속도 최적화
+        self.timeout = httpx.Timeout(15.0, connect=5.0)  # 타임아웃 단축
         self.limits = httpx.Limits(max_keepalive_connections=20, max_connections=100)
-        self.max_retries = 3
-        self.retry_delay = 1.0
+        self.max_retries = 2  # 재시도 횟수 감소
+        self.retry_delay = 0.5  # 재시도 지연 시간 단축
+        self.enable_translation = False  # 번역 기능 비활성화로 속도 향상
     
-    async def search_recipes(self, query: str, number: int = 10) -> List[Dict[str, Any]]:
+    async def search_recipes(self, query: str, number: int = 10, cuisine_type: Optional[str] = None) -> List[Dict[str, Any]]:
         """레시피 검색 (재시도 로직 포함)"""
-        logger.info(f"레시피 검색 시작: query={query}, number={number}")
+        logger.info(f"레시피 검색 시작: query={query}, number={number}, cuisine_type={cuisine_type}")
         
         # API 키 검증
         if not self.api_key:
@@ -41,9 +42,15 @@ class SpoonacularClient:
             "query": english_query,
             "number": number,
             "addRecipeInformation": True,
-            "fillIngredients": True
-            # instructionsRequired 파라미터 제거 - 너무 제한적일 수 있음
+            "fillIngredients": True,
+            "instructionsRequired": False  # 지시사항 필수 여부 비활성화로 속도 향상
         }
+        
+        # 한식 필터링 추가
+        if cuisine_type and cuisine_type.lower() in ['korean', '한식', 'korea']:
+            params["cuisine"] = "korean"
+            params["tags"] = "korean"
+            logger.info("한식 필터링 적용됨")
         
         logger.info(f"API 요청 파라미터: {params}")
         
@@ -82,12 +89,16 @@ class SpoonacularClient:
                                     total_results = data.get("totalResults", 0)
                                     logger.info(f"원본 쿼리 재시도 결과: totalResults={total_results}, results={len(recipes)}개")
                         
-                        # 번역이 실패해도 원본 데이터 반환
-                        try:
-                            translated_recipes = await self._translate_recipes_parallel(recipes)
-                            return translated_recipes
-                        except Exception as e:
-                            logger.warning(f"번역 중 오류 발생, 원본 데이터 반환: {e}")
+                        # 번역 기능이 활성화된 경우에만 번역 수행
+                        if self.enable_translation:
+                            try:
+                                translated_recipes = await self._translate_recipes_parallel(recipes)
+                                return translated_recipes
+                            except Exception as e:
+                                logger.warning(f"번역 중 오류 발생, 원본 데이터 반환: {e}")
+                                return recipes
+                        else:
+                            # 번역 없이 원본 데이터 반환 (속도 향상)
                             return recipes
                     
                     elif response.status_code == 429:  # Rate limit
@@ -167,12 +178,16 @@ class SpoonacularClient:
                         recipe_data = response.json()
                         logger.info(f"레시피 상세 정보 조회 성공: ID {recipe_id}")
                         
-                        # 번역 처리
-                        try:
-                            translated_recipe = await self._translate_recipe(recipe_data)
-                            return translated_recipe
-                        except Exception as e:
-                            logger.warning(f"번역 중 오류 발생, 원본 데이터 반환: {e}")
+                        # 번역 기능이 활성화된 경우에만 번역 수행
+                        if self.enable_translation:
+                            try:
+                                translated_recipe = await self._translate_recipe(recipe_data)
+                                return translated_recipe
+                            except Exception as e:
+                                logger.warning(f"번역 중 오류 발생, 원본 데이터 반환: {e}")
+                                return recipe_data
+                        else:
+                            # 번역 없이 원본 데이터 반환 (속도 향상)
                             return recipe_data
                     
                     elif response.status_code == 404:

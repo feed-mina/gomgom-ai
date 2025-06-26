@@ -127,6 +127,23 @@ async def general_exception_handler(request: Request, exc: Exception):
 # 라우터 등록
 app.include_router(api_router, prefix="/api/v1")
 
+# 루트 경로 엔드포인트
+@app.get("/")
+async def root():
+    """API 루트 경로 - 기본 정보 반환"""
+    return {
+        "message": "GomGom Recipe API에 오신 것을 환영합니다!",
+        "version": "1.0.0",
+        "description": "레시피 추천 및 검색 API",
+        "endpoints": {
+            "health_check": "/health",
+            "api_docs": "/docs",
+            "api_redoc": "/redoc",
+            "api_v1": "/api/v1"
+        },
+        "status": "running"
+    }
+
 # 헬스체크 엔드포인트
 @app.get("/health")
 async def health_check():

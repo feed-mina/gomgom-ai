@@ -17,11 +17,11 @@ class RecipeRecommendationService:
         self.spoonacular_client = spoonacular_client
         self.price_service = price_service
     
-    async def search_recipes(self, query: str, number: int = 10, include_price: bool = True) -> RecipeSearchResponse:
+    async def search_recipes(self, query: str, number: int = 10, include_price: bool = True, cuisine_type: Optional[str] = None) -> RecipeSearchResponse:
         """레시피 검색 및 추천"""
         try:
-            # Spoonacular API에서 검색
-            recipes = await self.spoonacular_client.search_recipes(query, number)
+            # Spoonacular API에서 검색 (한식 필터링 포함)
+            recipes = await self.spoonacular_client.search_recipes(query, number, cuisine_type)
             
             # 결과 변환
             all_recipes = []

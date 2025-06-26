@@ -3,12 +3,16 @@ import json
 from typing import Any, Optional
 import os
 import logging
+from functools import wraps
+import hashlib
+import psycopg2
 
 logger = logging.getLogger(__name__)
 
 class Cache:
     def __init__(self):
         try:
+            # Redis 연결 풀 설정으로 성능 향상
             self.redis_client = redis.Redis(
                 host=os.getenv("REDIS_HOST", "localhost"),
                 port=int(os.getenv("REDIS_PORT", 6379)),
@@ -16,7 +20,9 @@ class Cache:
                 decode_responses=True,
                 socket_connect_timeout=5,
                 socket_timeout=5,
-                retry_on_timeout=True
+                retry_on_timeout=True,
+                max_connections=20,  # 연결 풀 크기 증가
+                health_check_interval=30
             )
             # 연결 테스트
             self.redis_client.ping()
@@ -30,7 +36,9 @@ class Cache:
         try:
             if hasattr(obj, "model_dump"):
                 obj = obj.model_dump()
-            return json.dumps(obj, ensure_ascii=False)
+            elif hasattr(obj, "dict"):
+                obj = obj.dict()
+            return json.dumps(obj, ensure_ascii=False, default=str)
         except Exception as e:
             logger.error(f"객체 직렬화 실패: {e}")
             raise
@@ -46,6 +54,16 @@ class Cache:
             logger.error(f"객체 역직렬화 실패: {e}")
             raise
 
+    def generate_cache_key(self, prefix: str, *args, **kwargs) -> str:
+        """캐시 키 생성 (해시 기반)"""
+        key_parts = [prefix] + [str(arg) for arg in args]
+        if kwargs:
+            sorted_kwargs = sorted(kwargs.items())
+            key_parts.extend([f"{k}:{v}" for k, v in sorted_kwargs])
+        
+        key_string = "|".join(key_parts)
+        return f"{prefix}:{hashlib.md5(key_string.encode()).hexdigest()}"
+
     async def get(self, key: str) -> Optional[Any]:
         """캐시에서 데이터 조회"""
         if not self.redis_client:
@@ -55,7 +73,9 @@ class Cache:
         try:
             data = self.redis_client.get(key)
             if data:
+                logger.debug(f"캐시 히트: {key}")
                 return self.deserialize_from_cache(data)
+            logger.debug(f"캐시 미스: {key}")
             return None
         except redis.ConnectionError as e:
             logger.error(f"Redis 연결 오류 (get): {e}")
@@ -76,6 +96,7 @@ class Cache:
         try:
             serialized_value = self.serialize_for_cache(value)
             self.redis_client.setex(key, timeout, serialized_value)
+            logger.debug(f"캐시 저장: {key} (TTL: {timeout}s)")
             return True
         except redis.ConnectionError as e:
             logger.error(f"Redis 연결 오류 (set): {e}")
@@ -85,6 +106,34 @@ class Cache:
             return False
         except Exception as e:
             logger.error(f"Redis 저장 중 오류 (set): {e}")
+            return False
+
+    async def mget(self, keys: list) -> list:
+        """여러 키를 한 번에 조회 (성능 향상)"""
+        if not self.redis_client:
+            return [None] * len(keys)
+        
+        try:
+            values = self.redis_client.mget(keys)
+            return [self.deserialize_from_cache(v) if v else None for v in values]
+        except Exception as e:
+            logger.error(f"Redis mget 오류: {e}")
+            return [None] * len(keys)
+
+    async def mset(self, data: dict, timeout: int = 1800) -> bool:
+        """여러 키를 한 번에 저장 (성능 향상)"""
+        if not self.redis_client:
+            return False
+        
+        try:
+            pipeline = self.redis_client.pipeline()
+            for key, value in data.items():
+                serialized_value = self.serialize_for_cache(value)
+                pipeline.setex(key, timeout, serialized_value)
+            pipeline.execute()
+            return True
+        except Exception as e:
+            logger.error(f"Redis mset 오류: {e}")
             return False
 
     async def delete(self, key: str) -> bool:
@@ -138,7 +187,9 @@ class Cache:
         try:
             data = self.redis_client.get(key)
             if data:
+                logger.debug(f"캐시 히트: {key}")
                 return self.deserialize_from_cache(data)
+            logger.debug(f"캐시 미스: {key}")
             return None
         except redis.ConnectionError as e:
             logger.error(f"Redis 연결 오류 (get_sync): {e}")
@@ -159,6 +210,7 @@ class Cache:
         try:
             serialized_value = self.serialize_for_cache(value)
             self.redis_client.setex(key, timeout, serialized_value)
+            logger.debug(f"캐시 저장: {key} (TTL: {timeout}s)")
             return True
         except redis.ConnectionError as e:
             logger.error(f"Redis 연결 오류 (set_sync): {e}")
@@ -212,20 +264,51 @@ class Cache:
             return False
 
 # 전역 캐시 인스턴스
-cache = Cache()
+_cache_instance = None
+
+def get_cache_instance() -> Cache:
+    """전역 캐시 인스턴스 반환 (싱글톤 패턴)"""
+    global _cache_instance
+    if _cache_instance is None:
+        _cache_instance = Cache()
+    return _cache_instance
 
 # 편의 함수들
 def get_cache(key: str) -> Optional[Any]:
-    return cache.get_sync(key)
+    return get_cache_instance().get_sync(key)
 
 def set_cache(key: str, value: Any, timeout: int = 1800) -> bool:
-    return cache.set_sync(key, value, timeout)
+    return get_cache_instance().set_sync(key, value, timeout)
 
 def delete_cache(key: str) -> bool:
-    return cache.delete_sync(key)
+    return get_cache_instance().delete_sync(key)
 
 def clear_cache(pattern: str = "*") -> bool:
-    return cache.clear_sync(pattern)
+    return get_cache_instance().clear_sync(pattern)
+
+# 캐시 데코레이터
+def cache_result(timeout: int = 1800, key_prefix: str = "func"):
+    """함수 결과를 캐시하는 데코레이터"""
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            cache_instance = get_cache_instance()
+            cache_key = cache_instance.generate_cache_key(key_prefix, func.__name__, *args, **kwargs)
+            
+            # 캐시에서 조회
+            cached_result = await cache_instance.get(cache_key)
+            if cached_result is not None:
+                return cached_result
+            
+            # 함수 실행
+            result = await func(*args, **kwargs)
+            
+            # 결과 캐시
+            await cache_instance.set(cache_key, result, timeout)
+            
+            return result
+        return wrapper
+    return decorator
 
 def init_database():
     conn = psycopg2.connect(
@@ -239,3 +322,6 @@ def init_database():
     conn.set_client_encoding('UTF8')
     # 또는 conn.set_client_encoding('UTF8') 추가
     # ... 이하 생략 ... 
+
+# 전역 cache 인스턴스 생성 (다른 파일에서 import할 수 있도록)
+cache = get_cache_instance()
