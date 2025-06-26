@@ -11,6 +11,10 @@ import {
   Alert,
   CircularProgress,
   Card,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from '@mui/material';
 import { Search } from '@mui/icons-material';
 import { recipeApi } from '../../api/recipeApi';
@@ -20,6 +24,7 @@ import { useRouter } from 'next/navigation';
 
 export default function RecipeSearchPage() {
   const [query, setQuery] = useState('');
+  const [cuisineType, setCuisineType] = useState<string>('all'); // 요리 타입 선택
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchResult, setSearchResult] = useState<RecipeSearchResponse | null>(null);
@@ -35,10 +40,14 @@ export default function RecipeSearchPage() {
     setError(null);
 
     try {
+      // 요리 타입에 따라 cuisine_type 설정
+      const cuisineTypeParam = cuisineType === 'all' ? undefined : cuisineType;
+      
       const result = await recipeApi.searchRecipes({
         query: query.trim(),
-        number: 3,
+        number: 10,
         include_price: true,
+        cuisine_type: cuisineTypeParam
       });
 
       setSearchResult(result);
@@ -58,16 +67,37 @@ export default function RecipeSearchPage() {
       
       <Box sx={{ mb: 4 }}>
         <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} md={8}>
+          <Grid item xs={12} md={6}>
             <TextField
               fullWidth
-              label="음식명을 입력하세요 (예: 김치찌개)"
+              label="음식명을 입력하세요 (예: 김치찌개, pasta, curry)"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
             />
           </Grid>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={3}>
+            <FormControl fullWidth>
+              <InputLabel>요리 타입</InputLabel>
+              <Select
+                value={cuisineType}
+                label="요리 타입"
+                onChange={(e) => setCuisineType(e.target.value)}
+              >
+                <MenuItem value="all">모든 요리</MenuItem>
+                <MenuItem value="korean">한식</MenuItem>
+                <MenuItem value="chinese">중식</MenuItem>
+                <MenuItem value="japanese">일식</MenuItem>
+                <MenuItem value="italian">이탈리안</MenuItem>
+                <MenuItem value="mexican">멕시칸</MenuItem>
+                <MenuItem value="indian">인도</MenuItem>
+                <MenuItem value="thai">태국</MenuItem>
+                <MenuItem value="french">프랑스</MenuItem>
+                <MenuItem value="american">미국</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={3}>
             <Button
               fullWidth
               variant="contained"
@@ -91,6 +121,19 @@ export default function RecipeSearchPage() {
         <Box>
           <Typography variant="h5" gutterBottom>
             &quot;{searchResult.query}&quot; 검색 결과 ({searchResult.total_results}개)
+            {cuisineType !== 'all' && (
+              <Typography component="span" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                ({cuisineType === 'korean' ? '한식' : 
+                  cuisineType === 'chinese' ? '중식' :
+                  cuisineType === 'japanese' ? '일식' :
+                  cuisineType === 'italian' ? '이탈리안' :
+                  cuisineType === 'mexican' ? '멕시칸' :
+                  cuisineType === 'indian' ? '인도' :
+                  cuisineType === 'thai' ? '태국' :
+                  cuisineType === 'french' ? '프랑스' :
+                  cuisineType === 'american' ? '미국' : cuisineType} 필터 적용)
+              </Typography>
+            )}
           </Typography>
           <Grid container spacing={3}>
             {searchResult.recipes.map((recipe, index) => (

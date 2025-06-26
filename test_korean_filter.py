@@ -14,35 +14,44 @@ from app.utils.external_apis import spoonacular_client
 from app.core.config import settings
 
 async def test_korean_filtering():
-    """한식 필터링 기능을 테스트합니다."""
+    """다양한 요리 타입 필터링 기능을 테스트합니다."""
     
-    print("🍜 한식 필터링 기능 테스트 시작")
+    print("🍜 요리 타입 필터링 기능 테스트 시작")
     print("=" * 50)
     
     # 테스트 쿼리들
     test_queries = [
-        ("김치", "한식"),
-        ("비빔밥", "korean"),
+        ("김치", "korean"),
+        ("비빔밥", "한식"),
         ("된장찌개", "korea"),
-        ("치킨", None),  # 일반 검색 (한식 필터링 없음)
+        ("짜장면", "chinese"),
+        ("초밥", "japanese"),
+        ("파스타", "italian"),
+        ("타코", "mexican"),
+        ("커리", "indian"),
+        ("파드타이", "thai"),
+        ("크로와상", "french"),
+        ("햄버거", "american"),
+        ("치킨", None),  # 일반 검색 (필터링 없음)
     ]
     
     for query, cuisine_type in test_queries:
-        print(f"\n🔍 검색 테스트: '{query}' (cuisine_type: {cuisine_type})")
+        cuisine_display = cuisine_type if cuisine_type else "모든 요리"
+        print(f"\n🔍 검색 테스트: '{query}' (cuisine_type: {cuisine_display})")
         print("-" * 40)
         
         try:
             # Spoonacular API 호출
             recipes = await spoonacular_client.search_recipes(
                 query=query, 
-                number=5, 
+                number=3, 
                 cuisine_type=cuisine_type
             )
             
             print(f"✅ 검색 결과: {len(recipes)}개 레시피 발견")
             
             # 결과 요약
-            for i, recipe in enumerate(recipes[:3], 1):  # 상위 3개만 표시
+            for i, recipe in enumerate(recipes[:2], 1):  # 상위 2개만 표시
                 title = recipe.get("title", "제목 없음")
                 cuisines = recipe.get("cuisines", [])
                 print(f"  {i}. {title}")

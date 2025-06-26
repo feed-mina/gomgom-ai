@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Optional
 from app.core.config import settings
 from app.utils.translator import translator
 from app.utils.error_handler import safe_execute_async, log_api_request
+from app.utils.korean_recipe_crawler import korean_recipe_crawler
 import logging
 import re
 import time
@@ -46,11 +47,53 @@ class SpoonacularClient:
             "instructionsRequired": False  # 지시사항 필수 여부 비활성화로 속도 향상
         }
         
-        # 한식 필터링 추가
-        if cuisine_type and cuisine_type.lower() in ['korean', '한식', 'korea']:
-            params["cuisine"] = "korean"
-            params["tags"] = "korean"
-            logger.info("한식 필터링 적용됨")
+        # 요리 타입 필터링 추가
+        if cuisine_type:
+            cuisine_type_lower = cuisine_type.lower()
+            
+            # 한식 필터링
+            if cuisine_type_lower in ['korean', '한식', 'korea']:
+                params["cuisine"] = "korean"
+                params["tags"] = "korean"
+                logger.info("한식 필터링 적용됨")
+            
+            # 다른 요리 타입들 지원
+            elif cuisine_type_lower in ['chinese', '중식', 'china']:
+                params["cuisine"] = "chinese"
+                logger.info("중식 필터링 적용됨")
+            
+            elif cuisine_type_lower in ['japanese', '일식', 'japan']:
+                params["cuisine"] = "japanese"
+                logger.info("일식 필터링 적용됨")
+            
+            elif cuisine_type_lower in ['italian', '이탈리안', 'italy']:
+                params["cuisine"] = "italian"
+                logger.info("이탈리안 필터링 적용됨")
+            
+            elif cuisine_type_lower in ['mexican', '멕시칸', 'mexico']:
+                params["cuisine"] = "mexican"
+                logger.info("멕시칸 필터링 적용됨")
+            
+            elif cuisine_type_lower in ['indian', '인도', 'india']:
+                params["cuisine"] = "indian"
+                logger.info("인도 필터링 적용됨")
+            
+            elif cuisine_type_lower in ['thai', '태국', 'thailand']:
+                params["cuisine"] = "thai"
+                logger.info("태국 필터링 적용됨")
+            
+            elif cuisine_type_lower in ['french', '프랑스', 'france']:
+                params["cuisine"] = "french"
+                logger.info("프랑스 필터링 적용됨")
+            
+            elif cuisine_type_lower in ['american', '미국', 'usa']:
+                params["cuisine"] = "american"
+                logger.info("미국 필터링 적용됨")
+            
+            else:
+                # 알 수 없는 요리 타입인 경우 그대로 전달
+                params["cuisine"] = cuisine_type
+                logger.info(f"요리 타입 필터링 적용됨: {cuisine_type}")
         
         logger.info(f"API 요청 파라미터: {params}")
         
@@ -78,6 +121,20 @@ class SpoonacularClient:
                         
                         if len(recipes) == 0:
                             logger.warning(f"검색 결과가 없습니다. 쿼리: '{english_query}'")
+                            
+                            # 한식 필터링이 적용된 경우 만개의레시피에서 보완 검색
+                            if cuisine_type and cuisine_type.lower() in ['korean', '한식', 'korea']:
+                                logger.info("한식 결과가 없어 만개의레시피에서 보완 검색을 시도합니다.")
+                                try:
+                                    crawled_recipes = await korean_recipe_crawler.search_recipes(query, number)
+                                    if crawled_recipes:
+                                        logger.info(f"만개의레시피에서 {len(crawled_recipes)}개 레시피 발견")
+                                        return crawled_recipes
+                                    else:
+                                        logger.info("만개의레시피에서도 결과를 찾을 수 없습니다.")
+                                except Exception as e:
+                                    logger.error(f"만개의레시피 크롤링 중 오류: {e}")
+                            
                             # 원본 쿼리로 다시 시도
                             if query != english_query:
                                 logger.info(f"원본 쿼리로 재시도: '{query}'")
@@ -88,6 +145,17 @@ class SpoonacularClient:
                                     recipes = data.get("results", [])
                                     total_results = data.get("totalResults", 0)
                                     logger.info(f"원본 쿼리 재시도 결과: totalResults={total_results}, results={len(recipes)}개")
+                                    
+                                    # 여전히 결과가 없고 한식인 경우 크롤링 시도
+                                    if len(recipes) == 0 and cuisine_type and cuisine_type.lower() in ['korean', '한식', 'korea']:
+                                        logger.info("원본 쿼리로도 결과가 없어 만개의레시피에서 보완 검색을 시도합니다.")
+                                        try:
+                                            crawled_recipes = await korean_recipe_crawler.search_recipes(query, number)
+                                            if crawled_recipes:
+                                                logger.info(f"만개의레시피에서 {len(crawled_recipes)}개 레시피 발견")
+                                                return crawled_recipes
+                                        except Exception as e:
+                                            logger.error(f"만개의레시피 크롤링 중 오류: {e}")
                         
                         # 번역 기능이 활성화된 경우에만 번역 수행
                         if self.enable_translation:
