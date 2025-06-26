@@ -35,4 +35,51 @@ class RecipeListResponse(BaseModel):
     recipes: List[RecipeResponse]
     total: int
     page: int
-    size: int 
+    size: int
+
+# 레시피 검색 관련 스키마
+class RecipeIngredient(BaseModel):
+    name: str
+    amount: Optional[float] = None
+    unit: Optional[str] = None
+    price: Optional[float] = None
+
+class RecipeInstruction(BaseModel):
+    step: str
+    number: Optional[int] = None
+
+class RecipeNutrition(BaseModel):
+    calories: Optional[float] = None
+    protein: Optional[float] = None
+    fat: Optional[float] = None
+    carbohydrates: Optional[float] = None
+    fiber: Optional[float] = None
+
+class RecipeRecommendation(BaseModel):
+    id: Optional[int] = None
+    title: str
+    summary: Optional[str] = None
+    image_url: Optional[str] = None
+    ingredients: List[RecipeIngredient] = []
+    instructions: List[RecipeInstruction] = []
+    nutrition: Optional[RecipeNutrition] = None
+    cooking_time: Optional[int] = None
+    servings: Optional[int] = None
+    difficulty: Optional[str] = None
+    source: str
+    total_cost: Optional[float] = None
+    currency: str = "KRW"
+
+class RecipeSearchRequest(BaseModel):
+    query: str = Field(..., description="검색할 레시피 이름")
+    number: int = Field(10, ge=1, le=50, description="반환할 레시피 개수")
+    include_price: bool = Field(False, description="가격 정보 포함 여부")
+    max_cooking_time: Optional[int] = Field(None, ge=1, description="최대 조리 시간 (분)")
+    cuisine_type: Optional[str] = Field(None, description="요리 타입")
+
+class RecipeSearchResponse(BaseModel):
+    query: str
+    total_results: int
+    recipes: List[RecipeRecommendation]
+    estimated_total_cost: Optional[float] = None
+    currency: str = "KRW" 

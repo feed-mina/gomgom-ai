@@ -1,207 +1,170 @@
 'use client';
 
-import { useEffect, useState, Suspense, useCallback } from 'react';
-import styled from '@emotion/styled';
-import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Header from '@/components/Header';
-import Loading from '@/components/Loading';
-import { TestResult } from '@/types';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import {
+  Container,
+  Paper,
+  Typography,
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Chip,
+  CircularProgress,
+  Alert
+} from '@mui/material';
+import KakaoShare from '../../components/KakaoShare';
 
-const Container = styled.div`
-  min-height: 100vh;
-  background-color: #FAF0D7;
-  padding: 2rem;
-  
-  @media (max-width: 768px) {
-    padding: 1rem;
-  }
-`;
+interface Restaurant {
+  name: string;
+  description: string;
+  category: string;
+  keywords: string[];
+  logo_url?: string;
+}
 
-const Card = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  max-width: 25rem;
-  margin: auto;
-  background: white;
-  border-radius: 1.25rem;
-  box-shadow: 0 0.25rem 0.625rem rgba(0,0,0,0.1);
-  padding: 1.875rem;
-  text-align: center;
+interface RecommendResult {
+  result: Restaurant;
+  address: string;
+}
 
-  h3 {
-    color: #BEA397;
-    margin: 1rem 0;
-    font-size: 1.2rem;
-    
-    @media (max-width: 768px) {
-      font-size: 1rem;
-    }
-  }
-
-  p {
-    font-size: 1.125rem;
-    margin: 0.625rem 0;
-    
-    @media (max-width: 768px) {
-      font-size: 1rem;
-    }
-  }
-  
-  @media (max-width: 768px) {
-    padding: 1.5rem;
-    border-radius: 1rem;
-  }
-`;
-
-const Address = styled.p`
-  font-weight: bold;
-  font-size: 1rem;
-  color: #222;
-  margin: 1rem 0;
-  
-  @media (max-width: 768px) {
-    font-size: 0.9rem;
-  }
-`;
-
-const StoreLogo = styled(Image)`
-  margin: 1rem 0;
-  border-radius: 0.5rem;
-`;
-
-const RetryButton = styled.button`
-  display: inline-block;
-  margin-top: 1.25rem;
-  background-color: #8CC0DE;
-  color: white;
-  padding: 0.625rem 1.25rem;
-  border: none;
-  border-radius: 0.625rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s;
-
-  &:hover {
-    background-color: #FFDBDA;
-    color: #FF908B;
-  }
-  
-  @media (max-width: 768px) {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-  }
-`;
-
-function RecommendResultPage() {
-  const router = useRouter();
+export default function RecommendResultPage() {
   const searchParams = useSearchParams();
-  const [result, setResult] = useState<TestResult | null>(null);
-  const [currentAddress, setCurrentAddress] = useState<string>('로딩 중...');
-  const [isLoading, setIsLoading] = useState(true);
-  const text = searchParams.get('text') || '';
-  const lat = searchParams.get('lat') || '';
-  const lng = searchParams.get('lng') || '';
-  const [imgSrc, setImgSrc] = useState('/images/default_store_logo.png');
-
-  const loadResult = useCallback(async () => {
-    try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/v1/recommend_result/?text=${text}&lat=${lat}&lng=${lng}&mode=recommend`
-      );
-      console.log('[loadResult]response', response);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      console.log('[loadResult]data', data);
-      console.log('[loadResult]data.restaurants', data.restaurants);
-      if (data.detail) {
-        throw new Error(data.detail);
-      }
-      
-      setResult(data.result);
-      
-      const address =
-        Array.isArray(data.restaurants) && data.restaurants.length > 0 && data.restaurants[0] && data.restaurants[0].address
-          ? data.restaurants[0].address
-          : data.address || data.result?.address || '===';
-      setCurrentAddress(address);
-      
-      console.log('[loadResult]data.result.address', data.result?.address);
-      console.log('[loadResult]data.result.store', data.result?.store);
-      console.log('[loadResult]data.result.description', data.result?.description);
-      console.log('[loadResult]data.result.category', data.result?.category);
-      console.log('[loadResult]data.result.keywords', data.result?.keywords);
-      console.log('[loadResult]data.result.logo_url', data.result?.logo_url);
-      console.log('[loadResult]data.result.review_avg', data.result?.review_avg);
-      console.log('[loadResult]restaurants address', data.restaurants?.[0]?.address);
-    } catch (error) {
-      console.error('결과 로딩 실패', error);
-      // 에러 상태 처리
-      setResult(null);
-      setCurrentAddress('데이터를 불러오는데 실패했습니다.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [lat, lng, text]);
+  const [result, setResult] = useState<RecommendResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    if (lat && lng) {
-      loadResult();
-    }
-  }, [lat, lng, loadResult]);
+    const fetchResult = async () => {
+      try {
+        const text = searchParams.get('text');
+        const lat = searchParams.get('lat');
+        const lng = searchParams.get('lng');
+        const types = searchParams.get('types');
 
-  useEffect(() => {
-    if (result && result.logo_url) {
-      setImgSrc(result.logo_url);
-    }
-  }, [result]);
+        if (!text || !lat || !lng || !types) {
+          setError('필수 파라미터가 누락되었습니다.');
+          setLoading(false);
+          return;
+        }
 
-  const handleRetry = () => {
-    router.push('/');
-  };
+        const response = await fetch(`/api/recommend_result?text=${text}&lat=${lat}&lng=${lng}&types=${types}`);
+        if (!response.ok) {
+          throw new Error('추천 결과를 가져오는데 실패했습니다.');
+        }
 
-  if (isLoading) {
-    return <Loading />;
+        const data = await response.json();
+        setResult(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchResult();
+  }, [searchParams]);
+
+  if (loading) {
+    return (
+      <Container maxWidth="md">
+        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
+          <CircularProgress />
+        </Box>
+      </Container>
+    );
+  }
+
+  if (error) {
+    return (
+      <Container maxWidth="md">
+        <Box sx={{ mt: 8 }}>
+          <Alert severity="error">{error}</Alert>
+        </Box>
+      </Container>
+    );
   }
 
   if (!result) {
-    return <div>결과를 불러오는데 실패했습니다.</div>;
+    return (
+      <Container maxWidth="md">
+        <Box sx={{ mt: 8 }}>
+          <Alert severity="warning">추천 결과가 없습니다.</Alert>
+        </Box>
+      </Container>
+    );
   }
 
-  return (
-    <Container>
-      <Header />
-      <Card>
-        <h3>오늘의 추천 가게</h3>
-        <h3>{result.store}</h3>
-        <p><strong>{result.description}</strong></p>
-        <Address>{currentAddress}</Address>
-        <p><strong>내가 검색한 단어:</strong> {text}</p>
-        <p>📌 <strong>카테고리: {result.category}</strong></p>
-        <p>🔍 <strong>관련 키워드:{Array.isArray(result.keywords) ? result.keywords.join(', ') : '키워드 없음'}
-        </strong></p>
-        <StoreLogo
-          src={imgSrc}
-          alt="추천 가게 로고"
-          width={120}
-          height={120}
-          onError={() => setImgSrc('/image/default_store_logo.png')}
-        />
-        <RetryButton onClick={handleRetry}>다시 추천받기</RetryButton>
-      </Card>
-    </Container>
-  );
-}
+  const shareTitle = `🍽️ ${result.result.name} 추천!`;
+  const shareDescription = `${result.result.description}\n\n📍 ${result.address}\n🏷️ ${result.result.category}`;
 
-export default function RecommendResult() {
   return (
-    <Suspense fallback={<Loading />}>
-      <RecommendResultPage />
-    </Suspense>
+    <Container maxWidth="md">
+      <Box sx={{ mt: 4, mb: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom align="center">
+          🎉 추천 결과
+        </Typography>
+
+        <Paper elevation={3} sx={{ p: 4, mt: 3 }}>
+          <Card>
+            <CardContent>
+              <Typography variant="h5" component="h2" gutterBottom>
+                {result.result.name}
+              </Typography>
+              
+              <Typography variant="body1" color="text.secondary" paragraph>
+                {result.result.description}
+              </Typography>
+
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  카테고리:
+                </Typography>
+                <Chip 
+                  label={result.result.category} 
+                  color="primary" 
+                  variant="outlined"
+                />
+              </Box>
+
+              {result.result.keywords && result.result.keywords.length > 0 && (
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    키워드:
+                  </Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                    {result.result.keywords.map((keyword, index) => (
+                      <Chip 
+                        key={index} 
+                        label={keyword} 
+                        size="small" 
+                        variant="outlined"
+                      />
+                    ))}
+                  </Box>
+                </Box>
+              )}
+
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  📍 위치:
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {result.address}
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        </Paper>
+
+        {/* 카카오 공유 버튼 */}
+        <KakaoShare
+          title={shareTitle}
+          description={shareDescription}
+          buttonText="🍽️ 카카오톡으로 추천 공유하기"
+        />
+      </Box>
+    </Container>
   );
 } 

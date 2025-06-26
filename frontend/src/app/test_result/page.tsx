@@ -8,6 +8,7 @@ import Header from '@/components/Header';
 import Loading from '@/components/Loading';
 import ErrorDisplay from '@/components/ErrorDisplay';
 import type { TestResult } from '@/types';
+import KakaoShare from '../../components/KakaoShare';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -271,6 +272,9 @@ function TestResultContent() {
     );
   }
 
+  const shareTitle = `🎯 ${result.store} 테스트 결과!`;
+  const shareDescription = `${result.description}\n\n📍 ${currentAddress}\n🏷️ ${result.category}`;
+
   return (
     <Container>
       <Header />
@@ -309,6 +313,11 @@ function TestResultContent() {
         {/* </Result> */}
         </Card>
         <RetryButton onClick={handleRetry}>다시하기</RetryButton>
+        <KakaoShare
+          title={shareTitle}
+          description={shareDescription}
+          buttonText="🎯 카카오톡으로 테스트 결과 공유하기"
+        />
       </Main>
     </Container>
   );

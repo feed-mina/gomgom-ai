@@ -1,4 +1,6 @@
 venv/*
+venv-py311/*
+DEPLOYMENT.md
 h50n.com_redis_*
 h50n.com_redis_dd.pdf
 frontend/node_modules/*
@@ -132,4 +134,12 @@ jspm_packages/
 .dynamodb/
 
 # TernJS port file
-.tern-port
+.tern-port.env
+legacy.zip 
+GoogleCloudSDKInstaller.exe
+KAKAO_LOGIN_SETUP.md
+ubuntu@43.202.138.165
+
+simple_test.py
+test_api.py
+test_translation.py

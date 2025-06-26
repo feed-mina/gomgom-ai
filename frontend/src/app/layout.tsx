@@ -1,18 +1,32 @@
-export const metadata = {
-  title: 'GomGom AI',
-  description: 'GPT와 함께 기분에 딱 맞는 음식과 레시피를 추천받아보세요!',
-  metadataBase: new URL('http://localhost:3000'),
-};
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import Header from "../components/Header";
 
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "GomGom AI",
+  description: "AI 기반 음식 추천 서비스",
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="ko">
+      <head>
+        <script
+          async
+          src="https://developers.kakao.com/sdk/js/kakao.js"
+        ></script>
+      </head>
+      <body className={inter.className}>
+        <Header />
+        {children}
+      </body>
     </html>
-  )
+  );
 }

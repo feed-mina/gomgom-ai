@@ -11,9 +11,15 @@ export default function Home() {
   const [userInput, setUserInput] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showEmptyInputModal, setShowEmptyInputModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      setIsLoggedIn(true);
+    }
+
     const getLocation = async () => {
       if (typeof window === 'undefined') return;
       
@@ -104,6 +110,11 @@ export default function Home() {
                   <Button onClick={handleRecommend}>입력 추천</Button>
                 </InputBox>
                 <Button onClick={handleTestClick}>입맛 테스트</Button>
+                {isLoggedIn && (
+                  <Button onClick={() => router.push('/recipe_search')}>
+                    레시피 검색하기
+                  </Button>
+                )}
               </ButtonGroup>
             </Article>
           </All>

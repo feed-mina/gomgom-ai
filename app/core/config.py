@@ -1,10 +1,10 @@
 from typing import List, Union
-from pydantic import AnyHttpUrl, validator
+from pydantic import AnyHttpUrl, validator, field_validator
 from pydantic_settings import BaseSettings
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-
+load_dotenv()
 # 프로젝트 루트 디렉토리 찾기
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 # .env 파일 로드 (프로젝트 루트의 .env 파일 우선)
@@ -19,10 +19,14 @@ class Settings(BaseSettings):
     # OpenAI API 설정
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
     
+    # Google Cloud 설정
+    GOOGLE_APPLICATION_CREDENTIALS: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+    
     # CORS 설정
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
 
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
@@ -53,7 +57,17 @@ class Settings(BaseSettings):
     KAKAO_REST_API: str = "ce290686267085588527fc7c5b9334b3"
     KAKAO_CLIENT_ID: str = "2d22c7fa1d59eb77a5162a3948a0b6fe"
     KAKAO_TOKEN_ADMIN: str = "96ed9105639fb627fb2c710f39e6516f"
-    KAKAO_REDIRECT_URI: str = "http://localhost:4000/oauth/callback"
+    KAKAO_REDIRECT_URI: str = "http://localhost:3000/oauth/callback"
+
+    # 외부 API 설정
+    SPOONACULAR_API_KEY: str = "3ed0322a90654cac919bf1c1996d80a8"
+    
+    # 번역 API 설정 (Google Translate)
+    GOOGLE_TRANSLATE_API_KEY: str = os.getenv("GOOGLE_TRANSLATE_API_KEY", "")
+    
+    # 크롤링 설정
+    CRAWLING_DELAY: float = 1.0  # 크롤링 간격 (초)
+    MAX_CRAWLING_RETRIES: int = 3
 
     # Redis 설정 (FastApi와 동일)
     REDIS_HOST: str = "127.0.0.1"
@@ -71,10 +85,12 @@ class Settings(BaseSettings):
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
-    class Config:
-        case_sensitive = True
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = {
+        "case_sensitive": True,
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "extra": "allow"
+    }
 
 settings = Settings()
 
