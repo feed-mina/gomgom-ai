@@ -10,17 +10,20 @@ import {
   Box,
   Alert,
   CircularProgress,
+  Card,
 } from '@mui/material';
 import { Search } from '@mui/icons-material';
 import { recipeApi } from '../../api/recipeApi';
 import { RecipeSearchResponse } from '../../types/recipe';
 import { RecipeCard } from '../../components/RecipeCard';
+import { useRouter } from 'next/navigation';
 
 export default function RecipeSearchPage() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchResult, setSearchResult] = useState<RecipeSearchResponse | null>(null);
+  const router = useRouter();
 
   const handleSearch = async () => {
     if (!query.trim()) {
@@ -92,7 +95,10 @@ export default function RecipeSearchPage() {
           <Grid container spacing={3}>
             {searchResult.recipes.map((recipe, index) => (
               <Grid item xs={12} sm={6} md={4} key={index}>
-                <RecipeCard recipe={recipe} />
+                <RecipeCard
+                  recipe={recipe}
+                  onClick={() => router.push(`/recipe_card?id=${recipe.id}&query=${encodeURIComponent(query)}`)}
+                />
               </Grid>
             ))}
           </Grid>

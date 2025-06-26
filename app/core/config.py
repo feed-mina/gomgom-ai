@@ -4,6 +4,8 @@ from pydantic_settings import BaseSettings
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+import logging
+
 load_dotenv()
 # 프로젝트 루트 디렉토리 찾기
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -11,6 +13,8 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 load_dotenv(dotenv_path=ROOT_DIR / ".env")
 # app 디렉토리의 .env 파일도 로드 (없으면 무시)
 load_dotenv(dotenv_path=ROOT_DIR / "app" / ".env", override=True)
+
+logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     API_V1_STR: str = "/api/v1"
@@ -50,13 +54,13 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "django-insecure-k3=p4i=(mu-)*2w4d6-_)3h+w(o&sk5*tl)c-#n^%7(!w6co8@"
     JWT_SECRET_KEY: str = "d6ac9ecc0a3aa3c395313fb236e0ec10d71ab78fb36f54ba626664eba0b842b1"
     JWT_ISSUER: str = "admin"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24시간 (24 * 60 = 1440분)
 
     
     # Kakao API 설정
     KAKAO_REST_API: str = "ce290686267085588527fc7c5b9334b3"
-    KAKAO_CLIENT_ID: str = "2d22c7fa1d59eb77a5162a3948a0b6fe"
-    KAKAO_TOKEN_ADMIN: str = "96ed9105639fb627fb2c710f39e6516f"
+    KAKAO_CLIENT_ID: str = "ac17c741aa8131e12604eac5e2d0441c"
+    # KAKAO_TOKEN_ADMIN: str = "96ed9105639fb627fb2c710f39e6516f"
     KAKAO_REDIRECT_URI: str = "http://localhost:3000/oauth/callback"
 
     # 외부 API 설정
@@ -94,9 +98,43 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
-# API 키 검증
+# API 키 검증 - 더 유연한 처리
 if not settings.OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY가 설정되지 않았습니다.")
+    logger.warning("OPENAI_API_KEY가 설정되지 않았습니다. OpenAI 관련 기능이 제한될 수 있습니다.")
+
+# 데이터베이스 연결 확인
+try:
+    import psycopg2
+    from psycopg2 import OperationalError
+    conn = psycopg2.connect(
+        host=settings.POSTGRES_HOST,
+        port=settings.POSTGRES_PORT,
+        database=settings.POSTGRES_DB,
+        user=settings.POSTGRES_USER,
+        password=settings.POSTGRES_PASSWORD
+    )
+    conn.close()
+    logger.info("PostgreSQL 데이터베이스 연결 성공")
+except Exception as e:
+    logger.error(f"PostgreSQL 데이터베이스 연결 실패: {e}")
+    logger.warning("데이터베이스 연결이 실패했습니다. 일부 기능이 제한될 수 있습니다.")
+
+# Redis 연결 확인
+try:
+    import redis
+    redis_client = redis.Redis(
+        host=settings.REDIS_HOST,
+        port=settings.REDIS_PORT,
+        db=settings.REDIS_DB,
+        socket_connect_timeout=5,
+        socket_timeout=5
+    )
+    redis_client.ping()
+    logger.info("Redis 연결 성공")
+except Exception as e:
+    logger.error(f"Redis 연결 실패: {e}")
+    logger.warning("Redis 연결이 실패했습니다. 캐시 기능이 비활성화됩니다.")
+    settings.CACHE_ENABLED = False
 
 kakao_key = settings.KAKAO_REST_API  # ✅ 정상 동작
 

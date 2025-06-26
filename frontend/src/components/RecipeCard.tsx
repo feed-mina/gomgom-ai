@@ -27,9 +27,11 @@ import { RecipeRecommendation } from '../types/recipe';
 
 interface RecipeCardProps {
   recipe: RecipeRecommendation;
+  onClick?: () => void;
+  query?: string;
 }
 
-export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
+export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onClick }) => {
   const [expanded, setExpanded] = React.useState(false);
 
   const handleExpandClick = () => {
@@ -50,7 +52,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
   };
 
   return (
-    <Card sx={{ maxWidth: 400, height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Card sx={{ maxWidth: 400, height: '100%', display: 'flex', flexDirection: 'column', cursor: onClick ? 'pointer' : 'default' }} onClick={onClick}>
       {recipe.image_url && (
         <CardMedia
           component="img"

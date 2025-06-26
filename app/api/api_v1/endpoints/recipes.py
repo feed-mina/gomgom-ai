@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from app.db.session import get_db
 from app.models.models import Recipe
 from app.schemas.recipe import RecipeCreate, RecipeResponse, RecipeUpdate
+from app.utils.external_apis import spoonacular_client
 import logging
 # from app.core.cache import get_cache, set_cache, delete_cache
 
@@ -172,4 +173,25 @@ def delete_recipe(
     except Exception as e:
         logger.error(f"예상치 못한 오류 (레시피 삭제): {e}")
         db.rollback()
-        raise HTTPException(status_code=500, detail="서버 내부 오류가 발생했습니다.") 
+        raise HTTPException(status_code=500, detail="서버 내부 오류가 발생했습니다.")
+
+@router.get("/external/{recipe_id}")
+async def get_external_recipe(recipe_id: int):
+    """
+    Spoonacular API에서 레시피 상세 정보를 가져옵니다.
+    """
+    try:
+        # Spoonacular API에서 레시피 정보 가져오기
+        recipe_info = await spoonacular_client.get_recipe_by_id(recipe_id)
+        
+        if not recipe_info:
+            raise HTTPException(status_code=404, detail="레시피를 찾을 수 없습니다.")
+        
+        logger.info(f"외부 레시피 조회 성공: ID {recipe_id}")
+        return recipe_info
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"외부 레시피 조회 중 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail="레시피 조회 중 오류가 발생했습니다.") 

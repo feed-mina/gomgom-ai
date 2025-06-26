@@ -1,21 +1,27 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { AppBar, Toolbar, Typography, Button, Box, Avatar, Menu, MenuItem } from '@mui/material';
-import { AccountCircle } from '@mui/icons-material';
-import axios from 'axios';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
-interface User {
-  email: string;
-  full_name: string;
-}
+import {
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Box,
+  Menu,
+  MenuItem,
+  Snackbar,
+  Alert
+} from '@mui/material';
+import apiClient from '../utils/apiClient';
+import { User } from '../types';
+import { checkAndHandleTokenExpiration, shouldShowExpirationWarning, getTimeUntilExpiration } from '../utils/tokenUtils';
 
 export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [loading, setLoading] = useState(true);
+  const [showExpirationWarning, setShowExpirationWarning] = useState(false);
+  const [expirationWarningMessage, setExpirationWarningMessage] = useState('');
 
   useEffect(() => {
     const updateUser = () => {
@@ -24,7 +30,38 @@ export default function Header() {
       const nickname = localStorage.getItem('user_nickname');
 
       if (token && email && nickname) {
-        setUser({ email: email, full_name: nickname });
+        // 토큰 만료 체크
+        const isExpired = checkAndHandleTokenExpiration();
+        if (isExpired) {
+          setUser(null);
+          setLoading(false);
+          return;
+        }
+
+        // 토큰 만료 경고 체크
+        if (shouldShowExpirationWarning(token)) {
+          setShowExpirationWarning(true);
+          // 경고 메시지 설정
+          const timeUntilExpiration = getTimeUntilExpiration(token);
+          const hours = Math.floor(timeUntilExpiration / 3600);
+          const minutes = Math.floor((timeUntilExpiration % 3600) / 60);
+          
+          if (hours > 0) {
+            setExpirationWarningMessage(`로그인 세션이 ${hours}시간 ${minutes}분 후에 만료됩니다.`);
+          } else {
+            setExpirationWarningMessage(`로그인 세션이 ${minutes}분 후에 만료됩니다.`);
+          }
+        }
+
+        setUser({ 
+          id: 0, // 임시 ID
+          email: email, 
+          full_name: nickname,
+          is_active: true,
+          is_superuser: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
       } else {
         setUser(null);
       }
@@ -35,14 +72,38 @@ export default function Header() {
 
     window.addEventListener('storage', updateUser); // 스토리지 변경 감지
 
+    // 토큰 만료 체크를 주기적으로 실행 (5분마다)
+    const tokenCheckInterval = setInterval(() => {
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        const isExpired = checkAndHandleTokenExpiration();
+        if (isExpired) {
+          setUser(null);
+        } else if (shouldShowExpirationWarning(token)) {
+          setShowExpirationWarning(true);
+          // 경고 메시지 업데이트
+          const timeUntilExpiration = getTimeUntilExpiration(token);
+          const hours = Math.floor(timeUntilExpiration / 3600);
+          const minutes = Math.floor((timeUntilExpiration % 3600) / 60);
+          
+          if (hours > 0) {
+            setExpirationWarningMessage(`로그인 세션이 ${hours}시간 ${minutes}분 후에 만료됩니다.`);
+          } else {
+            setExpirationWarningMessage(`로그인 세션이 ${minutes}분 후에 만료됩니다.`);
+          }
+        }
+      }
+    }, 5 * 60 * 1000); // 5분
+
     return () => {
       window.removeEventListener('storage', updateUser); // 클린업
+      clearInterval(tokenCheckInterval);
     };
   }, []);
 
   const handleKakaoLogin = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/v1/auth/kakao/login`);
+      const response = await apiClient.get('/api/v1/auth/kakao/login');
       window.location.href = response.data.auth_url;
     } catch (error) {
       console.error('Failed to get Kakao login URL:', error);
@@ -55,6 +116,7 @@ export default function Header() {
     localStorage.removeItem('user_nickname');
     setUser(null);
     setAnchorEl(null);
+    setShowExpirationWarning(false);
     // 스토리지 변경 이벤트를 발생시켜 헤더를 업데이트합니다.
     window.dispatchEvent(new Event("storage"));
     window.location.href = '/';
@@ -68,51 +130,70 @@ export default function Header() {
     setAnchorEl(null);
   };
 
+  const handleCloseExpirationWarning = () => {
+    setShowExpirationWarning(false);
+  };
+
   return (
-    <AppBar position="static" sx={{ backgroundColor: '#FFF0F5' }}>
-      <Toolbar>
-        <Typography 
-          variant="h6" 
-          component="div" 
-          sx={{ flexGrow: 1, cursor: 'pointer', color: '#333' }}
-          onClick={() => window.location.href = '/'}
+    <>
+      <AppBar position="static" sx={{ backgroundColor: '#FFF0F5' }}>
+        <Toolbar>
+          <Typography 
+            variant="h6" 
+            component="div" 
+            sx={{ flexGrow: 1, cursor: 'pointer', color: '#333' }}
+            onClick={() => window.location.href = '/'}
+          >
+            GomGom AI
+          </Typography>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minHeight: '36px' }}>
+            {loading ? null : user ? (
+              <>
+                <Typography sx={{ color: '#333' }}>
+                  {user.full_name}님, 환영합니다!
+                </Typography>
+                <Button color="inherit" onClick={handleLogout} sx={{ color: '#333' }}>
+                  로그아웃
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button 
+                  color="inherit" 
+                  variant="contained"
+                  onClick={handleKakaoLogin}
+                  sx={{ 
+                    backgroundColor: '#FEE500', 
+                    color: '#000',
+                    '&:hover': {
+                      backgroundColor: '#FDD835'
+                    }
+                  }}
+                >
+                  카카오 로그인
+                </Button>
+              </>
+            )}
+          </Box>
+        </Toolbar>
+      </AppBar>
+
+      {/* 토큰 만료 경고 스낵바 */}
+      <Snackbar
+        open={showExpirationWarning}
+        autoHideDuration={10000} // 10초 후 자동 숨김
+        onClose={handleCloseExpirationWarning}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseExpirationWarning} 
+          severity="warning" 
+          sx={{ width: '100%' }}
         >
-          GomGom AI
-        </Typography>
-        
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minHeight: '36px' }}>
-          {loading ? null : user ? (
-            <>
-              <Typography sx={{ color: '#333' }}>
-                {user.full_name}님, 환영합니다!
-              </Typography>
-              <Button color="inherit" onClick={handleLogout} sx={{ color: '#333' }}>
-                로그아웃
-              </Button>
-            </>
-          ) : (
-            <>
-              {/* <Button color="inherit" onClick={() => window.location.href = '/login'}>
-                로그인
-              </Button> */}
-              <Button 
-                color="inherit" 
-                variant="contained"
-                onClick={handleKakaoLogin}
-                sx={{ 
-                  backgroundColor: '#FEE500', 
-                  color: '#000',
-                  '&:hover': {
-                    backgroundColor: '#FDD835'
-                  }
-                }}
-              >
-                카카오 로그인
-              </Button>
-            </>
-          )}
-        </Box>
-      </Toolbar>
-    </AppBar>
+          {expirationWarningMessage}
+        </Alert>
+      </Snackbar>
+    </>
   );
 } 

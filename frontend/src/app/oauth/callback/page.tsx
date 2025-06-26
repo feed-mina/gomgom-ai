@@ -10,7 +10,7 @@ import {
   CircularProgress,
   Alert
 } from '@mui/material';
-import axios from 'axios';
+import apiClient from '../../../utils/apiClient';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -38,7 +38,7 @@ export default function OAuthCallbackPage() {
       }
 
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/v1/auth/kakao/callback?code=${code}`);
+        const response = await apiClient.get(`/api/v1/auth/kakao/callback?code=${code}`);
         
         // 토큰 및 사용자 정보 저장
         localStorage.setItem('access_token', response.data.access_token);

@@ -132,25 +132,111 @@ app.include_router(api_router, prefix="/api/v1")
 async def health_check():
     """애플리케이션 상태 확인"""
     try:
-        # 기본 상태 정보
-        health_info = {
+        # 서비스 상태 확인
+        health_status = {
             "status": "healthy",
             "message": "GomGom Recipe API is running",
             "version": "1.0.0",
-            "timestamp": time.time()
+            "timestamp": time.time(),
+            "services": {}
         }
         
+        # 데이터베이스 상태 확인
+        try:
+            from app.db.session import SessionLocal
+            db = SessionLocal()
+            db.execute("SELECT 1")
+            db.close()
+            health_status["services"]["database"] = "connected"
+        except Exception as e:
+            logger.error(f"데이터베이스 상태 확인 실패: {e}")
+            health_status["services"]["database"] = "disconnected"
+            health_status["status"] = "degraded"
+        
+        # Redis 상태 확인
+        try:
+            from app.core.cache import Cache
+            cache = Cache()
+            if cache.redis_client:
+                cache.redis_client.ping()
+                health_status["services"]["redis"] = "connected"
+            else:
+                health_status["services"]["redis"] = "disabled"
+        except Exception as e:
+            logger.error(f"Redis 상태 확인 실패: {e}")
+            health_status["services"]["redis"] = "disconnected"
+        
+        # API 키 상태 확인
+        api_keys_status = {}
+        if settings.OPENAI_API_KEY:
+            api_keys_status["openai"] = "configured"
+        else:
+            api_keys_status["openai"] = "missing"
+            health_status["status"] = "degraded"
+        
+        if settings.SPOONACULAR_API_KEY:
+            api_keys_status["spoonacular"] = "configured"
+        else:
+            api_keys_status["spoonacular"] = "missing"
+            health_status["status"] = "degraded"
+        
+        health_status["api_keys"] = api_keys_status
+        
         logger.info("헬스체크 요청 처리 완료")
-        return health_info
+        return health_status
     
     except Exception as e:
         logger.error(f"헬스체크 중 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail="서버 상태 확인 중 오류가 발생했습니다.")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "unhealthy",
+                "error": "서버 상태 확인 중 오류가 발생했습니다.",
+                "detail": str(e)
+            }
+        )
 
 # 서버 시작 설정 (성능 최적화)
 if __name__ == "__main__":
     try:
         logger.info("GomGom Recipe API 서버 시작 중...")
+        
+        # 시작 전 초기화 검증
+        logger.info("서비스 초기화 검증 중...")
+        
+        # 설정 검증
+        if not settings.OPENAI_API_KEY:
+            logger.warning("⚠️  OPENAI_API_KEY가 설정되지 않았습니다. AI 기능이 제한됩니다.")
+        
+        if not settings.SPOONACULAR_API_KEY:
+            logger.warning("⚠️  SPOONACULAR_API_KEY가 설정되지 않았습니다. 레시피 검색 기능이 제한됩니다.")
+        
+        # 데이터베이스 연결 테스트
+        try:
+            from app.db.session import SessionLocal
+            db = SessionLocal()
+            db.execute("SELECT 1")
+            db.close()
+            logger.info("✅ 데이터베이스 연결 확인 완료")
+        except Exception as e:
+            logger.error(f"❌ 데이터베이스 연결 실패: {e}")
+            logger.warning("데이터베이스 없이 서버를 시작합니다. 일부 기능이 제한됩니다.")
+        
+        # Redis 연결 테스트
+        try:
+            from app.core.cache import Cache
+            cache = Cache()
+            if cache.redis_client:
+                cache.redis_client.ping()
+                logger.info("✅ Redis 연결 확인 완료")
+            else:
+                logger.warning("⚠️  Redis가 비활성화되어 있습니다.")
+        except Exception as e:
+            logger.error(f"❌ Redis 연결 실패: {e}")
+            logger.warning("Redis 없이 서버를 시작합니다. 캐시 기능이 비활성화됩니다.")
+        
+        logger.info("🚀 서버 시작 준비 완료")
+        
         uvicorn.run(
             "app.main:app",
             host="0.0.0.0",

@@ -35,4 +35,9 @@ export const recipeApi = {
     console.log('healthCheck', response.data);
     return response.data;
   },
+
+  getRecipeById: async (id: number | string) => {
+    const response = await api.get(`/api/v1/recipes/external/${id}`);
+    return response.data;
+  },
 }; 

@@ -33,7 +33,7 @@ class SpoonacularClient:
         
         # 한글 쿼리를 영어로 번역 (실패해도 계속 진행)
         english_query = await translator.translate_to_english(query)
-        # 번역이 실패하면 원본 쿼리 사용 (translator가 이미 원본을 반환하므로 추가 처리 불필요)
+        logger.info(f"번역된 쿼리: '{query}' -> '{english_query}'")
         
         url = f"{self.base_url}/complexSearch"
         params = {
@@ -41,9 +41,11 @@ class SpoonacularClient:
             "query": english_query,
             "number": number,
             "addRecipeInformation": True,
-            "fillIngredients": True,
-            "instructionsRequired": True
+            "fillIngredients": True
+            # instructionsRequired 파라미터 제거 - 너무 제한적일 수 있음
         }
+        
+        logger.info(f"API 요청 파라미터: {params}")
         
         # 재시도 로직
         for attempt in range(self.max_retries):
@@ -54,7 +56,7 @@ class SpoonacularClient:
                 async with httpx.AsyncClient(
                     timeout=self.timeout,
                     limits=self.limits,
-                    http2=True
+                    http2=False
                 ) as client:
                     response = await client.get(url, params=params)
                     duration = time.time() - start_time
@@ -64,7 +66,21 @@ class SpoonacularClient:
                     if response.status_code == 200:
                         data = response.json()
                         recipes = data.get("results", [])
-                        logger.info(f"Spoonacular API에서 {len(recipes)}개의 레시피를 가져왔습니다.")
+                        total_results = data.get("totalResults", 0)
+                        logger.info(f"Spoonacular API 응답: totalResults={total_results}, results={len(recipes)}개")
+                        
+                        if len(recipes) == 0:
+                            logger.warning(f"검색 결과가 없습니다. 쿼리: '{english_query}'")
+                            # 원본 쿼리로 다시 시도
+                            if query != english_query:
+                                logger.info(f"원본 쿼리로 재시도: '{query}'")
+                                params["query"] = query
+                                response = await client.get(url, params=params)
+                                if response.status_code == 200:
+                                    data = response.json()
+                                    recipes = data.get("results", [])
+                                    total_results = data.get("totalResults", 0)
+                                    logger.info(f"원본 쿼리 재시도 결과: totalResults={total_results}, results={len(recipes)}개")
                         
                         # 번역이 실패해도 원본 데이터 반환
                         try:
@@ -116,6 +132,95 @@ class SpoonacularClient:
                     return []
         
         return []
+    
+    async def get_recipe_by_id(self, recipe_id: int) -> Optional[Dict[str, Any]]:
+        """레시피 ID로 상세 정보를 가져옵니다."""
+        logger.info(f"레시피 상세 정보 조회 시작: ID={recipe_id}")
+        
+        # API 키 검증
+        if not self.api_key:
+            logger.warning("Spoonacular API 키가 설정되지 않았습니다.")
+            return None
+        
+        url = f"{self.base_url}/{recipe_id}/information"
+        params = {
+            "apiKey": self.api_key
+        }
+        
+        # 재시도 로직
+        for attempt in range(self.max_retries):
+            try:
+                logger.info(f"Spoonacular API 호출 (시도 {attempt + 1}/{self.max_retries}): {url}")
+                start_time = time.time()
+                
+                async with httpx.AsyncClient(
+                    timeout=self.timeout,
+                    limits=self.limits,
+                    http2=False
+                ) as client:
+                    response = await client.get(url, params=params)
+                    duration = time.time() - start_time
+                    
+                    log_api_request("GET", url, response.status_code, duration)
+                    
+                    if response.status_code == 200:
+                        recipe_data = response.json()
+                        logger.info(f"레시피 상세 정보 조회 성공: ID {recipe_id}")
+                        
+                        # 번역 처리
+                        try:
+                            translated_recipe = await self._translate_recipe(recipe_data)
+                            return translated_recipe
+                        except Exception as e:
+                            logger.warning(f"번역 중 오류 발생, 원본 데이터 반환: {e}")
+                            return recipe_data
+                    
+                    elif response.status_code == 404:
+                        logger.warning(f"레시피를 찾을 수 없습니다: ID {recipe_id}")
+                        return None
+                    
+                    elif response.status_code == 429:  # Rate limit
+                        logger.warning(f"Rate limit 도달 (시도 {attempt + 1}): {response.status_code}")
+                        if attempt < self.max_retries - 1:
+                            await asyncio.sleep(self.retry_delay * (2 ** attempt))
+                            continue
+                        else:
+                            logger.error("최대 재시도 횟수 초과")
+                            return None
+                    
+                    else:
+                        logger.error(f"Spoonacular API 오류: {response.status_code} - {response.text}")
+                        if attempt < self.max_retries - 1:
+                            await asyncio.sleep(self.retry_delay)
+                            continue
+                        else:
+                            return None
+            
+            except httpx.TimeoutException as e:
+                logger.error(f"Spoonacular API 호출 타임아웃 (시도 {attempt + 1}): {e}")
+                if attempt < self.max_retries - 1:
+                    await asyncio.sleep(self.retry_delay)
+                    continue
+                else:
+                    return None
+            
+            except httpx.ConnectError as e:
+                logger.error(f"Spoonacular API 연결 오류 (시도 {attempt + 1}): {e}")
+                if attempt < self.max_retries - 1:
+                    await asyncio.sleep(self.retry_delay)
+                    continue
+                else:
+                    return None
+            
+            except Exception as e:
+                logger.error(f"Spoonacular API 호출 중 예상치 못한 오류 (시도 {attempt + 1}): {e}")
+                if attempt < self.max_retries - 1:
+                    await asyncio.sleep(self.retry_delay)
+                    continue
+                else:
+                    return None
+        
+        return None
     
     async def _translate_recipes_parallel(self, recipes: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """레시피들을 병렬로 번역 (오류 처리 개선)"""

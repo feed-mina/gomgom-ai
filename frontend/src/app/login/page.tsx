@@ -11,11 +11,9 @@ import {
   Divider,
   Alert
 } from '@mui/material';
-import axios from 'axios';
+import apiClient from '../../utils/apiClient';
 import { useRouter } from 'next/navigation';
 import { LoginFormData } from '../../types';
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -43,7 +41,7 @@ export default function LoginPage() {
       formDataToSend.append('username', formData.email);
       formDataToSend.append('password', formData.password);
 
-      const response = await axios.post(`${API_BASE_URL}/api/v1/auth/login`, formDataToSend, {
+      const response = await apiClient.post('/api/v1/auth/login', formDataToSend, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'
         }
@@ -60,7 +58,7 @@ export default function LoginPage() {
 
   const handleKakaoLogin = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/v1/auth/kakao/login`);
+      const response = await apiClient.get('/api/v1/auth/kakao/login');
       window.location.href = response.data.auth_url;
     } catch (error) {
       setError('카카오 로그인 URL을 가져오는데 실패했습니다.');
@@ -136,9 +134,9 @@ export default function LoginPage() {
             <Typography variant="body2" color="text.secondary">
               계정이 없으신가요?{' '}
               <Button
-                variant="text"
+                color="primary"
                 onClick={() => router.push('/register')}
-                sx={{ p: 0, minWidth: 'auto' }}
+                sx={{ textTransform: 'none' }}
               >
                 회원가입
               </Button>
