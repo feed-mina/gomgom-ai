@@ -142,7 +142,3 @@ ubuntu@43.202.138.165
 
 frontend/src/app/recipe_card/
 frontend/src/utils/
-scripts/diagnose.py
-simple_test.py
-test_api.py
-test_translation.py
