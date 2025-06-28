@@ -291,6 +291,11 @@ function TestResultContent() {
           
       <Card>
         <h3>오늘의 추천 가게</h3>
+        {text && text !== '===' && (
+          <div style={{ marginBottom: '0.5rem', fontWeight: 500 }}>
+            {text}을 먹고 싶다면,
+          </div>
+        )}
         <h3>{result.store}</h3>
         <p><strong>{result.description}</strong></p>
         <Address>{currentAddress}</Address>

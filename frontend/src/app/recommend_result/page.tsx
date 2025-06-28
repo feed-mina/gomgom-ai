@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useState, Suspense, useCallback } from 'react';
+import styled from '@emotion/styled';
+import { useRouter, useSearchParams } from 'next/navigation';
+import apiClient from '@/utils/apiClient';
 import {
-  Container,
   Paper,
   Typography,
   Box,
@@ -17,6 +18,8 @@ import {
 import KakaoShare from '../../components/KakaoShare';
 import Image from 'next/image';
 import LoadingFallback from '../../components/LoadingFallback';
+import ErrorDisplay from '../../components/ErrorDisplay';
+
 
 interface Restaurant {
   name: string;
@@ -43,48 +46,103 @@ interface RecommendResult {
   restaurants: Restaurant[];
 }
 
+const Container = styled.div`
+  min-height: 100vh;
+  background-color: #FAF0D7;
+`;
+
+const Main = styled.main`
+  max-width: 50rem;
+  margin: 0 auto;
+  padding: 2rem;
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+  }
+`;
+
+const Heading = styled.div`
+  text-align: center;
+  margin-bottom: 2rem;
+
+  h2 {
+    font-size: 2rem;
+    color: #6B4E71;
+    margin-bottom: 1rem;
+    
+    @media (max-width: 768px) {
+      font-size: 1.5rem;
+    }
+  }
+`;
+
 // 추천 결과 처리 컴포넌트
 function RecommendResultContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [result, setResult] = useState<RecommendResult | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [currentAddress, setCurrentAddress] = useState<string>('로딩 중...');
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const text = searchParams.get('text') || '===';
+  const lat = searchParams.get('lat') || '';
+  const lng = searchParams.get('lng') || '';
+  const types = searchParams.get('types') || '';
+
+
+  const loadResult = useCallback(async () => {
+    try {
+      const response = await apiClient.get('/api/v1/recommend_result/', {
+        params: { text, lat, lng, types }
+      });
+      
+      const data = response.data;
+      
+      if (data.error) {
+        throw new Error(data.detail || data.error);
+      }
+      
+      if (!data || !data.result) {
+        throw new Error('Invalid response format');
+      }
+
+      setResult(data.result);
+      
+      const address = data.restaurants && data.restaurants.length > 0
+      ? data.restaurants[0].address
+      : data.address || data.result?.address || '입력필요';
+    setCurrentAddress(address);
+      
+      console.log('[loadResult]data.result.address', data.result?.address);
+      console.log('[loadResult]data.result.store', data.result?.store);
+      console.log('[loadResult]data.result.description', data.result?.description);
+      console.log('[loadResult]data.result.category', data.result?.category);
+      console.log('[loadResult]data.result.keywords', data.result?.keywords);
+      console.log('[loadResult]data.result.logo_url', data.result?.logo_url);
+      console.log('[loadResult]restaurants address', data.restaurants?.[0]?.address);
+    } catch (error) {
+      console.error('결과 로딩 실패:', error);
+      setResult(null);
+      setCurrentAddress('주소 정보를 가져올 수 없습니다');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [text, lat, lng, types]);
 
   useEffect(() => {
-    const fetchResult = async () => {
-      try {
-        const text = searchParams.get('text');
-        const lat = searchParams.get('lat');
-        const lng = searchParams.get('lng');
-        const types = searchParams.get('types');
+    if (text && lat && lng && types) {
+      loadResult();
+    }
+  }, [text, lat, lng, types, loadResult]);
 
-        if (!text || !lat || !lng || !types) {
-          setError('필수 파라미터가 누락되었습니다.');
-          setLoading(false);
-          return;
-        }
+  const handleRetry = () => {
+    router.push('/');
+  };
 
-        const url = `/api/v1/recommend_result?text=${text}&lat=${lat}&lng=${lng}&mode=recommend&rand=${Date.now()}`;
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error('추천 결과를 가져오는데 실패했습니다.');
-        }
 
-        const data = await response.json();
-        setResult(data.result || data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchResult();
-  }, [searchParams]);
-
-  if (loading) {
+  if (isLoading) {
     return (
-      <Container maxWidth="md">
+      <Container>
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 8 }}>
           <CircularProgress />
         </Box>
@@ -92,9 +150,25 @@ function RecommendResultContent() {
     );
   }
 
+  if (!result) {
+    return (
+      <Container>
+        <Main>
+          <ErrorDisplay 
+            title="결과를 불러오는데 실패했습니다"
+            message="네트워크 연결을 확인하거나 잠시 후 다시 시도해주세요.\n문제가 지속되면 다른 방법으로 시도해보세요."
+            onRetry={handleRetry}
+            retryButtonText="다시 시도하기"
+            homeButtonText="홈으로 돌아가기"
+          />
+        </Main>
+      </Container>
+    );
+  }
+
   if (error) {
     return (
-      <Container maxWidth="md">
+      <Container>
         <Box sx={{ mt: 8 }}>
           <Alert severity="error">{error}</Alert>
         </Box>
@@ -102,32 +176,44 @@ function RecommendResultContent() {
     );
   }
 
-  if (!result) {
-    return (
-      <Container maxWidth="md">
-        <Box sx={{ mt: 8 }}>
-          <Alert severity="warning">추천 결과가 없습니다.</Alert>
-        </Box>
-      </Container>
-    );
-  }
+  console.log('result', result);
 
   // restaurant info 추출
   const restaurant = result.restaurants && result.restaurants.length > 0 ? result.restaurants[0] : null;
+
+  console.log('restaurant', restaurant);
+
   const logoUrl = restaurant && restaurant.logo_url ? restaurant.logo_url : '/image/default_store_logo.png';
+
+  console.log('logoUrl', logoUrl);
+
+
   const reviewAvg = restaurant && restaurant.review_avg ? restaurant.review_avg : null;
+
+  console.log('reviewAvg', reviewAvg);
+
   const address = restaurant && restaurant.address ? restaurant.address : result.address;
+
+  console.log('address', address);
+
   const storeName = (restaurant && restaurant.name) || result.result?.store || '';
 
+
+  console.log('storeName', storeName);
   const shareTitle = `🍽️ ${storeName} 추천!`;
   const shareDescription = `${result.result?.description || ''}\n\n📍 ${address}\n🏷️ ${result.result?.category || ''}`;
 
   return (
-    <Container maxWidth="md">
+    <Container>
+      <Main>
+    <Heading>
+      <h2>당신에게 딱 맞는 음식은?</h2>
+      </Heading>
       <Box sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center">
-          🎉 추천 결과
+        <Typography variant="h4" component="h3" gutterBottom align="center">
+          오늘의 추천 가게: {storeName}
         </Typography>
+
 
         <Paper elevation={3} sx={{ p: 4, mt: 3 }}>
           <Card>
@@ -147,7 +233,7 @@ function RecommendResultContent() {
                   onError={(e) => { (e.target as HTMLImageElement).src = '/image/default_store_logo.png'; }}
                 />
                 <Box>
-                  <Typography variant="h5" component="h2" gutterBottom>
+                  <Typography variant="h5" component="h4" gutterBottom>
                     {storeName}
                   </Typography>
                   {reviewAvg && (
@@ -166,11 +252,18 @@ function RecommendResultContent() {
                 <Typography variant="subtitle1" gutterBottom>
                   카테고리:
                 </Typography>
-                <Chip 
-                  label={result.result?.category || ''} 
-                  color="primary" 
-                  variant="outlined"
-                />
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {(result.result?.category || '')
+                    .split(',')
+                    .map((cat, idx) => (
+                      <Chip
+                        key={idx}
+                        label={cat.trim()}
+                        color="primary"
+                        variant="outlined"
+                      />
+                    ))}
+                </Box>
               </Box>
 
               {result.result?.keywords && result.result.keywords.length > 0 && (
@@ -193,7 +286,7 @@ function RecommendResultContent() {
 
               <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Typography variant="subtitle1" gutterBottom>
-                  📍 위치:
+                  📍 위치:{currentAddress}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {address}
@@ -230,6 +323,7 @@ function RecommendResultContent() {
           </button>
         </Box>
       </Box>
+      </Main>
     </Container>
   );
 }
