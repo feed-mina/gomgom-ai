@@ -205,7 +205,7 @@ function TestResultContent() {
   const [result, setResult] = useState<TestResult | null>(null);
   const [currentAddress, setCurrentAddress] = useState<string>('로딩 중...');
   const [isLoading, setIsLoading] = useState(true);
-  const text = searchParams.get('text') || '===';
+  const text = searchParams.get('text') || '';
   const lat = searchParams.get('lat') || '';
   const lng = searchParams.get('lng') || '';
   const types = searchParams.get('types') || '';
@@ -259,6 +259,22 @@ function TestResultContent() {
     router.push('/');
   };
 
+  if (!text || !lat || !lng || !types) {
+    return (
+      <Container>
+        <Main>
+          <ErrorDisplay 
+            title="잘못된 접근입니다"
+            message="필수 정보가 누락되었습니다. 홈으로 돌아가 다시 시도해주세요."
+            onRetry={handleRetry}
+            retryButtonText="다시 시도하기"
+            homeButtonText="홈으로 돌아가기"
+          />
+        </Main>
+      </Container>
+    );
+  }
+
   if (isLoading) {
     return <Loading />;
   }
@@ -280,7 +296,9 @@ function TestResultContent() {
   }
 
   const shareTitle = `🎯 ${result.store} 테스트 결과!`;
-  const shareDescription = `${result.description}\n\n📍 ${currentAddress}\n🏷️ ${result.category}`;
+  const shareDescription = text
+    ? `${text}를 원한다면 ...`
+    : `당신에게 어울리는 추천 결과입니다!`;
 
   return (
     <Container>

@@ -15,6 +15,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  LinearProgress,
 } from '@mui/material';
 import { Search } from '@mui/icons-material';
 import { recipeApi } from '../../api/recipeApi';
@@ -27,6 +28,7 @@ export default function RecipeSearchPage() {
   const [query, setQuery] = useState('');
   const [cuisineType, setCuisineType] = useState<string>('all'); // 요리 타입 선택
   const [loading, setLoading] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchResult, setSearchResult] = useState<RecipeSearchResponse | null>(null);
   const router = useRouter();
@@ -51,6 +53,13 @@ export default function RecipeSearchPage() {
         cuisine_type: cuisineTypeParam
       });
 
+      // 먼저 기본 결과를 표시
+      setSearchResult(result);
+      setLoading(false);
+
+      // 번역은 백그라운드에서 진행
+      setTranslating(true);
+      
       // 번역할 텍스트 모으기
       const textsToTranslate: string[] = [];
       result.recipes.forEach((r) => {
@@ -64,7 +73,10 @@ export default function RecipeSearchPage() {
         r.dishTypes?.forEach((d) => textsToTranslate.push(d ?? ""));
         r.diets?.forEach((d) => textsToTranslate.push(d ?? ""));
       });
+
+      console.log(`번역 시작: ${textsToTranslate.length}개 텍스트`);
       const translated = await batchTranslate(textsToTranslate);
+      
       // 번역 결과 매핑
       let idx = 0;
       const translatedRecipes = result.recipes.map((r) => {
@@ -86,12 +98,16 @@ export default function RecipeSearchPage() {
           diets: diets_ko,
         };
       });
+      
+      // 번역된 결과로 업데이트
       setSearchResult({ ...result, recipes: translatedRecipes });
+      setTranslating(false);
+      
     } catch (err) {
       console.error('레시피 검색 오류:', err);
       setError('레시피 검색 중 오류가 발생했습니다.');
-    } finally {
       setLoading(false);
+      setTranslating(false);
     }
   };
 
@@ -150,6 +166,17 @@ export default function RecipeSearchPage() {
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
           {error}
+        </Alert>
+      )}
+
+      {translating && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <CircularProgress size={20} />
+            <Typography>
+              한국어 번역 중... 잠시만 기다려주세요.
+            </Typography>
+          </Box>
         </Alert>
       )}
 

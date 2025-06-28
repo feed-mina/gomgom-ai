@@ -84,35 +84,34 @@ function RecommendResultContent() {
   const [currentAddress, setCurrentAddress] = useState<string>('로딩 중...');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const text = searchParams.get('text') || '===';
+  const text = searchParams.get('text') || '';
   const lat = searchParams.get('lat') || '';
   const lng = searchParams.get('lng') || '';
   const types = searchParams.get('types') || '';
 
+  // handleRetry는 먼저 선언
+  const handleRetry = () => {
+    router.push('/');
+  };
 
+  // 모든 Hook은 최상단에서 호출
   const loadResult = useCallback(async () => {
     try {
       const response = await apiClient.get('/api/v1/recommend_result/', {
         params: { text, lat, lng, types }
       });
-      
       const data = response.data;
-      
       if (data.error) {
         throw new Error(data.detail || data.error);
       }
-      
       if (!data || !data.result) {
         throw new Error('Invalid response format');
       }
-
       setResult(data.result);
-      
       const address = data.restaurants && data.restaurants.length > 0
-      ? data.restaurants[0].address
-      : data.address || data.result?.address || '입력필요';
-    setCurrentAddress(address);
-      
+        ? data.restaurants[0].address
+        : data.address || data.result?.address || '입력필요';
+      setCurrentAddress(address);
       console.log('[loadResult]data.result.address', data.result?.address);
       console.log('[loadResult]data.result.store', data.result?.store);
       console.log('[loadResult]data.result.description', data.result?.description);
@@ -135,10 +134,22 @@ function RecommendResultContent() {
     }
   }, [text, lat, lng, types, loadResult]);
 
-  const handleRetry = () => {
-    router.push('/');
-  };
-
+  // 조건부 렌더링은 Hook 호출 이후에만!
+  if (!text || !lat || !lng || !types) {
+    return (
+      <Container>
+        <Main>
+          <ErrorDisplay 
+            title="잘못된 접근입니다"
+            message="필수 정보가 누락되었습니다. 홈으로 돌아가 다시 시도해주세요."
+            onRetry={handleRetry}
+            retryButtonText="다시 시도하기"
+            homeButtonText="홈으로 돌아가기"
+          />
+        </Main>
+      </Container>
+    );
+  }
 
   if (isLoading) {
     return (
