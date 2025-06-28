@@ -32,7 +32,7 @@ const Title = styled.div`
 const TitleText = styled.h2`
   font-size: 2rem;
   color: #6B4E71;
-  
+  font-weight: 700;
   @media (max-width: 768px) {
     font-size: 1.5rem;
   }
@@ -86,6 +86,7 @@ margin-top: 2rem;
   border: none;
   border-radius: 0.5rem;
   font-size: 1.2rem;
+  font-weight: 700;
   cursor: pointer;
   transition: background-color 0.3s;
 

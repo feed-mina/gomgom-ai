@@ -5,7 +5,7 @@ from app.core.config import settings
 from app.utils.translator import translator
 from app.utils.error_handler import safe_execute_async, log_api_request
 from app.utils.korean_recipe_crawler import korean_recipe_crawler
-from app.utils.korean_recipe_crawler2 import korean_recipe_crawler2
+# from app.utils.korean_recipe_crawler2 import korean_recipe_crawler2
 import logging
 import re
 import time
@@ -41,25 +41,17 @@ class SpoonacularClient:
         return is_korean
     
     async def _try_korean_crawler(self, query: str, number: int) -> List[Dict[str, Any]]:
-        """한식 크롤러를 사용하여 레시피를 검색합니다. 두 크롤러를 순차적으로 시도합니다."""
+        """한식 크롤러를 사용하여 레시피를 검색합니다."""
         try:
             logger.info(f"🍜 한식 전용 크롤러로 검색 시도: '{query}'")
             
-            # 첫 번째 크롤러 시도
             logger.info("🔄 KoreanRecipeCrawler로 검색 시도...")
             crawled_recipes = await korean_recipe_crawler.search_recipes(query, number)
             if crawled_recipes:
                 logger.info(f"✅ KoreanRecipeCrawler에서 {len(crawled_recipes)}개 레시피 발견")
                 return crawled_recipes
             
-            # 첫 번째 크롤러에서 결과가 없으면 두 번째 크롤러 시도
-            logger.info("🔄 KoreanRecipeCrawler2로 검색 시도...")
-            crawled_recipes2 = await korean_recipe_crawler2.search_recipes(query, number)
-            if crawled_recipes2:
-                logger.info(f"✅ KoreanRecipeCrawler2에서 {len(crawled_recipes2)}개 레시피 발견")
-                return crawled_recipes2
-            
-            logger.info("❌ 두 한식 크롤러 모두에서 결과를 찾을 수 없습니다.")
+            logger.info("❌ 한식 크롤러에서 결과를 찾을 수 없습니다.")
             return []
             
         except Exception as e:

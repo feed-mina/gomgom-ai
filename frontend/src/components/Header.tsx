@@ -141,7 +141,7 @@ export default function Header() {
           <Typography 
             variant="h6" 
             component="div" 
-            sx={{ flexGrow: 1, cursor: 'pointer', color: '#333', 'fontWeight': 700 }}
+            sx={{ flexGrow: 1, cursor: 'pointer', color: '#fff', 'fontWeight': 700 }}
             onClick={() => window.location.href = '/'}
           >
             GomGom AI
@@ -150,10 +150,10 @@ export default function Header() {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, minHeight: '36px' }}>
             {loading ? null : user ? (
               <>
-                <Typography sx={{ color: '#333' }}>
+                <Typography sx={{ color: '#333', 'fontWeight': 700 }}>
                   {user.full_name}님, 환영합니다!
                 </Typography>
-                <Button color="inherit" onClick={handleLogout} sx={{ color: '#333' }}>
+                <Button color="inherit" onClick={handleLogout} sx={{ color: '#333', 'fontWeight': 700 }}>
                   로그아웃
                 </Button>
               </>

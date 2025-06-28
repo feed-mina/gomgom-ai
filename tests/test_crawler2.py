@@ -4,7 +4,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from app.utils.korean_recipe_crawler2 import korean_recipe_crawler2
+from app.utils.korean_recipe_crawler import korean_recipe_crawler
 from app.utils.external_apis import spoonacular_client
 
 async def test_korean_crawler():
@@ -19,10 +19,10 @@ async def test_korean_crawler():
         "불고기"
     ]
     for query in test_queries:
-        print(f"\n�� 크롤링 테스트: '{query}'")
+        print(f"\n🍜 크롤링 테스트: '{query}'")
         print("-" * 40)
         try:
-            recipes = await korean_recipe_crawler2.search_recipes(query, 3)
+            recipes = await korean_recipe_crawler.search_recipes(query, 3)
             print(f"✅ 크롤링 결과: {len(recipes)}개 레시피 발견")
             for i, recipe in enumerate(recipes[:2], 1):
                 title = recipe.get('title', '제목 없음')
@@ -49,7 +49,7 @@ async def test_integrated_search():
     ]
     for query, cuisine_type in test_queries:
         cuisine_display = cuisine_type if cuisine_type else "모든 요리"
-        print(f"\n�� 통합 검색 테스트: '{query}' (cuisine_type: {cuisine_display})")
+        print(f"\n🌐 통합 검색 테스트: '{query}' (cuisine_type: {cuisine_display})")
         print("-" * 40)
         try:
             recipes = await spoonacular_client.search_recipes(

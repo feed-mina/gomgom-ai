@@ -112,7 +112,10 @@ const ResultImage = styled(Image)`
 
 const SideInfo = styled.div`
   flex: 1;
-
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    align-items: center;
   height: 15rem;
   h2 {
     font-size: 1.5rem;
@@ -143,9 +146,10 @@ const SelectedDescription = styled.p`
 `;
 
 const InfoText = styled.div`
-    // display: flex;
-    // flex-direction: column;
-    // align-items: center;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   background-color: #FFE8EE;
   border-radius: 0.75rem;
   padding: 1rem;
@@ -304,10 +308,10 @@ function TestResultContent() {
             <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>입력 텍스트:</span> {text}</div>
           )}
           <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>테스트 결과:</span> {types}</div>
-          <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>카테고리:</span> {result.category}</div>
-          <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>키워드:</span> {result.keywords.join(', ')}</div>
+          <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>카테고리:</span> {result?.category || ''}</div>
+          <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>키워드:</span> {result?.keywords?.join(', ') || ''}</div>
           <StoreLogo
-            src={result.logo_url}
+            src={result?.logo_url || '/image/default_store_logo.png'}
             alt="추천 가게 로고"
             width={100}
             height={100}

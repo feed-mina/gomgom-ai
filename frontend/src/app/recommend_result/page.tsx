@@ -117,10 +117,10 @@ function RecommendResultContent() {
   const logoUrl = restaurant && restaurant.logo_url ? restaurant.logo_url : '/image/default_store_logo.png';
   const reviewAvg = restaurant && restaurant.review_avg ? restaurant.review_avg : null;
   const address = restaurant && restaurant.address ? restaurant.address : result.address;
-  const storeName = (restaurant && restaurant.name) || result.result.store || result.result?.store || '';
+  const storeName = (restaurant && restaurant.name) || result.result?.store || '';
 
   const shareTitle = `🍽️ ${storeName} 추천!`;
-  const shareDescription = `${result.result.description}\n\n📍 ${address}\n🏷️ ${result.result.category}`;
+  const shareDescription = `${result.result?.description || ''}\n\n📍 ${address}\n🏷️ ${result.result?.category || ''}`;
 
   return (
     <Container maxWidth="md">
@@ -159,7 +159,7 @@ function RecommendResultContent() {
               </Box>
 
               <Typography variant="body1" color="text.secondary" paragraph>
-                {result.result.description}
+                {result.result?.description || ''}
               </Typography>
 
               <Box sx={{ mb: 2 }}>
@@ -167,13 +167,13 @@ function RecommendResultContent() {
                   카테고리:
                 </Typography>
                 <Chip 
-                  label={result.result.category} 
+                  label={result.result?.category || ''} 
                   color="primary" 
                   variant="outlined"
                 />
               </Box>
 
-              {result.result.keywords && result.result.keywords.length > 0 && (
+              {result.result?.keywords && result.result.keywords.length > 0 && (
                 <Box sx={{ mb: 2 }}>
                   <Typography variant="subtitle1" gutterBottom>
                     키워드:
