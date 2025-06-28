@@ -5,6 +5,7 @@ from app.core.config import settings
 from app.utils.translator import translator
 from app.utils.error_handler import safe_execute_async, log_api_request
 from app.utils.korean_recipe_crawler import korean_recipe_crawler
+from app.utils.korean_recipe_crawler2 import korean_recipe_crawler2
 import logging
 import re
 import time
@@ -24,18 +25,73 @@ class SpoonacularClient:
         self.retry_delay = 0.5  # 재시도 지연 시간 단축
         self.enable_translation = False  # 번역 기능 비활성화로 속도 향상
     
+    def _is_korean_cuisine(self, cuisine_type: Optional[str]) -> bool:
+        """한식 요리인지 확인합니다."""
+        if not cuisine_type:
+            return False
+        
+        korean_keywords = ['korean', '한식', 'korea', 'korean cuisine']
+        is_korean = cuisine_type.lower() in korean_keywords
+        
+        if is_korean:
+            logger.info(f"한식 요리로 식별됨: '{cuisine_type}'")
+        else:
+            logger.info(f"한식이 아닌 요리로 식별됨: '{cuisine_type}' - KoreanRecipeCrawler 사용하지 않음")
+        
+        return is_korean
+    
+    async def _try_korean_crawler(self, query: str, number: int) -> List[Dict[str, Any]]:
+        """한식 크롤러를 사용하여 레시피를 검색합니다. 두 크롤러를 순차적으로 시도합니다."""
+        try:
+            logger.info(f"🍜 한식 전용 크롤러로 검색 시도: '{query}'")
+            
+            # 첫 번째 크롤러 시도
+            logger.info("🔄 KoreanRecipeCrawler로 검색 시도...")
+            crawled_recipes = await korean_recipe_crawler.search_recipes(query, number)
+            if crawled_recipes:
+                logger.info(f"✅ KoreanRecipeCrawler에서 {len(crawled_recipes)}개 레시피 발견")
+                return crawled_recipes
+            
+            # 첫 번째 크롤러에서 결과가 없으면 두 번째 크롤러 시도
+            logger.info("🔄 KoreanRecipeCrawler2로 검색 시도...")
+            crawled_recipes2 = await korean_recipe_crawler2.search_recipes(query, number)
+            if crawled_recipes2:
+                logger.info(f"✅ KoreanRecipeCrawler2에서 {len(crawled_recipes2)}개 레시피 발견")
+                return crawled_recipes2
+            
+            logger.info("❌ 두 한식 크롤러 모두에서 결과를 찾을 수 없습니다.")
+            return []
+            
+        except Exception as e:
+            logger.error(f"❌ 한식 크롤러 검색 중 오류: {e}")
+            return []
+
     async def search_recipes(self, query: str, number: int = 10, cuisine_type: Optional[str] = None) -> List[Dict[str, Any]]:
-        """레시피 검색 (재시도 로직 포함)"""
-        logger.info(f"레시피 검색 시작: query={query}, number={number}, cuisine_type={cuisine_type}")
+        """레시피를 검색합니다. 한식인 경우에만 KoreanRecipeCrawler를 사용합니다."""
+        logger.info(f"🔍 레시피 검색 시작: query='{query}', number={number}, cuisine_type='{cuisine_type}'")
+        
+        # 한식 여부 확인
+        is_korean = self._is_korean_cuisine(cuisine_type)
         
         # API 키 검증
         if not self.api_key:
-            logger.warning("Spoonacular API 키가 설정되지 않았습니다.")
-            return []
+            logger.warning("⚠️ Spoonacular API 키가 설정되지 않았습니다.")
+            # 한식인 경우에만 크롤러로 대체
+            if is_korean:
+                logger.info("🍜 API 키 없음 - 한식 크롤러로 대체")
+                return await self._try_korean_crawler(query, number)
+            else:
+                logger.warning("❌ API 키 없음 - 한식이 아니므로 크롤러 사용하지 않음")
+                return []
         
-        # 한글 쿼리를 영어로 번역 (실패해도 계속 진행)
-        english_query = await translator.translate_to_english(query)
-        logger.info(f"번역된 쿼리: '{query}' -> '{english_query}'")
+        # 영어로 번역 (한식이 아닌 경우에만)
+        english_query = query
+        if not is_korean:
+            try:
+                english_query = await translator.translate_to_english(query)
+                logger.info(f"🌐 쿼리 번역: '{query}' -> '{english_query}'")
+            except Exception as e:
+                logger.warning(f"⚠️ 쿼리 번역 실패, 원본 사용: {e}")
         
         url = f"{self.base_url}/complexSearch"
         params = {
@@ -44,63 +100,18 @@ class SpoonacularClient:
             "number": number,
             "addRecipeInformation": True,
             "fillIngredients": True,
-            "instructionsRequired": False  # 지시사항 필수 여부 비활성화로 속도 향상
+            "instructionsRequired": True
         }
         
-        # 요리 타입 필터링 추가
-        if cuisine_type:
-            cuisine_type_lower = cuisine_type.lower()
-            
-            # 한식 필터링
-            if cuisine_type_lower in ['korean', '한식', 'korea']:
-                params["cuisine"] = "korean"
-                params["tags"] = "korean"
-                logger.info("한식 필터링 적용됨")
-            
-            # 다른 요리 타입들 지원
-            elif cuisine_type_lower in ['chinese', '중식', 'china']:
-                params["cuisine"] = "chinese"
-                logger.info("중식 필터링 적용됨")
-            
-            elif cuisine_type_lower in ['japanese', '일식', 'japan']:
-                params["cuisine"] = "japanese"
-                logger.info("일식 필터링 적용됨")
-            
-            elif cuisine_type_lower in ['italian', '이탈리안', 'italy']:
-                params["cuisine"] = "italian"
-                logger.info("이탈리안 필터링 적용됨")
-            
-            elif cuisine_type_lower in ['mexican', '멕시칸', 'mexico']:
-                params["cuisine"] = "mexican"
-                logger.info("멕시칸 필터링 적용됨")
-            
-            elif cuisine_type_lower in ['indian', '인도', 'india']:
-                params["cuisine"] = "indian"
-                logger.info("인도 필터링 적용됨")
-            
-            elif cuisine_type_lower in ['thai', '태국', 'thailand']:
-                params["cuisine"] = "thai"
-                logger.info("태국 필터링 적용됨")
-            
-            elif cuisine_type_lower in ['french', '프랑스', 'france']:
-                params["cuisine"] = "french"
-                logger.info("프랑스 필터링 적용됨")
-            
-            elif cuisine_type_lower in ['american', '미국', 'usa']:
-                params["cuisine"] = "american"
-                logger.info("미국 필터링 적용됨")
-            
-            else:
-                # 알 수 없는 요리 타입인 경우 그대로 전달
-                params["cuisine"] = cuisine_type
-                logger.info(f"요리 타입 필터링 적용됨: {cuisine_type}")
-        
-        logger.info(f"API 요청 파라미터: {params}")
+        # 한식 필터링 추가
+        if is_korean:
+            params["cuisine"] = "Korean"
+            logger.info("🇰🇷 한식 필터링 적용됨")
         
         # 재시도 로직
         for attempt in range(self.max_retries):
             try:
-                logger.info(f"Spoonacular API 호출 (시도 {attempt + 1}/{self.max_retries}): {url}")
+                logger.info(f"🌐 Spoonacular API 호출 (시도 {attempt + 1}/{self.max_retries}): {url}")
                 start_time = time.time()
                 
                 async with httpx.AsyncClient(
@@ -117,45 +128,28 @@ class SpoonacularClient:
                         data = response.json()
                         recipes = data.get("results", [])
                         total_results = data.get("totalResults", 0)
-                        logger.info(f"Spoonacular API 응답: totalResults={total_results}, results={len(recipes)}개")
+                        logger.info(f"✅ Spoonacular API 응답: totalResults={total_results}, results={len(recipes)}개")
                         
                         if len(recipes) == 0:
-                            logger.warning(f"검색 결과가 없습니다. 쿼리: '{english_query}'")
+                            logger.warning(f"⚠️ 검색 결과가 없습니다. 쿼리: '{english_query}'")
                             
-                            # 한식 필터링이 적용된 경우 만개의레시피에서 보완 검색
-                            if cuisine_type and cuisine_type.lower() in ['korean', '한식', 'korea']:
-                                logger.info("한식 결과가 없어 만개의레시피에서 보완 검색을 시도합니다.")
-                                try:
-                                    crawled_recipes = await korean_recipe_crawler.search_recipes(query, number)
-                                    if crawled_recipes:
-                                        logger.info(f"만개의레시피에서 {len(crawled_recipes)}개 레시피 발견")
-                                        return crawled_recipes
-                                    else:
-                                        logger.info("만개의레시피에서도 결과를 찾을 수 없습니다.")
-                                except Exception as e:
-                                    logger.error(f"만개의레시피 크롤링 중 오류: {e}")
+                            # 한식인 경우에만 크롤러 사용
+                            if is_korean:
+                                logger.info("🍜 한식 결과가 없어 만개의레시피에서 보완 검색을 시도합니다.")
+                                return await self._try_korean_crawler(query, number)
+                            else:
+                                logger.info("🌐 한식이 아니므로 크롤러 사용하지 않음")
                             
-                            # 원본 쿼리로 다시 시도
+                            # 한식이 아닌 경우 원본 쿼리로 재시도
                             if query != english_query:
-                                logger.info(f"원본 쿼리로 재시도: '{query}'")
+                                logger.info(f"🔄 원본 쿼리로 재시도: '{query}'")
                                 params["query"] = query
                                 response = await client.get(url, params=params)
                                 if response.status_code == 200:
                                     data = response.json()
                                     recipes = data.get("results", [])
                                     total_results = data.get("totalResults", 0)
-                                    logger.info(f"원본 쿼리 재시도 결과: totalResults={total_results}, results={len(recipes)}개")
-                                    
-                                    # 여전히 결과가 없고 한식인 경우 크롤링 시도
-                                    if len(recipes) == 0 and cuisine_type and cuisine_type.lower() in ['korean', '한식', 'korea']:
-                                        logger.info("원본 쿼리로도 결과가 없어 만개의레시피에서 보완 검색을 시도합니다.")
-                                        try:
-                                            crawled_recipes = await korean_recipe_crawler.search_recipes(query, number)
-                                            if crawled_recipes:
-                                                logger.info(f"만개의레시피에서 {len(crawled_recipes)}개 레시피 발견")
-                                                return crawled_recipes
-                                        except Exception as e:
-                                            logger.error(f"만개의레시피 크롤링 중 오류: {e}")
+                                    logger.info(f"✅ 원본 쿼리 재시도 결과: totalResults={total_results}, results={len(recipes)}개")
                         
                         # 번역 기능이 활성화된 경우에만 번역 수행
                         if self.enable_translation:
@@ -163,52 +157,82 @@ class SpoonacularClient:
                                 translated_recipes = await self._translate_recipes_parallel(recipes)
                                 return translated_recipes
                             except Exception as e:
-                                logger.warning(f"번역 중 오류 발생, 원본 데이터 반환: {e}")
+                                logger.warning(f"⚠️ 번역 중 오류 발생, 원본 데이터 반환: {e}")
                                 return recipes
                         else:
                             # 번역 없이 원본 데이터 반환 (속도 향상)
                             return recipes
                     
                     elif response.status_code == 429:  # Rate limit
-                        logger.warning(f"Rate limit 도달 (시도 {attempt + 1}): {response.status_code}")
+                        logger.warning(f"⚠️ Rate limit 도달 (시도 {attempt + 1}): {response.status_code}")
                         if attempt < self.max_retries - 1:
                             await asyncio.sleep(self.retry_delay * (2 ** attempt))  # 지수 백오프
                             continue
                         else:
-                            logger.error("최대 재시도 횟수 초과")
-                            return []
+                            logger.error("❌ 최대 재시도 횟수 초과")
+                            # 한식인 경우에만 크롤러로 대체
+                            if is_korean:
+                                logger.info("🍜 Rate limit 초과 - 한식 크롤러로 대체")
+                                return await self._try_korean_crawler(query, number)
+                            else:
+                                logger.warning("❌ Rate limit 초과 - 한식이 아니므로 크롤러 사용하지 않음")
+                                return []
                     
                     else:
-                        logger.error(f"Spoonacular API 오류: {response.status_code} - {response.text}")
+                        logger.error(f"❌ Spoonacular API 오류: {response.status_code} - {response.text}")
                         if attempt < self.max_retries - 1:
                             await asyncio.sleep(self.retry_delay)
                             continue
                         else:
-                            return []
+                            # 한식인 경우에만 크롤러로 대체
+                            if is_korean:
+                                logger.info("🍜 API 오류 - 한식 크롤러로 대체")
+                                return await self._try_korean_crawler(query, number)
+                            else:
+                                logger.warning("❌ API 오류 - 한식이 아니므로 크롤러 사용하지 않음")
+                                return []
             
             except httpx.TimeoutException as e:
-                logger.error(f"Spoonacular API 호출 타임아웃 (시도 {attempt + 1}): {e}")
+                logger.error(f"⏰ Spoonacular API 호출 타임아웃 (시도 {attempt + 1}): {e}")
                 if attempt < self.max_retries - 1:
                     await asyncio.sleep(self.retry_delay)
                     continue
                 else:
-                    return []
+                    # 한식인 경우에만 크롤러로 대체
+                    if is_korean:
+                        logger.info("🍜 타임아웃 - 한식 크롤러로 대체")
+                        return await self._try_korean_crawler(query, number)
+                    else:
+                        logger.warning("❌ 타임아웃 - 한식이 아니므로 크롤러 사용하지 않음")
+                        return []
             
             except httpx.ConnectError as e:
-                logger.error(f"Spoonacular API 연결 오류 (시도 {attempt + 1}): {e}")
+                logger.error(f"🔌 Spoonacular API 연결 오류 (시도 {attempt + 1}): {e}")
                 if attempt < self.max_retries - 1:
                     await asyncio.sleep(self.retry_delay)
                     continue
                 else:
-                    return []
+                    # 한식인 경우에만 크롤러로 대체
+                    if is_korean:
+                        logger.info("🍜 연결 오류 - 한식 크롤러로 대체")
+                        return await self._try_korean_crawler(query, number)
+                    else:
+                        logger.warning("❌ 연결 오류 - 한식이 아니므로 크롤러 사용하지 않음")
+                        return []
             
             except Exception as e:
-                logger.error(f"Spoonacular API 호출 중 예상치 못한 오류 (시도 {attempt + 1}): {e}")
+                logger.error(f"💥 Spoonacular API 호출 중 예상치 못한 오류 (시도 {attempt + 1}): {e}")
                 if attempt < self.max_retries - 1:
                     await asyncio.sleep(self.retry_delay)
                     continue
                 else:
-                    return []
+                    # 한식인 경우에만 크롤러로 대체
+                    if is_korean:
+                        logger.info("🍜 예상치 못한 오류 - 한식 크롤러로 대체")
+                        return await self._try_korean_crawler(query, number)
+                    else:
+                        logger.warning("❌ 예상치 못한 오류 - 한식이 아니므로 크롤러 사용하지 않음")
+                        return []
         
         return []
     

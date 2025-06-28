@@ -21,6 +21,7 @@ import { recipeApi } from '../../api/recipeApi';
 import { RecipeSearchResponse } from '../../types/recipe';
 import { RecipeCard } from '../../components/RecipeCard';
 import { useRouter } from 'next/navigation';
+import { batchTranslate } from '../../types/translate';
 
 export default function RecipeSearchPage() {
   const [query, setQuery] = useState('');
@@ -45,12 +46,47 @@ export default function RecipeSearchPage() {
       
       const result = await recipeApi.searchRecipes({
         query: query.trim(),
-        number: 10,
+        number: 3,
         include_price: true,
         cuisine_type: cuisineTypeParam
       });
 
-      setSearchResult(result);
+      // 번역할 텍스트 모으기
+      const textsToTranslate: string[] = [];
+      result.recipes.forEach((r) => {
+        textsToTranslate.push(
+          r.title ?? "",
+          r.summary ?? "",
+          r.difficulty ?? ""
+        );
+        r.ingredients?.forEach((i) => textsToTranslate.push(i.name ?? ""));
+        r.cuisines?.forEach((c) => textsToTranslate.push(c ?? ""));
+        r.dishTypes?.forEach((d) => textsToTranslate.push(d ?? ""));
+        r.diets?.forEach((d) => textsToTranslate.push(d ?? ""));
+      });
+      const translated = await batchTranslate(textsToTranslate);
+      // 번역 결과 매핑
+      let idx = 0;
+      const translatedRecipes = result.recipes.map((r) => {
+        const title_ko = translated[idx++];
+        const summary_ko = translated[idx++];
+        const difficulty_ko = translated[idx++];
+        const ingredients_ko = r.ingredients?.map(() => translated[idx++]) || [];
+        const cuisines_ko = r.cuisines?.map(() => translated[idx++]) || [];
+        const dishTypes_ko = r.dishTypes?.map(() => translated[idx++]) || [];
+        const diets_ko = r.diets?.map(() => translated[idx++]) || [];
+        return {
+          ...r,
+          title: title_ko,
+          summary: summary_ko,
+          difficulty: difficulty_ko,
+          ingredients: r.ingredients?.map((i, iidx) => ({ ...i, name: ingredients_ko[iidx] })) || [],
+          cuisines: cuisines_ko,
+          dishTypes: dishTypes_ko,
+          diets: diets_ko,
+        };
+      });
+      setSearchResult({ ...result, recipes: translatedRecipes });
     } catch (err) {
       console.error('레시피 검색 오류:', err);
       setError('레시피 검색 중 오류가 발생했습니다.');
@@ -140,7 +176,7 @@ export default function RecipeSearchPage() {
               <Grid item xs={12} sm={6} md={4} key={index}>
                 <RecipeCard
                   recipe={recipe}
-                  onClick={() => router.push(`/recipe_card?id=${recipe.id}&query=${encodeURIComponent(query)}`)}
+                  onClick={() => router.push(`/recipe_card?id=${recipe.id}&query=${encodeURIComponent(String(query))}`)}
                 />
               </Grid>
             ))}

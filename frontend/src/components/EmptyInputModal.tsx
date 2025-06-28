@@ -10,7 +10,7 @@ const EmptyInputModal: React.FC<EmptyInputModalProps> = ({ onClose, onConfirm })
   return (
     <Modal>
       <ModalContent>
-        <p>바로 입맛 테스트를 진행할까요?</p>
+        <p>바로 GomGom-AI 심리테스트를 진행할까요?</p>
         <ButtonGroup>
           <Button onClick={onConfirm}>네</Button>
           <Button onClick={onClose}>아니요</Button>
@@ -63,7 +63,7 @@ const ButtonGroup = styled.div`
 `;
 
 const Button = styled.button`
-  background: #007bff;
+  background: lightseagreen;
   color: white;
   border: none;
   padding: 0.5rem 1rem;

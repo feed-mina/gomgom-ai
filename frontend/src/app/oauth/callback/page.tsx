@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   Container,
@@ -11,10 +11,12 @@ import {
   Alert
 } from '@mui/material';
 import apiClient from '../../../utils/apiClient';
+import LoadingFallback from '../../../components/LoadingFallback';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-export default function OAuthCallbackPage() {
+// OAuth 콜백 처리 컴포넌트
+function OAuthCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -97,4 +99,13 @@ export default function OAuthCallbackPage() {
   }
 
   return null;
+}
+
+// 메인 페이지 컴포넌트
+export default function OAuthCallbackPage() {
+  return (
+    <Suspense fallback={<LoadingFallback message="로그인 처리 중..." variant="card" containerMaxWidth="sm" />}>
+      <OAuthCallbackContent />
+    </Suspense>
+  );
 } 

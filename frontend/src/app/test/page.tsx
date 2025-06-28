@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import styled from '@emotion/styled';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Header from '@/components/Header';
+
 import Loading from '@/components/Loading';
 import { Question } from '@/types';
 
@@ -55,7 +55,7 @@ const questions: Question[] = [
 
 const Container = styled.div`
   min-height: 100vh;
-  background-color: #FAF0D7;
+  background-color: seashell;
 `;
 
 const Main = styled.main`
@@ -71,6 +71,8 @@ const Main = styled.main`
 
 const Title = styled.div`
   margin-bottom: 2rem;
+    display: flex;
+    justify-content: center;
 `;
 
 const RabbitImage = styled(Image)`
@@ -164,7 +166,6 @@ function TestPage() {
 
   return (
     <Container>
-      <Header />
       <Main>
         <Title>
           <RabbitImage

@@ -11,7 +11,7 @@ const ConfirmModal: React.FC<ConfirmModalProps> = ({ onClose, onConfirm, onTest 
   return (
     <Modal>
       <ModalContent>
-        <p>입맛 테스트도 해보시겠어요?</p>
+        <p>GomGom-AI 심리테스트도 해보시겠어요?</p>
         <ButtonGroup>
           <Button onClick={onTest}>네</Button>
           <Button onClick={onConfirm}>아니요</Button>
@@ -64,7 +64,7 @@ const ButtonGroup = styled.div`
 `;
 
 const Button = styled.button`
-  background: #007bff;
+  background: lightseagreen;
   color: white;
   border: none;
   padding: 0.5rem 1rem;

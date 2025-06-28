@@ -136,12 +136,12 @@ export default function Header() {
 
   return (
     <>
-      <AppBar position="static" sx={{ backgroundColor: '#FFF0F5' }}>
+      <AppBar position="static" sx={{ backgroundColor: 'lightpink' }}>
         <Toolbar>
           <Typography 
             variant="h6" 
             component="div" 
-            sx={{ flexGrow: 1, cursor: 'pointer', color: '#333' }}
+            sx={{ flexGrow: 1, cursor: 'pointer', color: '#333', 'fontWeight': 700 }}
             onClick={() => window.location.href = '/'}
           >
             GomGom AI

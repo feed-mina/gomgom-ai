@@ -1,12 +1,14 @@
 'use client';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { recipeApi } from '../../api/recipeApi';
 import { Card, CircularProgress, Alert, Button } from '@mui/material';
 import { RecipeRecommendation } from '../../types/recipe';
-import { RecipeCard } from '../../components/RecipeCard';
+import { RecipeDetailCard } from '../../components/RecipeDetailCard';
+import LoadingFallback from '../../components/LoadingFallback';
 
-export default function RecipeDetailPage() {
+// 레시피 상세 처리 컴포넌트
+function RecipeDetailContent() {
   const params = useSearchParams();
   const router = useRouter();
   const id = params.get('id');
@@ -97,7 +99,16 @@ export default function RecipeDetailPage() {
 
   return (
     <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
-      <RecipeCard recipe={recipe} />
+      <RecipeDetailCard recipe={recipe} />
     </div>
+  );
+}
+
+// 메인 페이지 컴포넌트
+export default function RecipeDetailPage() {
+  return (
+    <Suspense fallback={<LoadingFallback message="레시피를 불러오는 중..." variant="centered" />}>
+      <RecipeDetailContent />
+    </Suspense>
   );
 }

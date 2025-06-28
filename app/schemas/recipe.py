@@ -72,7 +72,7 @@ class RecipeRecommendation(BaseModel):
 
 class RecipeSearchRequest(BaseModel):
     query: str = Field(..., description="검색할 레시피 이름")
-    number: int = Field(10, ge=1, le=50, description="반환할 레시피 개수")
+    number: int = Field(3, ge=1, le=50, description="반환할 레시피 개수")
     include_price: bool = Field(False, description="가격 정보 포함 여부")
     max_cooking_time: Optional[int] = Field(None, ge=1, description="최대 조리 시간 (분)")
     cuisine_type: Optional[str] = Field(None, description="요리 타입")

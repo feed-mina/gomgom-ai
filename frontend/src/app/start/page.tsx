@@ -4,15 +4,16 @@ import { useEffect, useState, Suspense } from 'react';
 import styled from '@emotion/styled';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Header from '@/components/Header';
+
 import Loading from '@/components/Loading';
 
 const Container = styled.div`
   min-height: 100vh;
-  background-color: #FAF0D7;
+  background-color: ivory;
 `;
 
 const Main = styled.main`
+    margin-top: 8rem;
   max-width: 50rem;
   margin: 0 auto;
   padding: 2rem;
@@ -24,6 +25,7 @@ const Main = styled.main`
 `;
 
 const Title = styled.div`
+    margin-top: 5rem;
   margin-bottom: 2rem;
 `;
 
@@ -38,7 +40,8 @@ const TitleText = styled.h2`
 
 const Box = styled.div`
   margin: 2rem 0;
-  
+    display: flex;
+    justify-content: center;
   @media (max-width: 768px) {
     margin: 1.5rem 0;
   }
@@ -76,6 +79,7 @@ const SavedText = styled.p`
 `;
 
 const NextButton = styled.button`
+margin-top: 2rem;
   background-color: #8CC0DE;
   color: white;
   padding: 1rem 2rem;
@@ -117,10 +121,9 @@ function StartContent() {
 
   return (
     <Container>
-      <Header />
       <Main>
         <Title>
-          <TitleText>입맛 테스트</TitleText>
+          <TitleText>GomGom-AI 심리테스트</TitleText>
         </Title>
         <Box>
           <RabbitImage
@@ -130,7 +133,7 @@ function StartContent() {
             height={285}
           />
         </Box>
-        <WelcomeText>🐰 입맛 테스트에 오신 걸 환영합니다!</WelcomeText>
+        <WelcomeText>🐰 GomGom-AI 심리테스트에 오신 걸 환영합니다!</WelcomeText>
         {text && <SavedText><strong>입력된 텍스트: {text}</strong></SavedText>}
         <NextButton onClick={handleNext}>다음으로</NextButton>
       </Main>

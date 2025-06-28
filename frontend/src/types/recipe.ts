@@ -10,6 +10,32 @@ export interface RecipeInstruction {
   number?: number;
 }
 
+export interface AnalyzedInstructionStep {
+  number: number;
+  step: string;
+  ingredients?: Array<{
+    id: number;
+    name: string;
+    localizedName?: string;
+    image?: string;
+  }>;
+  equipment?: Array<{
+    id: number;
+    name: string;
+    localizedName?: string;
+    image?: string;
+  }>;
+  length?: {
+    number: number;
+    unit: string;
+  };
+}
+
+export interface AnalyzedInstructionGroup {
+  name?: string;
+  steps: AnalyzedInstructionStep[];
+}
+
 export interface RecipeNutrition {
   calories?: number;
   protein?: number;
@@ -33,6 +59,7 @@ export interface RecipeRecommendation {
   sourceUrl?: string;
   ingredients?: RecipeIngredient[];
   instructions?: RecipeInstruction[] | string;
+  analyzedInstructions?: AnalyzedInstructionGroup[];
   nutrition?: RecipeNutrition;
   cooking_time?: number;
   servings?: number;
@@ -40,6 +67,14 @@ export interface RecipeRecommendation {
   source: string;
   total_cost?: number;
   currency: string;
+  pricePerServing?: number;
+  aggregateLikes?: number;
+  vegetarian?: boolean;
+  vegan?: boolean;
+  glutenFree?: boolean;
+  dairyFree?: boolean;
+  veryHealthy?: boolean;
+  cheap?: boolean;
   [key: string]: any;
 }
 

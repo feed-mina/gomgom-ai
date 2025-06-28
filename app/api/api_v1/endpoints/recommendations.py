@@ -37,7 +37,7 @@ async def health_check():
 @router.get("/search", response_model=RecipeSearchResponse)
 async def search_recipes_get(
     query: str = Query(..., description="검색할 레시피 이름"),
-    number: int = Query(10, ge=1, le=50, description="반환할 레시피 개수"),
+    number: int = Query(3, ge=1, le=50, description="반환할 레시피 개수"),
     include_price: Optional[str] = Query("false", description="가격 정보 포함 여부"),
     max_cooking_time: Optional[int] = Query(None, ge=1, description="최대 조리 시간 (분)"),
     cuisine_type: Optional[str] = Query(None, description="요리 타입")

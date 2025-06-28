@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.api_v1.endpoints import recipes, recommendations, location, auth, ingredients, restaurants, recommend_result, test_result
+from app.api.api_v1.endpoints import recipes, recommendations, location, auth, ingredients, restaurants, recommend_result, test_result, translate
 
 api_router = APIRouter()
 
@@ -94,6 +94,17 @@ api_router.include_router(
     tags=["test_result"],
     responses={
         404: {"description": "Test result not found"},
+        400: {"description": "Bad request"},
+        500: {"description": "Internal server error"}
+    }
+)
+
+# 번역 관련 엔드포인트
+api_router.include_router(
+    translate.router,
+    prefix="",
+    tags=["translate"],
+    responses={
         400: {"description": "Bad request"},
         500: {"description": "Internal server error"}
     }

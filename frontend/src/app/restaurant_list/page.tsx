@@ -4,20 +4,21 @@ import { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import styled from '@emotion/styled';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
-import Header from '@/components/Header';
+
 import Loading from '@/components/Loading';
 import { Restaurant } from '@/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const Container = styled.div`
-  background-color: #FAF0D7;
+  background-color: honeydew;
   min-height: 100vh;
   padding: 1rem;
 `;
 
 const Title = styled.h1`
   margin: 1rem;
+  font-weight: bold;
   color: #222;
   font-size: 1.5rem;
   
@@ -170,7 +171,6 @@ function RestaurantListPage() {
 
   return (
     <Container>
-      <Header />
       <Title>🥄 근처 배달 가능한 가게 목록</Title>
       <Address>{currentAddress}</Address>
 

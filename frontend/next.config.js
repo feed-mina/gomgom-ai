@@ -2,7 +2,7 @@
 const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
-    NEXT_PUBLIC_KAKAO_APP_KEY: '2d22c7fa1d59eb77a5162a3948a0b6fe',
+    NEXT_PUBLIC_KAKAO_APP_KEY: 'ac17c741aa8131e12604eac5e2d0441c',
   },
   reactStrictMode: true,
   compiler: {
@@ -15,10 +15,19 @@ const nextConfig = {
   },
   images: {
     unoptimized: false,
-    domains: [
-      'example.com',
-      'rev-static.yogiyo.co.kr',
-      'localhost',
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'rev-static.yogiyo.co.kr',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'example.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
     formats: ['image/webp', 'image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],

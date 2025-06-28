@@ -57,7 +57,7 @@ class RecommendationWithRecipe(BaseModel):
 
 class RecommendationRequest(BaseModel):
     user_id: int = Field(..., description="User ID")
-    limit: int = Field(10, ge=1, le=50, description="Number of recommendations to return")
+    limit: int = Field(3, ge=1, le=50, description="Number of recommendations to return")
 
 class IngredientPrice(BaseModel):
     """재료 가격 정보"""
@@ -106,7 +106,7 @@ class RecipeRecommendation(BaseModel):
 class RecipeSearchRequest(BaseModel):
     """레시피 검색 요청"""
     query: str
-    number: int = 10
+    number: int = 3
     include_price: bool = True
     max_cooking_time: Optional[int] = None
     cuisine_type: Optional[str] = None

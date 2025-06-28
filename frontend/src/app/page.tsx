@@ -102,12 +102,6 @@ export default function Home() {
   if (isLoading) {
     return (
       <Container>
-        <Header>
-          <HeaderLink href="/">
-            <LogoImg src="/image/logo.png" alt="토끼" />
-            <HeaderText>CLICK YOUR TASTE!</HeaderText>
-          </HeaderLink>
-        </Header>
         <MainContainer>
           <LoadingSkeleton />
         </MainContainer>
@@ -117,13 +111,6 @@ export default function Home() {
 
   return (
     <Container>
-      <Header>
-        <HeaderLink href="/">
-          <LogoImg src="/image/logo.png" alt="토끼" />
-          <HeaderText>CLICK YOUR TASTE!</HeaderText>
-        </HeaderLink>
-      </Header>
-      
       <MainContainer>
         <CheckYogiyoDiv>
           <CheckYogiyoButton onClick={handleCheckYogiyo}>
@@ -145,7 +132,7 @@ export default function Home() {
                 {!(showConfirmModal || showEmptyInputModal) && (
                   <>
                     <Circle />
-                    <RabbitImg src="/image/elice_rabbit_stand.png" alt="토끼" />
+                    <RabbitImg src="/image/elice_rabbit_stand.png" alt="토끼 캐릭터" />
                   </>
                 )}
               </Image>
@@ -153,18 +140,19 @@ export default function Home() {
               <ButtonGroup>
                 <InputBox>
                   <Input
+                    id="recommend-input"
+                    name="recommend"
+                    placeholder="예: 매운 음식 추천해줘"
+                    className="css-1u6vxzx"
                     type="text"
                     value={userInput}
                     onChange={handleInputChange}
-                    placeholder="예: 매운 음식 추천해줘"
                   />
                   <Button onClick={handleRecommend}>입력 추천</Button>
                 </InputBox>
-                <Button onClick={handleTestClick}>입맛 테스트</Button>
+                <Button onClick={handleTestClick}>GomGom-AI 심리테스트</Button>
                 {isLoggedIn && (
-                  <Button onClick={() => router.push('/recipe_search')}>
-                    레시피 검색하기
-                  </Button>
+                  <Button onClick={() => router.push('/recipe_search')}>레시피 검색하기</Button>
                 )}
               </ButtonGroup>
             </Article>
@@ -223,35 +211,6 @@ const Container = styled.div`
   font-family: 'Noto Sans KR', sans-serif;
 `;
 
-const Header = styled.header`
-  padding: 1rem;
-`;
-
-const HeaderLink = styled.a`
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const LogoImg = styled.img`
-  height: 2.5rem;
-  
-  @media (max-width: 768px) {
-    height: 2rem;
-  }
-`;
-
-const HeaderText = styled.span`
-  color: #333;
-  font-weight: bold;
-  font-size: 1.1rem;
-  
-  @media (max-width: 768px) {
-    font-size: 1rem;
-  }
-`;
-
 const MainContainer = styled.div`
   max-width: 75rem;
   margin: 0 auto;
@@ -268,7 +227,7 @@ const CheckYogiyoDiv = styled.div`
 
 const CheckYogiyoButton = styled.button`
   padding: 0.5rem 1rem;
-  background-color: #007bff;
+  background-color: lightseagreen;
   color: white;
   border: none;
   border-radius: 0.25rem;
@@ -325,33 +284,44 @@ const TextBox = styled.div`
 `;
 
 const Image = styled.div`
-  margin-bottom: 2rem;
+  margin-bottom: 8rem;
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative; 
+  height: 100px; 
 `;
 
+
 const Circle = styled.div`
-  width: 100px;
-  height: 100px;
+  width: 150px;
+  height: 150px;
   border-radius: 50%;
-  background-color: #007bff;
-  margin-right: 20px;
+  background-color: lavender;
+  position: relative;  
+  z-index: 1;  
 `;
+
 
 const RabbitImg = styled.img`
   height: 100px;
+  position: absolute;
+  top: 0;
+  // transform: translate(-50%, -50%); 
+  z-index: 2;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 1.2rem;
+  align-items: stretch;
 `;
 
 const InputBox = styled.div`
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.5rem;
 `;
 
 const Input = styled.input`
@@ -363,7 +333,7 @@ const Input = styled.input`
 
 const Button = styled.button`
   padding: 0.5rem 1rem;
-  background-color: #007bff;
+  background-color: lightseagreen;
   color: white;
   border: none;
   border-radius: 0.25rem;

@@ -29,7 +29,7 @@ export default function KakaoShare({
   useEffect(() => {
     // 카카오 SDK 초기화
     if (typeof window !== 'undefined' && !window.Kakao.isInitialized()) {
-      window.Kakao.init(process.env.NEXT_PUBLIC_KAKAO_APP_KEY || '2d22c7fa1d59eb77a5162a3948a0b6fe');
+      window.Kakao.init(process.env.NEXT_PUBLIC_KAKAO_APP_KEY || 'ac17c741aa8131e12604eac5e2d0441c');
     }
   }, []);
 

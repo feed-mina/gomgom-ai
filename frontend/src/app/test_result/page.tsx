@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import styled from '@emotion/styled';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Header from '@/components/Header';
+
 import Loading from '@/components/Loading';
 import ErrorDisplay from '@/components/ErrorDisplay';
 import type { TestResult } from '@/types';
 import KakaoShare from '../../components/KakaoShare';
+import apiClient from '@/utils/apiClient';
 
 const Container = styled.div`
   min-height: 100vh;
@@ -142,6 +143,9 @@ const SelectedDescription = styled.p`
 `;
 
 const InfoText = styled.div`
+    // display: flex;
+    // flex-direction: column;
+    // align-items: center;
   background-color: #FFE8EE;
   border-radius: 0.75rem;
   padding: 1rem;
@@ -202,19 +206,13 @@ function TestResultContent() {
   const lng = searchParams.get('lng') || '';
   const types = searchParams.get('types') || '';
 
-  useEffect(() => {
-    if (lat && lng) {
-      loadResult();
-    }
-  }, [lat, lng]);
-
-  const loadResult = async () => {
+  const loadResult = useCallback(async () => {
     try {
-      const response = await fetch(`/api/v1/test_result?text=${encodeURIComponent(text || '')}&lat=${lat}&lng=${lng}&types=${types}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
+      const response = await apiClient.get('/api/v1/test_result/', {
+        params: { text, lat, lng, types }
+      });
+      
+      const data = response.data;
       
       if (data.error) {
         throw new Error(data.detail || data.error);
@@ -245,7 +243,13 @@ function TestResultContent() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [text, lat, lng, types]);
+
+  useEffect(() => {
+    if (lat && lng) {
+      loadResult();
+    }
+  }, [lat, lng, loadResult]);
 
   const handleRetry = () => {
     router.push('/');
@@ -258,7 +262,6 @@ function TestResultContent() {
   if (!result) {
     return (
       <Container>
-        <Header />
         <Main>
           <ErrorDisplay 
             title="결과를 불러오는데 실패했습니다"
@@ -277,7 +280,6 @@ function TestResultContent() {
 
   return (
     <Container>
-      <Header />
       <Main>
         <Heading>
           <h2>당신에게 딱 맞는 음식은?</h2>
@@ -298,7 +300,9 @@ function TestResultContent() {
             height={200}
           />
         <InfoText>
-          <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>입력 텍스트:</span> {text}</div>
+          {text && text !== '===' && (
+            <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>입력 텍스트:</span> {text}</div>
+          )}
           <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>테스트 결과:</span> {types}</div>
           <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>카테고리:</span> {result.category}</div>
           <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>키워드:</span> {result.keywords.join(', ')}</div>

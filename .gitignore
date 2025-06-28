@@ -140,3 +140,18 @@ GoogleCloudSDKInstaller.exe
 KAKAO_LOGIN_SETUP.md
 ubuntu@43.202.138.165
 
+README_KOREAN_CRAWLER.md
+
+
+frontend/src/components/Header.tsx
+frontend/src/components/KakaoShare.tsx
+app/api/api_v1/endpoints/translate.py
+frontend/src/components/LoadingFallback.tsx
+frontend/src/components/RecipeDetailCard.tsx
+frontend/src/types/translate.ts
+test_korean_crawler_only.py
+app/utils/korean_recipe_crawler2.py
+app/utils/korean_recipe_crawler.py
+
+
+

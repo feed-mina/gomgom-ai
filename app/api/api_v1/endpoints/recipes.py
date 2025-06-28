@@ -229,6 +229,23 @@ async def get_external_recipe(recipe_id: int):
         if analyzed and len(analyzed) > 0 and "steps" in analyzed[0]:
             for step in analyzed[0]["steps"]:
                 step["step"] = await translator.translate_to_korean(step["step"])
+                
+                # 각 단계의 재료 이름 번역
+                if step.get("ingredients"):
+                    for ingredient in step["ingredients"]:
+                        if ingredient.get("localizedName"):
+                            ingredient["localizedName"] = await translator.translate_to_korean(ingredient["localizedName"])
+                        if ingredient.get("name"):
+                            ingredient["name"] = await translator.translate_to_korean(ingredient["name"])
+                
+                # 각 단계의 도구 이름 번역
+                if step.get("equipment"):
+                    for equipment in step["equipment"]:
+                        if equipment.get("localizedName"):
+                            equipment["localizedName"] = await translator.translate_to_korean(equipment["localizedName"])
+                        if equipment.get("name"):
+                            equipment["name"] = await translator.translate_to_korean(equipment["name"])
+            
             # 프론트에서 사용하기 쉽게 배열로 가공
             recipe_info["instructions"] = [step["step"] for step in analyzed[0]["steps"]]
         elif isinstance(recipe_info.get("instructions"), str):
@@ -238,6 +255,25 @@ async def get_external_recipe(recipe_id: int):
         for ing in recipe_info.get("extendedIngredients", []):
             ing["name"] = await translator.translate_to_korean(ing["name"])
             ing["original"] = await translator.translate_to_korean(ing["original"])
+
+        # 태그 번역
+        if recipe_info.get("cuisines"):
+            translated_cuisines = []
+            for cuisine in recipe_info["cuisines"]:
+                translated_cuisines.append(await translator.translate_to_korean(cuisine))
+            recipe_info["cuisines"] = translated_cuisines
+
+        if recipe_info.get("dishTypes"):
+            translated_dish_types = []
+            for dish_type in recipe_info["dishTypes"]:
+                translated_dish_types.append(await translator.translate_to_korean(dish_type))
+            recipe_info["dishTypes"] = translated_dish_types
+
+        if recipe_info.get("diets"):
+            translated_diets = []
+            for diet in recipe_info["diets"]:
+                translated_diets.append(await translator.translate_to_korean(diet))
+            recipe_info["diets"] = translated_diets
 
         # 결과를 캐시에 저장 (2시간)
         set_cache(cache_key, recipe_info, timeout=7200)
