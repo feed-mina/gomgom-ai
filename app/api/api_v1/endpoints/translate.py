@@ -23,30 +23,27 @@ async def translate_texts(texts: list[str] = Body(...)):
         
         logger.info(f"번역 요청: {len(texts)}개 텍스트")
         
-        # 여러 문장 한 번에 번역 (타임아웃 설정)
-        results = []
-        for i, text in enumerate(texts):
+        # 여러 문장 병렬 번역 (asyncio.gather)
+        async def translate_single(text, idx):
             try:
                 if not text.strip():
-                    results.append("")
-                    continue
-                    
-                logger.debug(f"텍스트 {i+1}/{len(texts)} 번역 시작: {text[:50]}...")
-                
-                # 타임아웃 설정 (30초)
+                    return ""
+                logger.debug(f"텍스트 {idx+1}/{len(texts)} 번역 시작: {text[:50]}...")
                 translated = await asyncio.wait_for(
                     translator.translate_to_korean(text),
                     timeout=30.0
                 )
-                results.append(translated)
-                logger.debug(f"텍스트 {i+1}/{len(texts)} 번역 완료")
-                
+                logger.debug(f"텍스트 {idx+1}/{len(texts)} 번역 완료")
+                return translated
             except asyncio.TimeoutError:
-                logger.error(f"텍스트 {i+1} 번역 타임아웃")
-                results.append(text)  # 타임아웃 시 원본 반환
+                logger.error(f"텍스트 {idx+1} 번역 타임아웃")
+                return text
             except Exception as e:
-                logger.error(f"텍스트 {i+1} 번역 실패: {e}")
-                results.append(text)  # 실패시 원본 반환
+                logger.error(f"텍스트 {idx+1} 번역 실패: {e}")
+                return text
+        
+        tasks = [translate_single(text, i) for i, text in enumerate(texts)]
+        results = await asyncio.gather(*tasks)
         
         logger.info(f"번역 완료: {len(results)}개 텍스트")
         return {"translatedTexts": results}

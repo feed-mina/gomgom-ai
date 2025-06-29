@@ -9,6 +9,7 @@ from app.utils.korean_recipe_crawler import korean_recipe_crawler
 import logging
 import re
 import time
+from app.core.cache import get_cache, set_cache
 
 logger = logging.getLogger(__name__)
 
@@ -232,6 +233,13 @@ class SpoonacularClient:
         """레시피 ID로 상세 정보를 가져옵니다."""
         logger.info(f"레시피 상세 정보 조회 시작: ID={recipe_id}")
         
+        # 캐시 확인 (동기)
+        cache_key = f"recipe_detail:{recipe_id}"
+        cached = get_cache(cache_key)
+        if cached:
+            logger.info(f"캐시에서 레시피 상세 정보 반환: ID {recipe_id}")
+            return cached
+        
         # API 키 검증
         if not self.api_key:
             logger.warning("Spoonacular API 키가 설정되지 않았습니다.")
@@ -266,12 +274,15 @@ class SpoonacularClient:
                         if self.enable_translation:
                             try:
                                 translated_recipe = await self._translate_recipe(recipe_data)
+                                set_cache(cache_key, translated_recipe, timeout=7200)
                                 return translated_recipe
                             except Exception as e:
                                 logger.warning(f"번역 중 오류 발생, 원본 데이터 반환: {e}")
+                                set_cache(cache_key, recipe_data, timeout=7200)
                                 return recipe_data
                         else:
                             # 번역 없이 원본 데이터 반환 (속도 향상)
+                            set_cache(cache_key, recipe_data, timeout=7200)
                             return recipe_data
                     
                     elif response.status_code == 404:
