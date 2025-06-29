@@ -205,7 +205,8 @@ function TestResultContent() {
   const [result, setResult] = useState<TestResult | null>(null);
   const [currentAddress, setCurrentAddress] = useState<string>('로딩 중...');
   const [isLoading, setIsLoading] = useState(true);
-  const text = searchParams.get('text') || '';
+  const text = searchParams.get('text');
+  const safeText = !text || text === 'none' ? '' : text;
   const lat = searchParams.get('lat') || '';
   const lng = searchParams.get('lng') || '';
   const types = searchParams.get('types') || '';
@@ -256,10 +257,12 @@ function TestResultContent() {
   }, [lat, lng, loadResult]);
 
   const handleRetry = () => {
-    router.push('/');
+    const params = new URLSearchParams(window.location.search);
+    params.set('dummy', Date.now().toString());
+    window.location.search = params.toString();
   };
 
-  if (!text || !lat || !lng || !types) {
+  if (!lat || !lng || !types) {
     return (
       <Container>
         <Main>
@@ -296,8 +299,8 @@ function TestResultContent() {
   }
 
   const shareTitle = `🎯 ${result.store} 테스트 결과!`;
-  const shareDescription = text
-    ? `${text}를 원한다면 ...`
+  const shareDescription = safeText
+    ? `${safeText}를 원한다면 ...`
     : `당신에게 어울리는 추천 결과입니다!`;
 
   return (
@@ -309,9 +312,9 @@ function TestResultContent() {
           
       <Card>
         <h3>오늘의 추천 가게</h3>
-        {text && text !== '===' && (
+        {safeText && safeText !== '===' && (
           <div style={{ marginBottom: '0.5rem', fontWeight: 500 }}>
-            {text}을 먹고 싶다면,
+            {safeText}을 먹고 싶다면,
           </div>
         )}
         <h3>{result.store}</h3>
@@ -327,8 +330,8 @@ function TestResultContent() {
             height={200}
           />
         <InfoText>
-          {text && text !== '===' && (
-            <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>입력 텍스트:</span> {text}</div>
+          {safeText && safeText !== '===' && (
+            <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>입력 텍스트:</span> {safeText}</div>
           )}
           <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>테스트 결과:</span> {types}</div>
           <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>카테고리:</span> {result?.category || ''}</div>

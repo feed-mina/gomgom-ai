@@ -126,101 +126,125 @@ async def recommend_result(
     type3: Optional[str] = None,
     type4: Optional[str] = None,
     type5: Optional[str] = None,
-    type6: Optional[str] = None
+    type6: Optional[str] = None,
+    dummy: Optional[str] = Query(None)
 ):
+    # text가 'none'이면 입력 없는 것으로 간주
+    if text == 'none':
+        text = None
     print("==== recommend_result 진입 ====")
     logger.error("==== recommend_result 진입 ====")
-    # 1. 캐시 확인
-    print("1. 캐시 확인")
-    cache_key = f"recommend_{mode}_{text}_{lat}_{lng}"
-    cached_data = get_cache(cache_key)
-    if cached_data:
-        return cached_data
-
-    # 2. 요기요 데이터 가져오기
-    print("2. 요기요 데이터 가져오기")
-    data = await fetch_yogiyo_data(lat, lng)
-    restaurants = data.get("restaurants", [])
-    if not restaurants:
-        raise HTTPException(status_code=404, detail="주변에 음식점이 없습니다.")
-
-    # 3. 가게명+키워드 리스트 만들기
-    print("3. 가게명+키워드 리스트 만들기")
-    store_keywords_list = [
-        f"{r.get('name')}: {', '.join(extract_keywords_from_store_name(r.get('name', '')))}"
-        for r in restaurants
-    ]
-    random.shuffle(store_keywords_list)
-    store_keywords_list = store_keywords_list[:10]
-
-    # 4. GPT 프롬프트 생성
-    print("4. GPT 프롬프트 생성")
-    score = None
-    if mode == "test":
-        types = [t for t in [type1, type2, type3, type4, type5, type6] if t]
-        score = {t: types.count(t) for t in types}
-    
-    prompt = create_yogiyo_prompt_with_options(text or "", store_keywords_list, score=score)
-
-    # 5. GPT 호출 직전
-    print("5. GPT 호출 직전")
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        gpt_content = response.choices[0].message.content
-        gpt_result = json.loads(gpt_content)
-    except Exception as e:
-        logger.error("GPT 호출 실패: %s", traceback.format_exc())
-        print("GPT 호출 실패:", traceback.format_exc())  # 콘솔에도 강제 출력
-        raise HTTPException(status_code=500, detail=f"GPT 호출 실패: {str(e)}")
+        # 1. 캐시 확인
+        print("1. 캐시 확인")
+        cache_key = f"recommend_{mode}_{text}_{lat}_{lng}_{dummy}"
+        cached_data = get_cache(cache_key)
+        if cached_data:
+            return cached_data
 
-    # 6. GPT 호출 성공
-    print("6. GPT 호출 성공")
-    # 6. 요기요 가게 리스트에서 best match 찾기
-    best_match = match_gpt_result_with_yogiyo(gpt_result, restaurants)
-    if not best_match:
-        # Fallback: 랜덤 선택
-        best_match = random.choice(restaurants)
-        gpt_result = {
-            "store": best_match.get("name", "추천 없음"),
-            "description": f"'{text or '무작위'}'와 어울리는 인기 메뉴를 추천해요!",
-            "category": ", ".join(best_match.get("categories", [])),
-            "keywords": extract_keywords_from_store_name(best_match.get("name", ""))
+        # 2. 요기요 데이터 가져오기
+        print("2. 요기요 데이터 가져오기")
+        data = await fetch_yogiyo_data(lat, lng)
+        restaurants = data.get("restaurants", [])
+        if not restaurants:
+            return {
+                "result": None,
+                "restaurants": [],
+                "error": "주변에 음식점이 없습니다."
+            }
+
+        # 3. 가게명+키워드 리스트 만들기
+        print("3. 가게명+키워드 리스트 만들기")
+        store_keywords_list = [
+            f"{r.get('name')}: {', '.join(extract_keywords_from_store_name(r.get('name', '')))}"
+            for r in restaurants
+        ]
+        random.shuffle(store_keywords_list)
+        store_keywords_list = store_keywords_list[:10]
+
+        # 4. GPT 프롬프트 생성
+        print("4. GPT 프롬프트 생성")
+        score = None
+        if mode == "test":
+            types = [t for t in [type1, type2, type3, type4, type5, type6] if t]
+            score = {t: types.count(t) for t in types}
+        
+        prompt = create_yogiyo_prompt_with_options(text or "", store_keywords_list, score=score)
+
+        # 5. GPT 호출 직전
+        print("5. GPT 호출 직전")
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            gpt_content = response.choices[0].message.content
+            gpt_result = json.loads(gpt_content)
+        except Exception as e:
+            logger.error("GPT 호출 실패: %s", traceback.format_exc())
+            print("GPT 호출 실패:", traceback.format_exc())
+            # GPT 실패 시 랜덤 추천 fallback
+            best_match = random.choice(restaurants)
+            gpt_result = {
+                "store": best_match.get("name", "추천 없음"),
+                "description": f"'{text or '무작위'}'와 어울리는 인기 메뉴를 추천해요!",
+                "category": ", ".join(best_match.get("categories", [])),
+                "keywords": extract_keywords_from_store_name(best_match.get("name", ""))
+            }
+        else:
+            # 6. GPT 호출 성공
+            print("6. GPT 호출 성공")
+            # 6. 요기요 가게 리스트에서 best match 찾기
+            best_match = match_gpt_result_with_yogiyo(gpt_result, restaurants)
+            if not best_match:
+                # Fallback: 랜덤 선택
+                best_match = random.choice(restaurants)
+                gpt_result = {
+                    "store": best_match.get("name", "추천 없음"),
+                    "description": f"'{text or '무작위'}'와 어울리는 인기 메뉴를 추천해요!",
+                    "category": ", ".join(best_match.get("categories", [])),
+                    "keywords": extract_keywords_from_store_name(best_match.get("name", ""))
+                }
+
+        # 7. 응답 데이터 구성
+        print("7. 응답 데이터 구성")
+        response_data = {
+            "result": {
+                "store": best_match.get("name", ""),
+                "description": gpt_result.get("description", ""),
+                "category": ", ".join(best_match.get("categories", [])),
+                "keywords": gpt_result.get("keywords", []),
+                "logo_url": best_match.get("logo_url", "")
+            },
+            "restaurants": [{
+                "name": best_match.get("name", ""),
+                "review_avg": str(best_match.get("review_avg", "5점")),
+                "address": best_match.get("address", "주소 정보 없음"),
+                "id": str(best_match.get("id", "ID 없음")),
+                "categories": ", ".join(best_match.get("categories", [])),
+                "logo_url": best_match.get("logo_url", "")
+            }]
         }
 
-    # 7. 응답 데이터 구성
-    print("7. 응답 데이터 구성")
-    response_data = {
-        "result": {
-            "store": best_match.get("name", ""),
-            "description": gpt_result.get("description", ""),
-            "category": ", ".join(best_match.get("categories", [])),
-            "keywords": gpt_result.get("keywords", []),
-            "logo_url": best_match.get("logo_url", "")
-        },
-        "restaurants": [{
-            "name": best_match.get("name", ""),
-            "review_avg": str(best_match.get("review_avg", "5점")),
-            "address": best_match.get("address", "주소 정보 없음"),
-            "id": str(best_match.get("id", "ID 없음")),
-            "categories": ", ".join(best_match.get("categories", [])),
-            "logo_url": best_match.get("logo_url", "")
-        }]
-    }
+        # 8. 모드별 추가 데이터
+        if mode == "test":
+            response_data.update({
+                "text": text,
+                "lat": lat,
+                "lng": lng,
+                "types": [t for t in [type1, type2, type3, type4, type5, type6] if t],
+                "score": score
+            })
 
-    # 8. 모드별 추가 데이터
-    if mode == "test":
-        response_data.update({
-            "text": text,
-            "lat": lat,
-            "lng": lng,
-            "types": [t for t in [type1, type2, type3, type4, type5, type6] if t],
-            "score": score
-        })
+        # 9. 캐시 저장
+        set_cache(cache_key, response_data, timeout=1800)  # 30분 캐시
 
-    # 9. 캐시 저장
-    set_cache(cache_key, response_data, timeout=1800)  # 30분 캐시
-
-    return response_data
+        return response_data
+    except Exception as e:
+        logger.error(f"recommend_result 예외: {e}")
+        # 예외 발생 시에도 result, restaurants 필드 포함
+        return {
+            "result": None,
+            "restaurants": [],
+            "error": str(e)
+        }

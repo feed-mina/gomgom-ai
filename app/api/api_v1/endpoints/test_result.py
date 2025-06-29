@@ -18,10 +18,14 @@ async def get_test_result(
     text: Optional[str] = Query(None),
     lat: float = Query(...),
     lng: float = Query(...),
-    types: str = Query(...)
+    types: str = Query(...),
+    dummy: Optional[str] = Query(None)
 ):
-    # 1. 캐시 확인
-    cache_key = f"test_result_{text}_{lat}_{lng}_{types}"
+    # text가 'none'이면 입력 없는 것으로 간주
+    if text == 'none':
+        text = None
+    # 1. 캐시 확인 (dummy 포함)
+    cache_key = f"test_result_{text}_{lat}_{lng}_{types}_{dummy}"
     cached_data = await cache.get(cache_key)
     if cached_data:
         return cached_data

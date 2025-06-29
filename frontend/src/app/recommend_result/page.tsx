@@ -91,7 +91,9 @@ function RecommendResultContent() {
 
   // handleRetry는 먼저 선언
   const handleRetry = () => {
-    router.push('/');
+    const params = new URLSearchParams(window.location.search);
+    params.set('dummy', Date.now().toString());
+    window.location.search = params.toString();
   };
 
   // 모든 Hook은 최상단에서 호출
@@ -121,6 +123,9 @@ function RecommendResultContent() {
       console.log('[loadResult]restaurants address', data.restaurants?.[0]?.address);
     } catch (error) {
       console.error('결과 로딩 실패:', error);
+      if ((error as any)?.response) {
+        console.error('서버 응답:', (error as any).response.data);
+      }
       setResult(null);
       setCurrentAddress('주소 정보를 가져올 수 없습니다');
     } finally {
@@ -328,7 +333,7 @@ function RecommendResultContent() {
               cursor: 'pointer',
               boxShadow: '0 2px 8px rgba(0,0,0,0.07)'
             }}
-            onClick={() => window.location.reload()}
+            onClick={handleRetry}
           >
             🔄 다시 추천받기
           </button>
