@@ -5,13 +5,7 @@ import styled from '@emotion/styled';
 import { useRouter, useSearchParams } from 'next/navigation';
 import apiClient from '@/utils/apiClient';
 import {
-  Paper,
-  Typography,
   Box,
-  Card,
-  CardContent,
-  Grid,
-  Chip,
   CircularProgress,
   Alert
 } from '@mui/material';
@@ -63,6 +57,43 @@ const Main = styled.main`
   
   @media (max-width: 768px) {
     padding: 1.5rem;
+  }
+`;
+
+const Card = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 30rem;
+  margin: auto;
+  background: white;
+  border-radius: 1.25rem;
+  box-shadow: 0 0.25rem 0.625rem rgba(0,0,0,0.1);
+  padding: 1.875rem;
+  text-align: center;
+
+  h3 {
+    color: #BEA397;
+    margin: 1rem 0;
+    font-size: 1.2rem;
+    
+    @media (max-width: 768px) {
+      font-size: 1rem;
+    }
+  }
+
+  p {
+    font-size: 1.125rem;
+    margin: 0.625rem 0;
+    
+    @media (max-width: 768px) {
+      font-size: 1rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    border-radius: 1rem;
   }
 `;
 
@@ -248,9 +279,7 @@ function RecommendResultContent() {
   if (error) {
     return (
       <Container>
-        <Box sx={{ mt: 8 }}>
           <Alert severity="error">{error}</Alert>
-        </Box>
       </Container>
     );
   }
@@ -299,27 +328,18 @@ function RecommendResultContent() {
           )}
           <h3>{storeName}</h3>
           <p><strong>{result?.description}</strong></p>
-          <div>{address}</div>
-          <div>
-            <Image
+          <Address>{address}</Address>
+            <ResultImage
               src="/image/rabbit_chef_body2.png"
               alt="토끼"
               width={200}
               height={200}
             />
-            <div style={{
-              fontWeight: 700,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              backgroundColor: '#FFE8EE',
-              borderRadius: '0.75rem',
-              padding: '1rem',
-              boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.1)',
-              marginTop: '1rem',
-            }}>
+         
+        <InfoText>
               {text && text !== '===' && (
-                <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>입력 텍스트:</span> {text}</div>
+             
+             <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>입력 텍스트:</span> {text}</div>
               )}
               <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>카테고리:</span> {result?.category || ''}</div>
               <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>키워드:</span> {result?.keywords?.join(', ') || ''}</div>
@@ -330,10 +350,9 @@ function RecommendResultContent() {
                 height={100}
                 style={{ marginTop: '1rem', borderRadius: '0.5rem' }}
               />
-            </div>
-          </div>
+            </InfoText>
         </Card>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        {/* <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
           <button
             style={{
               background: '#ffe066',
@@ -350,7 +369,7 @@ function RecommendResultContent() {
           >
             🔄 다시 추천받기
           </button>
-        </Box>
+        </Box> */}
         <KakaoShare
           title={shareTitle}
           description={shareDescription}

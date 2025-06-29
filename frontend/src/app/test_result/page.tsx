@@ -347,7 +347,7 @@ function TestResultContent() {
           </SideInfo>
         {/* </Result> */}
         </Card>
-        <RetryButton onClick={handleRetry}>다시하기</RetryButton>
+        {/* <RetryButton onClick={handleRetry}>다시하기</RetryButton> */}
         <KakaoShare
           title={shareTitle}
           description={shareDescription}
