@@ -210,11 +210,12 @@ function TestResultContent() {
   const lat = searchParams.get('lat') || '';
   const lng = searchParams.get('lng') || '';
   const types = searchParams.get('types') || '';
+  const dummy = searchParams.get('dummy') || '';
 
   const loadResult = useCallback(async () => {
     try {
       const response = await apiClient.get('/api/v1/test_result/', {
-        params: { text, lat, lng, types }
+        params: { text, lat, lng, types, dummy }
       });
       
       const data = response.data;
@@ -248,13 +249,13 @@ function TestResultContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [text, lat, lng, types]);
+  }, [text, lat, lng, types, dummy]);
 
   useEffect(() => {
     if (lat && lng) {
       loadResult();
     }
-  }, [lat, lng, loadResult]);
+  }, [lat, lng, types, dummy, loadResult]);
 
   const handleRetry = () => {
     const params = new URLSearchParams(window.location.search);
@@ -300,7 +301,7 @@ function TestResultContent() {
 
   const shareTitle = `🎯 ${result.store} 테스트 결과!`;
   const shareDescription = safeText
-    ? `${safeText}를 원한다면 ...`
+    ? `${safeText}랑 관련되어 있는 음식은 ...`
     : `당신에게 어울리는 추천 결과입니다!`;
 
   return (
@@ -314,7 +315,7 @@ function TestResultContent() {
         <h3>오늘의 추천 가게</h3>
         {safeText && safeText !== '===' && (
           <div style={{ marginBottom: '0.5rem', fontWeight: 500 }}>
-            {safeText}을 먹고 싶다면,
+            {safeText}랑 어울리고 ,
           </div>
         )}
         <h3>{result.store}</h3>

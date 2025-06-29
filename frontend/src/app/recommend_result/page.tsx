@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense, useCallback } from 'react';
+import React, { useEffect, useState, Suspense, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { useRouter, useSearchParams } from 'next/navigation';
 import apiClient from '@/utils/apiClient';
@@ -42,6 +42,11 @@ interface RecommendResult {
     logo_url: string;
     // 필요한 필드 추가
   };
+  store: string;
+  description: string;
+  category: string;
+  keywords: string[];
+  logo_url: string;
   address: string;
   restaurants: Restaurant[];
 }
@@ -59,6 +64,68 @@ const Main = styled.main`
   @media (max-width: 768px) {
     padding: 1.5rem;
   }
+`;
+
+const Address = styled.p`
+  font-weight: bold;
+  font-size: 1rem;
+  color: #222;
+  @media (max-width: 768px) {
+    font-size: 0.9rem;
+  }
+`;
+
+const SideInfo = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  align-items: center;
+  height: 15rem;
+  h2 {
+    font-size: 1.5rem;
+    color: #333;
+    @media (max-width: 768px) {
+      font-size: 1.2rem;
+    }
+  }
+`;
+
+const ResultImage = styled(Image)`
+  width: 7rem;
+  height: 7rem;
+  @media (max-width: 768px) {
+    width: 10rem;
+    height: 10rem;
+  }
+`;
+
+const InfoText = styled.div`
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #FFE8EE;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.1);
+  div {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+    @media (max-width: 768px) {
+      font-size: 1rem;
+    }
+  }
+  @media (max-width: 768px) {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+`;
+
+const StoreLogo = styled(Image)`
+  margin-top: 1rem;
+  border-radius: 0.5rem;
 `;
 
 const Heading = styled.div`
@@ -88,19 +155,12 @@ function RecommendResultContent() {
   const lat = searchParams.get('lat') || '';
   const lng = searchParams.get('lng') || '';
   const types = searchParams.get('types') || '';
+  const dummy = searchParams.get('dummy') || '';
 
-  // handleRetry는 먼저 선언
-  const handleRetry = () => {
-    const params = new URLSearchParams(window.location.search);
-    params.set('dummy', Date.now().toString());
-    window.location.search = params.toString();
-  };
-
-  // 모든 Hook은 최상단에서 호출
   const loadResult = useCallback(async () => {
     try {
       const response = await apiClient.get('/api/v1/recommend_result/', {
-        params: { text, lat, lng, types }
+        params: { text, lat, lng, types, dummy }
       });
       const data = response.data;
       if (data.error) {
@@ -114,30 +174,33 @@ function RecommendResultContent() {
         ? data.restaurants[0].address
         : data.address || data.result?.address || '입력필요';
       setCurrentAddress(address);
-      console.log('[loadResult]data.result.address', data.result?.address);
-      console.log('[loadResult]data.result.store', data.result?.store);
-      console.log('[loadResult]data.result.description', data.result?.description);
-      console.log('[loadResult]data.result.category', data.result?.category);
-      console.log('[loadResult]data.result.keywords', data.result?.keywords);
-      console.log('[loadResult]data.result.logo_url', data.result?.logo_url);
+      console.log('[loadResult]data.address', data.address);
+      console.log('[loadResult]data.store', data.store);
+      console.log('[loadResult]data.description', data.description);
+      console.log('[loadResult]data.category', data.category);
+      console.log('[loadResult]data.keywords', data.keywords);
+      console.log('[loadResult]data.logo_url', data.logo_url);
       console.log('[loadResult]restaurants address', data.restaurants?.[0]?.address);
     } catch (error) {
       console.error('결과 로딩 실패:', error);
-      if ((error as any)?.response) {
-        console.error('서버 응답:', (error as any).response.data);
-      }
       setResult(null);
       setCurrentAddress('주소 정보를 가져올 수 없습니다');
     } finally {
       setIsLoading(false);
     }
-  }, [text, lat, lng, types]);
+  }, [text, lat, lng, types, dummy]);
 
   useEffect(() => {
     if (text && lat && lng && types) {
       loadResult();
     }
-  }, [text, lat, lng, types, loadResult]);
+  }, [text, lat, lng, types, dummy, loadResult]);
+
+  const handleRetry = () => {
+    const params = new URLSearchParams(window.location.search);
+    params.set('dummy', Date.now().toString());
+    window.location.search = params.toString();
+  };
 
   // 조건부 렌더링은 Hook 호출 이후에만!
   if (!text || !lat || !lng || !types) {
@@ -212,114 +275,64 @@ function RecommendResultContent() {
 
   console.log('address', address);
 
-  const storeName = (restaurant && restaurant.name) || result.result?.store || '';
+  const storeName = (restaurant && restaurant.name) || result?.store || '';
 
 
   console.log('storeName', storeName);
-  const shareTitle = `🍽️ ${storeName} 추천!`;
-  const shareDescription = `${result.result?.description || ''}\n\n📍 ${address}\n🏷️ ${result.result?.category || ''}`;
+  const shareTitle = `🍽️ ${result?.store || ''} 추천!`;
+  const shareDescription = text
+    ? `${text}랑 관련되어 있는 음식은 ...`
+    : `당신에게 어울리는 추천 결과입니다!`;
 
   return (
     <Container>
       <Main>
-    <Heading>
-      <h2>당신에게 딱 맞는 음식은?</h2>
-      </Heading>
-      <Box sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" component="h3" gutterBottom align="center">
-          오늘의 추천 가게: {storeName}
-        </Typography>
-
-
-        <Paper elevation={3} sx={{ p: 4, mt: 3 }}>
-          <Card>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Image
-                  src={logoUrl}
-                  alt="가게 로고"
-                  width={60}
-                  height={60}
-                  style={{
-                    objectFit: 'cover',
-                    borderRadius: 8,
-                    marginRight: 16,
-                    background: '#f5f5f5'
-                  }}
-                  onError={(e) => { (e.target as HTMLImageElement).src = '/image/default_store_logo.png'; }}
-                />
-                <Box>
-                  <Typography variant="h5" component="h4" gutterBottom>
-                    {storeName}
-                  </Typography>
-                  {reviewAvg && (
-                    <Typography variant="body2" color="text.secondary">
-                      ⭐ 리뷰 평점: {reviewAvg}
-                    </Typography>
-                  )}
-                </Box>
-              </Box>
-
-              <Typography variant="body1" color="text.secondary" paragraph>
-                {result.result?.description || ''}
-              </Typography>
-
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  카테고리:
-                </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                  {(result.result?.category || '')
-                    .split(',')
-                    .map((cat, idx) => (
-                      <Chip
-                        key={idx}
-                        label={cat.trim()}
-                        color="primary"
-                        variant="outlined"
-                      />
-                    ))}
-                </Box>
-              </Box>
-
-              {result.result?.keywords && result.result.keywords.length > 0 && (
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    키워드:
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {result.result.keywords.map((keyword, index) => (
-                      <Chip 
-                        key={index} 
-                        label={keyword} 
-                        size="small" 
-                        variant="outlined"
-                      />
-                    ))}
-                  </Box>
-                </Box>
+        <Heading>
+          <h2>당신에게 딱 맞는 음식은?</h2>
+        </Heading>
+        <Card>
+          <h3>오늘의 추천 가게</h3>
+          {text && text !== '===' && (
+            <div style={{ marginBottom: '0.5rem', fontWeight: 500 }}>
+              {text}랑 어울리고 ,
+            </div>
+          )}
+          <h3>{storeName}</h3>
+          <p><strong>{result?.description}</strong></p>
+          <div>{address}</div>
+          <div>
+            <Image
+              src="/image/rabbit_chef_body2.png"
+              alt="토끼"
+              width={200}
+              height={200}
+            />
+            <div style={{
+              fontWeight: 700,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              backgroundColor: '#FFE8EE',
+              borderRadius: '0.75rem',
+              padding: '1rem',
+              boxShadow: '0 0.125rem 0.25rem rgba(0,0,0,0.1)',
+              marginTop: '1rem',
+            }}>
+              {text && text !== '===' && (
+                <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>입력 텍스트:</span> {text}</div>
               )}
-
-              <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  📍 위치:{currentAddress}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {address}
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Paper>
-
-        {/* 카카오 공유 버튼 */}
-        <KakaoShare
-          title={shareTitle}
-          description={shareDescription}
-          buttonText="🍽️ 카카오톡으로 추천 공유하기"
-        />
-
-        {/* 다시 추천받기 버튼 */}
+              <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>카테고리:</span> {result?.category || ''}</div>
+              <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>키워드:</span> {result?.keywords?.join(', ') || ''}</div>
+              <Image
+                src={result?.logo_url || '/image/default_store_logo.png'}
+                alt="추천 가게 로고"
+                width={100}
+                height={100}
+                style={{ marginTop: '1rem', borderRadius: '0.5rem' }}
+              />
+            </div>
+          </div>
+        </Card>
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
           <button
             style={{
@@ -338,7 +351,11 @@ function RecommendResultContent() {
             🔄 다시 추천받기
           </button>
         </Box>
-      </Box>
+        <KakaoShare
+          title={shareTitle}
+          description={shareDescription}
+          buttonText="🍽️ 카카오톡으로 추천 공유하기"
+        />
       </Main>
     </Container>
   );

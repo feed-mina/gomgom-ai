@@ -162,14 +162,14 @@ async def recommend_result(
         random.shuffle(store_keywords_list)
         store_keywords_list = store_keywords_list[:10]
 
-        # 4. GPT 프롬프트 생성
+        # 4. GPT 프롬프트 생성 (dummy 값 추가)
         print("4. GPT 프롬프트 생성")
         score = None
         if mode == "test":
             types = [t for t in [type1, type2, type3, type4, type5, type6] if t]
             score = {t: types.count(t) for t in types}
         
-        prompt = create_yogiyo_prompt_with_options(text or "", store_keywords_list, score=score)
+        prompt = create_yogiyo_prompt_with_options(text or "", store_keywords_list, score=score) + f"\n#dummy={dummy or random.random()}"
 
         # 5. GPT 호출 직전
         print("5. GPT 호출 직전")
@@ -184,6 +184,8 @@ async def recommend_result(
             logger.error("GPT 호출 실패: %s", traceback.format_exc())
             print("GPT 호출 실패:", traceback.format_exc())
             # GPT 실패 시 랜덤 추천 fallback
+            if len(restaurants) > 1:
+                random.shuffle(restaurants)
             best_match = random.choice(restaurants)
             gpt_result = {
                 "store": best_match.get("name", "추천 없음"),
@@ -198,6 +200,8 @@ async def recommend_result(
             best_match = match_gpt_result_with_yogiyo(gpt_result, restaurants)
             if not best_match:
                 # Fallback: 랜덤 선택
+                if len(restaurants) > 1:
+                    random.shuffle(restaurants)
                 best_match = random.choice(restaurants)
                 gpt_result = {
                     "store": best_match.get("name", "추천 없음"),

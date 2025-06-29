@@ -18,7 +18,7 @@ export interface TestResult {
   category: string;
   keywords: string[];
   logo_url: string;
-}
+} 
 
 export interface Location {
   lat: number;

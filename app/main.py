@@ -40,17 +40,25 @@ app = FastAPI(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 # CORS 설정 (더 구체적으로 설정)
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=[
+#         "http://localhost:3000",  
+#         "http://localhost:3001",
+#         "http://127.0.0.1:3000",
+#         "http://127.0.0.1:3001",
+#         "*"  
+#     ],
+#     allow_credentials=True,
+#     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+#     allow_headers=["*"],
+# )
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",  # Next.js 개발 서버
-        "http://localhost:3001",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "*"  # 개발 중에는 모든 origin 허용
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
