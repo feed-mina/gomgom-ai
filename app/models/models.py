@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, JSON, Text, DECIMAL
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, JSON, Text, DECIMAL, JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.base_class import Base
@@ -105,4 +105,20 @@ class Recommendation(Base):
     recipe = relationship("Recipe", back_populates="recommendations")
 
     def __repr__(self):
-        return f"<Recommendation {self.user_id} -> {self.recipe_id}>" 
+        return f"<Recommendation {self.user_id} -> {self.recipe_id}>"
+
+class RecommendationHistory(Base):
+    __tablename__ = "recommendation_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # 로그인하지 않은 사용자도 허용
+    request_type = Column(String(32), nullable=False)  # test_result, recommend_result, search_recipe
+    input_data = Column(JSONB, nullable=False)  # 입력 데이터 (쿼리, 위치 등)
+    result_data = Column(JSONB, nullable=False)  # 추천 결과 데이터
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    # Relationships
+    user = relationship("User", backref="recommendation_history")
+
+    def __repr__(self):
+        return f"<RecommendationHistory {self.request_type} - {self.created_at}>" 

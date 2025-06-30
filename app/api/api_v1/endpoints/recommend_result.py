@@ -12,6 +12,10 @@ import logging
 from app.core.config import settings
 import traceback
 from app.utils.prompt_creator import create_yogiyo_prompt_with_options, make_store_info_line, classify_user_input_via_gpt
+from app.db.session import SessionLocal
+from app.models.models import RecommendationHistory  # 새 모델 생성 필요
+from sqlalchemy.orm import Session
+from app.db.crud import save_recommendation_history
 
 router = APIRouter()
 okt = Okt()
@@ -241,6 +245,16 @@ async def recommend_result(
             except Exception as e:
                 logger.error(f"추천 결과 PostgreSQL 저장 실패: {e}")
 
+        # 엔드포인트 내부에서
+        db = SessionLocal()
+        save_recommendation_history(
+            db=db,
+            user_id=current_user.id if current_user else None,
+            request_type="recommend_result",
+            input_data={"text": text, "lat": lat, "lng": lng, "mode": mode, "type1": type1, "type2": type2, "type3": type3, "type4": type4, "type5": type5, "type6": type6, "dummy": dummy},
+            result_data=response_data
+        )
+
         return response_data
     except Exception as e:
         logger.error(f"recommend_result 예외: {e}")
@@ -250,3 +264,19 @@ async def recommend_result(
             "restaurants": [],
             "error": str(e)
         }
+
+def save_recommendation_history(
+    db: Session,
+    user_id: int,
+    request_type: str,
+    input_data: dict,
+    result_data: dict
+):
+    history = RecommendationHistory(
+        user_id=user_id,
+        request_type=request_type,
+        input_data=input_data,
+        result_data=result_data
+    )
+    db.add(history)
+    db.commit()

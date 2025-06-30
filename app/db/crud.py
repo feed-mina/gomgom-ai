@@ -2,7 +2,7 @@
 from typing import List, Optional
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func
-from app.models.models import User, Recipe, Ingredient, Location, Recommendation
+from app.models.models import User, Recipe, Ingredient, Location, Recommendation, RecommendationHistory
 
 # ---------------------- User ----------------------
 def get_user_by_email(db: Session, email: str) -> Optional[User]:
@@ -131,3 +131,21 @@ def create_recommendation(db: Session, recommendation_data: dict) -> Recommendat
     db.commit()
     db.refresh(db_recommendation)
     return db_recommendation
+
+def save_recommendation_history(
+    db: Session,
+    user_id: int,
+    request_type: str,
+    input_data: dict,
+    result_data: dict
+):
+    history = RecommendationHistory(
+        user_id=user_id,
+        request_type=request_type,
+        input_data=input_data,
+        result_data=result_data
+    )
+    db.add(history)
+    db.commit()
+    db.refresh(history)
+    return history

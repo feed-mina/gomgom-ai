@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from app.db.session import get_db
-from app.db.crud import get_all_recipes, search_recipes, get_recipes_with_recommendations
+from app.db.crud import get_all_recipes, search_recipes, get_recipes_with_recommendations, save_recommendation_history
 from app.models.models import Recipe
 from app.schemas.recipe import RecipeCreate, RecipeResponse, RecipeUpdate
 from app.utils.external_apis import spoonacular_client
@@ -36,6 +36,15 @@ async def read_recipes(
             recipes = search_recipes(db, search, skip, limit)
         else:
             recipes = get_all_recipes(db, skip, limit)
+        
+        if search:
+            save_recommendation_history(
+                db=db,
+                user_id=None,  # 로그인 유저 정보가 있다면 user_id로 교체
+                request_type="search_recipe",
+                input_data={"search": search, "skip": skip, "limit": limit},
+                result_data=[r.id for r in recipes]  # 또는 recipes 전체, 필요에 따라 조정
+            )
         
         # set_cache(cache_key, recipes)
         logger.info(f"레시피 목록 조회 성공: {len(recipes)}개")

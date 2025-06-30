@@ -1,13 +1,7 @@
 from pydantic import BaseModel
-from typing import List
-
-class TestResultResponse(BaseModel):
-    store: str
-    description: str
-    category: str
-    keywords: List[str]
-    logo_url: str
+from typing import List, Optional, Dict
 
 class TestResult(BaseModel):
-    result: TestResultResponse
-    address: str 
+    results: List[Dict]
+    result: Dict
+    address: Optional[str] = None 

@@ -10,6 +10,8 @@ from app.utils.store_matcher import match_gpt_result_with_yogiyo
 from app.core.cache import cache
 from app.schemas.test_result import TestResultResponse, TestResult
 import random
+from app.db.session import SessionLocal
+from app.db.crud import save_recommendation_history
 
 router = APIRouter()
 
@@ -96,6 +98,16 @@ async def get_test_result(
 
         # 10. 결과 캐싱 (30분)
         await cache.set(cache_key, result, timeout=1800)
+
+        # 추천 이력 저장
+        db = SessionLocal()
+        save_recommendation_history(
+            db=db,
+            user_id=None,  # 로그인 유저 정보가 있다면 user_id로 교체
+            request_type="test_result",
+            input_data={"text": text, "lat": lat, "lng": lng, "types": types, "dummy": dummy},
+            result_data=result
+        )
 
         return result
 
