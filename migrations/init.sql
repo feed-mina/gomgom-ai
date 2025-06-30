@@ -56,6 +56,16 @@ CREATE TABLE IF NOT EXISTS recommendations (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Redis 캐시 데이터를 PostgreSQL에 저장하는 테이블
+CREATE TABLE IF NOT EXISTS cache_data (
+    id SERIAL PRIMARY KEY,
+    cache_key VARCHAR(255) UNIQUE NOT NULL,
+    data_type VARCHAR(100) NOT NULL,
+    data JSONB NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_recipes_name ON recipes(name);
 CREATE INDEX IF NOT EXISTS idx_ingredients_name ON ingredients(name);
@@ -63,6 +73,8 @@ CREATE INDEX IF NOT EXISTS idx_ingredients_ko_name ON ingredients_ko(name);
 CREATE INDEX IF NOT EXISTS idx_locations_name ON locations(name);
 CREATE INDEX IF NOT EXISTS idx_recommendations_user_id ON recommendations(user_id);
 CREATE INDEX IF NOT EXISTS idx_recommendations_recipe_id ON recommendations(recipe_id);
+CREATE INDEX IF NOT EXISTS idx_cache_data_key ON cache_data(cache_key);
+CREATE INDEX IF NOT EXISTS idx_cache_data_type ON cache_data(data_type);
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -79,6 +91,7 @@ DROP TRIGGER IF EXISTS update_ingredients_updated_at ON ingredients;
 DROP TRIGGER IF EXISTS update_ingredients_ko_updated_at ON ingredients_ko;
 DROP TRIGGER IF EXISTS update_locations_updated_at ON locations;
 DROP TRIGGER IF EXISTS update_recommendations_updated_at ON recommendations;
+DROP TRIGGER IF EXISTS update_cache_data_updated_at ON cache_data;
 
 -- Create triggers
 CREATE TRIGGER update_users_updated_at
@@ -109,4 +122,12 @@ CREATE TRIGGER update_locations_updated_at
 CREATE TRIGGER update_recommendations_updated_at
     BEFORE UPDATE ON recommendations
     FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column(); 
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_cache_data_updated_at
+    BEFORE UPDATE ON cache_data
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+ALTER TABLE recommendations ADD CONSTRAINT unique_user_recipe UNIQUE (user_id, recipe_id);
+ALTER TABLE recipes ADD CONSTRAINT unique_recipe_name UNIQUE (name); 

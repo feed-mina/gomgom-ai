@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, Query
 import httpx
 import os
 from app.schemas.restaurant import Restaurant, RestaurantListResponse, DeliveryFeeDisplay
-from app.core.cache import get_cache, set_cache
+from app.core.cache import get_cache, set_cache, set_cache_with_db
 import logging
 import psycopg2
 from app.core.config import settings
@@ -122,7 +122,7 @@ async def get_restaurants(
         result = RestaurantListResponse(restaurants=parsed[:100], address=address)
 
         if CACHE_ENABLED:
-            set_cache(cache_key, result.model_dump(), timeout=900)
+            set_cache_with_db(cache_key, result.model_dump(), timeout=900, data_type="restaurant_data")
 
         return result
 

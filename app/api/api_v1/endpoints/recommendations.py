@@ -10,7 +10,7 @@ from app.schemas.recipe import (
     RecipeRecommendation, RecipeIngredient, RecipeInstruction
 )
 from app.utils.external_apis import spoonacular_client
-from app.core.cache import get_cache, set_cache
+from app.core.cache import get_cache, set_cache, set_cache_with_db
 import logging
 import hashlib
 
@@ -62,7 +62,7 @@ async def search_recipes_get(
         result = await _search_recipes_impl(query, number, include_price_bool, max_cooking_time, cuisine_type)
         
         # 결과를 캐시에 저장 (1시간으로 연장)
-        set_cache(cache_key, result, timeout=3600)
+        set_cache_with_db(cache_key, result, timeout=3600, data_type="recipe_search")
         
         logger.info(f"레시피 검색 성공: {query}, {len(result.recipes)}개 결과")
         return result
@@ -100,7 +100,7 @@ async def search_recipes_post(
         )
         
         # 결과를 캐시에 저장 (1시간으로 연장)
-        set_cache(cache_key, result, timeout=3600)
+        set_cache_with_db(cache_key, result, timeout=3600, data_type="recipe_search")
         
         logger.info(f"POST 레시피 검색 성공: {request.query}, {len(result.recipes)}개 결과")
         return result

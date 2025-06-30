@@ -6,7 +6,7 @@ import os
 import random
 import openai
 from konlpy.tag import Okt
-from app.core.cache import get_cache, set_cache
+from app.core.cache import get_cache, set_cache, set_cache_with_db, save_recommendation_with_cache
 from app.schemas.recommendation import RecommendationResponse
 import logging
 from app.core.config import settings
@@ -241,7 +241,24 @@ async def recommend_result(
             })
 
         # 9. 캐시 저장
-        set_cache(cache_key, response_data, timeout=1800)  # 30분 캐시
+        set_cache_with_db(cache_key, response_data, timeout=1800, data_type="recommendation_result")  # 30분 캐시
+
+        # 10. 추천 결과를 PostgreSQL에 저장 (사용자 ID가 있는 경우)
+        if mode == "test" and response_data.get("result"):
+            try:
+                # 임시로 user_id=1 사용 (실제로는 로그인된 사용자 ID 사용)
+                user_id = 1
+                recipe_id = 1  # 기본 레시피 ID
+                score = 0.8  # 기본 점수
+                
+                save_recommendation_with_cache(
+                    user_id=user_id,
+                    recipe_id=recipe_id,
+                    score=score,
+                    recommendation_data=response_data
+                )
+            except Exception as e:
+                logger.error(f"추천 결과 PostgreSQL 저장 실패: {e}")
 
         return response_data
     except Exception as e:
