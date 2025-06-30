@@ -141,3 +141,6 @@ KAKAO_LOGIN_SETUP.md
 ubuntu@43.202.138.165
 
 README_KOREAN_CRAWLER.md
+DEPLOYMENT.md
+start_server.sh
+update_server.sh

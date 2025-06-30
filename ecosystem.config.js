@@ -2,12 +2,12 @@ module.exports = {
   apps: [{
     name: 'gomgom-ai',
     script: 'uvicorn',
-    interpreter: '/home/ubuntu/gom/venv/bin/python',
+    interpreter: '/home/ubuntu/backend/venv-py311/bin/python',
     args: 'app.main:app --host 0.0.0.0 --port 8000',
-    cwd: '/home/ubuntu/gom',
+    cwd: '/home/ubuntu/backend',
     env: {
       NODE_ENV: 'production',
-      PYTHONPATH: '/home/ubuntu/gom'
+      PYTHONPATH: '/home/ubuntu/backend'
     },
     instances: 1,
     autorestart: true,

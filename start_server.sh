@@ -3,6 +3,9 @@
 echo "🚀 GomGom AI 서버 시작 스크립트"
 echo "================================"
 
+# 백엔드 디렉토리로 이동
+cd /home/ubuntu/backend
+
 # 환경 변수 파일 확인
 if [ ! -f ".env" ]; then
     echo "⚠️  .env 파일이 없습니다. env.example을 복사하여 .env 파일을 생성하세요."
@@ -56,6 +59,13 @@ if command -v redis-cli &> /dev/null; then
 else
     echo "⚠️  redis-cli 명령어를 찾을 수 없습니다. Redis 연결을 수동으로 확인하세요."
 fi
+
+# 프론트엔드 빌드
+echo "🎨 프론트엔드 빌드 중..."
+cd /home/ubuntu/frontend
+npm install
+npm run build
+cd /home/ubuntu/backend
 
 # PM2로 애플리케이션 시작
 echo "🚀 PM2로 애플리케이션 시작 중..."

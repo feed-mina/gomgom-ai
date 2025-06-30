@@ -23,8 +23,13 @@ export default function TestTranslatePage() {
       
       console.log('번역 요청 텍스트:', texts);
       
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!apiUrl) {
+        throw new Error('NEXT_PUBLIC_API_URL is not defined');
+      }
+
       // 백엔드로 직접 호출
-      const response = await fetch('http://localhost:8000/api/v1/translate', {
+      const response = await fetch(`${apiUrl}/api/v1/translate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
