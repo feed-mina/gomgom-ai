@@ -11,6 +11,7 @@ from app.schemas.recommendation import RecommendationResponse
 import logging
 from app.core.config import settings
 import traceback
+from app.utils.prompt_creator import create_yogiyo_prompt_with_options, make_store_info_line, classify_user_input_via_gpt
 
 router = APIRouter()
 okt = Okt()
@@ -27,19 +28,22 @@ def extract_keywords_from_store_name(name: str) -> List[str]:
 def create_yogiyo_prompt_with_options(user_text: str, store_keywords_list: List[str], score: Optional[Dict] = None, input_type: str = "음식") -> str:
     if input_type == "기분":
         context = f'사용자의 현재 기분은 "{user_text}"입니다.'
-        relevance = f'"{user_text}"일 때 먹으면 위로가 되거나 잘 어울리는 음식을 추천해주세요.'
+        relevance = f'"{user_text}"일 때 위로가 되거나 잘 어울리는 음식을 추천해주세요.'
     elif input_type == "상황":
         context = f'사용자의 상황은 "{user_text}"입니다.'
         relevance = f'"{user_text}"에 어울리는 음식 또는 분위기의 가게를 골라주세요.'
-    else:
+    elif input_type == "음식":
         context = f'사용자가 먹고 싶은 음식은 "{user_text}"입니다.'
         relevance = f'"{user_text}"와 가장 비슷하거나 관련 있는 음식을 추천해주세요.'
+    else:
+        context = f'사용자의 입력은 "{user_text}"입니다.'
+        relevance = f'"{user_text}"라는 키워드를 듣고 어울리는 음식을 추천해주세요.'
 
     prompt = f"""
     {context}
     사용자 입력 키워드: "{user_text}"
 
-    아래는 현재 배달 가능한 음식점 리스트입니다. 각 줄은 "가게명: 키워드들" 형식입니다.
+    아래는 현재 배달 가능한 음식점 리스트입니다. 각 줄은 "가게명: 키워드, 카테고리, 대표메뉴" 형식입니다.
     ---
     {chr(10).join(store_keywords_list[:10])}
     ---
@@ -129,20 +133,17 @@ async def recommend_result(
     type6: Optional[str] = None,
     dummy: Optional[str] = Query(None)
 ):
-    # text가 'none'이면 입력 없는 것으로 간주
     if text == 'none':
         text = None
     print("==== recommend_result 진입 ====")
     logger.error("==== recommend_result 진입 ====")
     try:
-        # 1. 캐시 확인
         print("1. 캐시 확인")
         cache_key = f"recommend_{mode}_{text}_{lat}_{lng}_{dummy}"
         cached_data = get_cache(cache_key)
         if cached_data:
             return cached_data
 
-        # 2. 요기요 데이터 가져오기
         print("2. 요기요 데이터 가져오기")
         data = await fetch_yogiyo_data(lat, lng)
         restaurants = data.get("restaurants", [])
@@ -153,84 +154,70 @@ async def recommend_result(
                 "error": "주변에 음식점이 없습니다."
             }
 
-        # 3. 가게명+키워드 리스트 만들기
-        print("3. 가게명+키워드 리스트 만들기")
-        store_keywords_list = [
-            f"{r.get('name')}: {', '.join(extract_keywords_from_store_name(r.get('name', '')))}"
-            for r in restaurants
-        ]
-        random.shuffle(store_keywords_list)
-        store_keywords_list = store_keywords_list[:10]
+        print("3. 가게 정보 리스트 만들기")
+        store_info_list = [make_store_info_line(r) for r in restaurants]
+        random.shuffle(store_info_list)
+        store_info_list = store_info_list[:10]
 
-        # 4. GPT 프롬프트 생성 (dummy 값 추가)
-        print("4. GPT 프롬프트 생성")
+        print("4. 입력 분류 GPT 호출")
+        input_type = await classify_user_input_via_gpt(text or "")
+
+        print("5. GPT 프롬프트 생성")
         score = None
         if mode == "test":
             types = [t for t in [type1, type2, type3, type4, type5, type6] if t]
             score = {t: types.count(t) for t in types}
-        
-        prompt = create_yogiyo_prompt_with_options(text or "", store_keywords_list, score=score) + f"\n#dummy={dummy or random.random()}"
+        prompt = create_yogiyo_prompt_with_options(text or "", store_info_list, score=score, input_type=input_type) + f"\n#dummy={dummy or random.random()}"
 
-        # 5. GPT 호출 직전
-        print("5. GPT 호출 직전")
+        print("6. GPT 호출")
         try:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}]
             )
             gpt_content = response.choices[0].message.content
-            gpt_result = json.loads(gpt_content)
+            gpt_results = json.loads(gpt_content)  # 배열로 파싱
+            if not isinstance(gpt_results, list):
+                gpt_results = [gpt_results]
         except Exception as e:
             logger.error("GPT 호출 실패: %s", traceback.format_exc())
             print("GPT 호출 실패:", traceback.format_exc())
-            # GPT 실패 시 랜덤 추천 fallback
             if len(restaurants) > 1:
                 random.shuffle(restaurants)
-            best_match = random.choice(restaurants)
-            gpt_result = {
-                "store": best_match.get("name", "추천 없음"),
-                "description": f"'{text or '무작위'}'와 어울리는 인기 메뉴를 추천해요!",
-                "category": ", ".join(best_match.get("categories", [])),
-                "keywords": extract_keywords_from_store_name(best_match.get("name", ""))
-            }
-        else:
-            # 6. GPT 호출 성공
-            print("6. GPT 호출 성공")
-            # 6. 요기요 가게 리스트에서 best match 찾기
-            best_match = match_gpt_result_with_yogiyo(gpt_result, restaurants)
-            if not best_match:
-                # Fallback: 랜덤 선택
-                if len(restaurants) > 1:
-                    random.shuffle(restaurants)
-                best_match = random.choice(restaurants)
-                gpt_result = {
+            gpt_results = []
+            for best_match in random.sample(restaurants, min(3, len(restaurants))):
+                gpt_results.append({
                     "store": best_match.get("name", "추천 없음"),
                     "description": f"'{text or '무작위'}'와 어울리는 인기 메뉴를 추천해요!",
                     "category": ", ".join(best_match.get("categories", [])),
-                    "keywords": extract_keywords_from_store_name(best_match.get("name", ""))
-                }
+                    "keywords": best_match.get("keywords", [])
+                })
+        else:
+            print("7. GPT 호출 성공")
+            # backward compatibility: best_match는 첫 번째 결과로
+            best_match = None
+            for r in gpt_results:
+                best_match = next((store for store in restaurants if store.get("name") == r.get("store")), None)
+                if best_match:
+                    break
+            if not best_match and restaurants:
+                best_match = restaurants[0]
 
-        # 7. 응답 데이터 구성
-        print("7. 응답 데이터 구성")
+        print("8. 응답 데이터 구성")
         response_data = {
-            "result": {
-                "store": best_match.get("name", ""),
-                "description": gpt_result.get("description", ""),
-                "category": ", ".join(best_match.get("categories", [])),
-                "keywords": gpt_result.get("keywords", []),
-                "logo_url": best_match.get("logo_url", "")
-            },
-            "restaurants": [{
-                "name": best_match.get("name", ""),
-                "review_avg": str(best_match.get("review_avg", "5점")),
-                "address": best_match.get("address", "주소 정보 없음"),
-                "id": str(best_match.get("id", "ID 없음")),
-                "categories": ", ".join(best_match.get("categories", [])),
-                "logo_url": best_match.get("logo_url", "")
-            }]
+            "results": gpt_results,  # 3개 배열 전체
+            "result": gpt_results[0] if gpt_results else {},  # 첫 번째 결과(기존 호환)
+            "restaurants": [
+                {
+                    "name": r.get("name", ""),
+                    "review_avg": str(r.get("review_avg", "5점")),
+                    "address": r.get("address", "주소 정보 없음"),
+                    "id": str(r.get("id", "ID 없음")),
+                    "categories": ", ".join(r.get("categories", [])),
+                    "logo_url": r.get("logo_url", "")
+                } for r in restaurants
+            ]
         }
-
-        # 8. 모드별 추가 데이터
         if mode == "test":
             response_data.update({
                 "text": text,
@@ -239,18 +226,12 @@ async def recommend_result(
                 "types": [t for t in [type1, type2, type3, type4, type5, type6] if t],
                 "score": score
             })
-
-        # 9. 캐시 저장
-        set_cache_with_db(cache_key, response_data, timeout=1800, data_type="recommendation_result")  # 30분 캐시
-
-        # 10. 추천 결과를 PostgreSQL에 저장 (사용자 ID가 있는 경우)
+        set_cache_with_db(cache_key, response_data, timeout=1800, data_type="recommendation_result")
         if mode == "test" and response_data.get("result"):
             try:
-                # 임시로 user_id=1 사용 (실제로는 로그인된 사용자 ID 사용)
                 user_id = 1
-                recipe_id = 1  # 기본 레시피 ID
-                score = 0.8  # 기본 점수
-                
+                recipe_id = 1
+                score = 0.8
                 save_recommendation_with_cache(
                     user_id=user_id,
                     recipe_id=recipe_id,

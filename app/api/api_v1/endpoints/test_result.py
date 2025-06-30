@@ -5,7 +5,7 @@ import json
 import openai
 from app.core.config import settings
 from app.utils.keyword_extractor import extract_keywords_from_store_name
-from app.utils.prompt_creator import create_yogiyo_prompt_with_testoptions
+from app.utils.prompt_creator import create_yogiyo_prompt_with_options, make_store_info_line, classify_user_input_via_gpt
 from app.utils.store_matcher import match_gpt_result_with_yogiyo
 from app.core.cache import cache
 from app.schemas.test_result import TestResultResponse, TestResult
@@ -37,13 +37,13 @@ async def get_test_result(
         if not restaurants:
             raise HTTPException(status_code=404, detail="주변에 음식점이 없습니다.")
 
-        # 3. 가게명+키워드 리스트 만들기
-        store_keywords_list = [
-            f"{r.get('name')}: {', '.join(extract_keywords_from_store_name(r.get('name', '')))}"
-            for r in restaurants
-        ]
+        store_info_list = [make_store_info_line(r) for r in restaurants]
         if len(restaurants) > 1:
-            random.shuffle(restaurants)
+            random.shuffle(store_info_list)
+        store_info_list = store_info_list[:10]
+
+        print("입력 분류 GPT 호출")
+        input_type = await classify_user_input_via_gpt(text or "")
 
         # 4. 테스트 결과 점수 계산
         score = {}
@@ -52,7 +52,7 @@ async def get_test_result(
                 score[t] = score.get(t, 0) + 1
 
         # 5. GPT 프롬프트 생성 (테스트 결과 반영, dummy 값 추가)
-        prompt = create_yogiyo_prompt_with_testoptions(text, store_keywords_list, score) + f"\n#dummy={dummy or random.random()}"
+        prompt = create_yogiyo_prompt_with_options(text, store_info_list, score, input_type) + f"\n#dummy={dummy or random.random()}"
 
         # 6. GPT 호출
         try:
@@ -61,45 +61,36 @@ async def get_test_result(
                 messages=[{"role": "user", "content": prompt}]
             )
             gpt_content = response.choices[0].message.content
-            gpt_result = json.loads(gpt_content)
+            gpt_results = json.loads(gpt_content)
+            if not isinstance(gpt_results, list):
+                gpt_results = [gpt_results]
         except Exception as e:
-            # GPT 실패 시 랜덤 추천 fallback
             if len(restaurants) > 1:
                 random.shuffle(restaurants)
-            best_match = random.choice(restaurants)
-            gpt_result = {
-                "store": best_match.get("name", "추천 없음"),
-                "description": f"'{text or '무작위'}'와 어울리는 인기 메뉴를 추천해요!",
-                "category": ", ".join(best_match.get("categories", [])),
-                "keywords": extract_keywords_from_store_name(best_match.get("name", ""))
-            }
-        else:
-            # 7. 요기요 가게 리스트에서 best match 찾기
-            best_match = match_gpt_result_with_yogiyo(gpt_result, restaurants)
-            if not best_match:
-                # Fallback: 랜덤 선택
-                if len(restaurants) > 1:
-                    random.shuffle(restaurants)
-                best_match = random.choice(restaurants)
-                gpt_result = {
+            gpt_results = []
+            for best_match in random.sample(restaurants, min(3, len(restaurants))):
+                gpt_results.append({
                     "store": best_match.get("name", "추천 없음"),
                     "description": f"'{text or '무작위'}'와 어울리는 인기 메뉴를 추천해요!",
                     "category": ", ".join(best_match.get("categories", [])),
-                    "keywords": extract_keywords_from_store_name(best_match.get("name", ""))
-                }
+                    "keywords": best_match.get("keywords", [])
+                })
+        else:
+            best_match = None
+            for r in gpt_results:
+                best_match = next((store for store in restaurants if store.get("name") == r.get("store")), None)
+                if best_match:
+                    break
+            if not best_match and restaurants:
+                best_match = restaurants[0]
 
         # 8. 주소 가져오기
         address = await get_address_from_coords(lat, lng)
 
         # 9. 응답 데이터 구성
         result = {
-            "result": {
-                "store": best_match.get("name", ""),
-                "description": gpt_result.get("description", ""),
-                "category": ", ".join(best_match.get("categories", [])),
-                "keywords": gpt_result.get("keywords", []),
-                "logo_url": best_match.get("logo_url", "")
-            },
+            "results": gpt_results,  # 3개 배열 전체
+            "result": gpt_results[0] if gpt_results else {},  # 첫 번째 결과(기존 호환)
             "address": address
         }
 

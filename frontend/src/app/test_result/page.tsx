@@ -202,11 +202,12 @@ const RetryButton = styled.button`
 function TestResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [result, setResult] = useState<TestResult | null>(null);
-  const [currentAddress, setCurrentAddress] = useState<string>('로딩 중...');
+  const [result, setResult] = useState<any | null>(null);
+  const [results, setResults] = useState<any[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const text = searchParams.get('text');
-  const safeText = !text || text === 'none' ? '' : text;
+  const [error, setError] = useState<string>('');
+  const text = searchParams.get('text') || '';
   const lat = searchParams.get('lat') || '';
   const lng = searchParams.get('lng') || '';
   const types = searchParams.get('types') || '';
@@ -217,51 +218,29 @@ function TestResultContent() {
       const response = await apiClient.get('/api/v1/test_result/', {
         params: { text, lat, lng, types, dummy }
       });
-      
       const data = response.data;
-      
-      if (data.error) {
-        throw new Error(data.detail || data.error);
-      }
-      
-      if (!data || !data.result) {
-        throw new Error('Invalid response format');
-      }
-
-      setResult(data.result);
-      
-      const address = data.restaurants && data.restaurants.length > 0
-      ? data.restaurants[0].address
-      : data.address || data.result?.address || '입력필요';
-    setCurrentAddress(address);
-      
-      console.log('[loadResult]data.result.address', data.result?.address);
-      console.log('[loadResult]data.result.store', data.result?.store);
-      console.log('[loadResult]data.result.description', data.result?.description);
-      console.log('[loadResult]data.result.category', data.result?.category);
-      console.log('[loadResult]data.result.keywords', data.result?.keywords);
-      console.log('[loadResult]data.result.logo_url', data.result?.logo_url);
-      console.log('[loadResult]restaurants address', data.restaurants?.[0]?.address);
-    } catch (error) {
-      console.error('결과 로딩 실패:', error);
-      setResult(null);
-      setCurrentAddress('주소 정보를 가져올 수 없습니다');
-    } finally {
+      setResult(data);
+      setResults(data.results || (data.result ? [data.result] : []));
+      setCurrentIndex(0);
+      setIsLoading(false);
+    } catch (err: any) {
+      setError(err.message || '추천 결과를 불러오지 못했습니다.');
       setIsLoading(false);
     }
   }, [text, lat, lng, types, dummy]);
 
   useEffect(() => {
-    if (lat && lng) {
-      loadResult();
-    }
-  }, [lat, lng, types, dummy, loadResult]);
+    loadResult();
+  }, [loadResult]);
 
   const handleRetry = () => {
-    const params = new URLSearchParams(window.location.search);
-    params.set('dummy', Date.now().toString());
-    window.location.search = params.toString();
+    if (results.length > 0) {
+      setCurrentIndex((prev) => (prev + 1) % results.length);
+    }
   };
+
+  // 화면에 표시할 추천 결과
+  const currentResult = results[currentIndex] || result?.result || {};
 
   if (!lat || !lng || !types) {
     return (
@@ -300,58 +279,65 @@ function TestResultContent() {
   }
 
   const shareTitle = `🎯 ${result.store} 테스트 결과!`;
-  const shareDescription = safeText
-    ? `${safeText}랑 관련되어 있는 음식은 ...`
+  const shareDescription = text
+    ? `${text}와/과 관련되어 있는 음식은 ...`
     : `당신에게 어울리는 추천 결과입니다!`;
 
   return (
     <Container>
       <Main>
         <Heading>
-          <h2>당신에게 딱 맞는 음식은?</h2>
-          </Heading>
-          
-      <Card>
-        <h3>오늘의 추천 가게</h3>
-        {safeText && safeText !== '===' && (
-          <div style={{ marginBottom: '0.5rem', fontWeight: 500 }}>
-            {safeText}랑 어울리고 ,
-          </div>
+          <h2>오늘의 추천 가게</h2>
+        </Heading>
+        <Card>
+        
+        {text && text !== '===' && (
+          <h2 style={{ marginBottom: '0.5rem', fontWeight: 500 }}>
+            {shareDescription}  
+          </h2>
         )}
-        <h3>{result.store}</h3>
-        <p><strong>{result.description}</strong></p>
-        <Address>{currentAddress}</Address>
-        {/* <Result> */}
-          <SideInfo>
-           
-          <ResultImage
-            src="/image/rabbit_chef_body2.png"
-            alt="토끼"
-            width={200}
-            height={200}
-          />
-        <InfoText>
-          {safeText && safeText !== '===' && (
-            <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>입력 텍스트:</span> {safeText}</div>
-          )}
-          <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>테스트 결과:</span> {types}</div>
-          <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>카테고리:</span> {result?.category || ''}</div>
-          <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>키워드:</span> {result?.keywords?.join(', ') || ''}</div>
+          <SelectedStore>{currentResult.store}</SelectedStore>
+          <SelectedDescription>{currentResult.description}</SelectedDescription>
+          <Address>{currentResult.address || result?.address}</Address>
+            <ResultImage
+              src="/image/rabbit_chef_body2.png"
+              alt="토끼"
+              width={200}
+              height={200}
+            />
+          {currentResult.logo_url && (
           <StoreLogo
-            src={result?.logo_url || '/image/default_store_logo.png'}
+            src={currentResult?.logo_url || '/image/default_store_logo.png'}
             alt="추천 가게 로고"
             width={100}
             height={100}
           />
-        </InfoText>
-          </SideInfo>
-        {/* </Result> */}
+          )}
+          <InfoText>
+            <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>카테고리:</span> {currentResult.category}</div>
+            <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>키워드:</span> {currentResult.keywords?.join(', ')}</div>
+          </InfoText>
+          <button
+            style={{
+              background: '#8CC0DE',
+              color: 'white',
+              border: 'none',
+              borderRadius: 8,
+              padding: '12px 28px',
+              fontSize: 16,
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+              marginTop: '1rem'
+            }}
+            onClick={handleRetry}
+          >
+            🔄 다시 추천받기
+          </button>
         </Card>
-        {/* <RetryButton onClick={handleRetry}>다시하기</RetryButton> */}
         <KakaoShare
-          title={shareTitle}
-          description={shareDescription}
-          buttonText="🎯 카카오톡으로 테스트 결과 공유하기"
+          title={currentResult.store ? `🍔 ${currentResult.store} 추천!` : '추천 결과'}
+          description={currentResult.description || ''}
         />
       </Main>
     </Container>

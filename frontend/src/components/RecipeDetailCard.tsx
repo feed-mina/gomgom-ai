@@ -47,7 +47,7 @@ function cleanSummary(summary: string): string {
   return cleaned.trim();
 }
 
-export const RecipeDetailCard: React.FC<RecipeDetailCardProps> = ({ recipe }) => {
+const RecipeDetailCardComponent: React.FC<RecipeDetailCardProps> = ({ recipe }) => {
   return (
     <Card sx={{ maxWidth: 800, width: '100%', mx: 'auto' }}>
       {recipe.image && (
@@ -56,6 +56,7 @@ export const RecipeDetailCard: React.FC<RecipeDetailCardProps> = ({ recipe }) =>
           height="400"
           image={recipe.image}
           alt={recipe.title}
+          loading="lazy"
           sx={{ objectFit: 'cover' }}
         />
       )}
@@ -348,4 +349,6 @@ export const RecipeDetailCard: React.FC<RecipeDetailCardProps> = ({ recipe }) =>
       </CardContent>
     </Card>
   );
-}; 
+};
+
+export const RecipeDetailCard = React.memo(RecipeDetailCardComponent); 

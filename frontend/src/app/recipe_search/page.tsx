@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Container,
   Typography,
@@ -24,6 +24,15 @@ import { RecipeCard } from '../../components/RecipeCard';
 import { useRouter } from 'next/navigation';
 import { batchTranslate } from '../../types/translate';
 
+const KOREAN_KEYWORDS = [
+  '김밥', '비빔밥', '불고기', '된장찌개', '김치찌개', '잡채', '떡볶이', '갈비', '삼겹살', '순두부', '부대찌개', '파전', '감자탕', '냉면', '칼국수', '수제비', '팥빙수', '전', '국밥', '콩나물국밥', '순대', '오징어볶음', '제육볶음', '닭갈비', '닭볶음탕', '찜닭', '불닭', '쭈꾸미', '해물파전', '김치전', '계란찜', '계란말이', '미역국', '갈비탕', '설렁탕', '육개장', '곰탕', '동태찌개', '감자조림', '멸치볶음', '시금치나물', '콩나물무침', '무생채', '도라지무침', '고등어조림', '코다리조림', '장조림', '오이무침', '깻잎장아찌', '고추장아찌', '깍두기', '총각김치', '백김치', '열무김치', '동치미', '오징어채볶음', '고추장불고기', '닭강정', '닭발', '곱창', '막창', '순대국', '감자전', '호박전', '동그랑땡', '유부초밥', '주먹밥', '비빔국수', '잔치국수', '쫄면', '라면', '부추전', '고추전', '고등어구이', '삼치구이', '꽁치조림', '북엇국', '콩비지찌개', '청국장', '홍합탕', '매운탕', '아구찜', '해물찜', '낙지볶음', '낙지탕탕이', '오징어순대', '명태조림', '명란젓', '오징어젓', '창란젓', '게장', '간장게장', '양념게장', '새우장', '멍게비빔밥', '돌솥비빔밥', '산채비빔밥', '콩국수', '냉콩국수', '우엉조림', '연근조림', '고사리나물', '취나물', '도토리묵', '묵사발', '묵무침', '오이소박이', '깻잎김치', '파김치', '고추김치', '나박김치', '물김치', '보쌈', '족발', '편육', '수육', '홍어삼합', '굴비', '조기구이', '병어조림', '갈치조림', '갈치구이', '고등어무조림', '꽁치구이', '장어구이', '장어덮밥', '추어탕', '민물매운탕', '복지리', '복매운탕', '아욱국', '시래기국', '우거지국', '우거지해장국', '선지해장국', '콩나물해장국', '북어해장국', '황태해장국', '뼈해장국', '감자해장국', '매운해장국', '닭한마리', '닭도리탕', '닭곰탕', '닭죽', '삼계탕', '오리백숙', '오리주물럭', '오리불고기', '오리훈제', '오리탕', '오리로스', '오리찜', '오리구이', '오리백숙', '오리탕', '오리주물럭', '오리불고기', '오리훈제', '오리로스', '오리찜', '오리구이'
+  // 필요시 더 추가
+];
+
+function isKoreanFood(query: string): boolean {
+  return KOREAN_KEYWORDS.some(keyword => query.includes(keyword));
+}
+
 export default function RecipeSearchPage() {
   const [query, setQuery] = useState('');
   const [cuisineType, setCuisineType] = useState<string>('all'); // 요리 타입 선택
@@ -44,7 +53,10 @@ export default function RecipeSearchPage() {
 
     try {
       // 요리 타입에 따라 cuisine_type 설정
-      const cuisineTypeParam = cuisineType === 'all' ? undefined : cuisineType;
+      const cuisineTypeParam =
+        cuisineType === 'all'
+          ? (isKoreanFood(query) ? 'korean' : undefined)
+          : cuisineType;
       
       const result = await recipeApi.searchRecipes({
         query: query.trim(),
@@ -78,24 +90,17 @@ export default function RecipeSearchPage() {
       const translated = await batchTranslate(textsToTranslate);
       
       // 번역 결과 매핑
-      let idx = 0;
-      const translatedRecipes = result.recipes.map((r) => {
-        const title_ko = translated[idx++];
-        const summary_ko = translated[idx++];
-        const difficulty_ko = translated[idx++];
-        const ingredients_ko = r.ingredients?.map(() => translated[idx++]) || [];
-        const cuisines_ko = r.cuisines?.map(() => translated[idx++]) || [];
-        const dishTypes_ko = r.dishTypes?.map(() => translated[idx++]) || [];
-        const diets_ko = r.diets?.map(() => translated[idx++]) || [];
+      const translatedRecipes = translated.map((translatedText, index) => {
+        const recipe = result.recipes[index];
         return {
-          ...r,
-          title: title_ko,
-          summary: summary_ko,
-          difficulty: difficulty_ko,
-          ingredients: r.ingredients?.map((i, iidx) => ({ ...i, name: ingredients_ko[iidx] })) || [],
-          cuisines: cuisines_ko,
-          dishTypes: dishTypes_ko,
-          diets: diets_ko,
+          ...recipe,
+          title: translatedText,
+          summary: translatedText,
+          difficulty: translatedText,
+          ingredients: recipe.ingredients?.map((i, iidx) => ({ ...i, name: translatedText })) || [],
+          cuisines: recipe.cuisines?.map(() => translatedText) || [],
+          dishTypes: recipe.dishTypes?.map(() => translatedText) || [],
+          diets: recipe.diets?.map(() => translatedText) || [],
         };
       });
       
