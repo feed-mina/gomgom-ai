@@ -8,7 +8,7 @@ from app.utils.keyword_extractor import extract_keywords_from_store_name
 from app.utils.prompt_creator import create_yogiyo_prompt_with_options, make_store_info_line, classify_user_input_via_gpt
 from app.utils.store_matcher import match_gpt_result_with_yogiyo
 from app.core.cache import cache
-from app.schemas.test_result import TestResultResponse, TestResult
+from app.schemas.test_result import TestResult
 import random
 from app.db.session import SessionLocal
 from app.db.crud import save_recommendation_history
