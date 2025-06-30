@@ -10,6 +10,7 @@ from app.utils.external_apis import spoonacular_client
 from app.core.cache import get_cache, set_cache, cache_result
 from app.utils.translator import translator
 import logging
+from app.utils.korean_recipe_crawler import get_recipe_by_id as korean_recipe_crawler_get_recipe_by_id
 # from app.core.cache import get_cache, set_cache, delete_cache
 
 logger = logging.getLogger(__name__)
@@ -295,3 +296,12 @@ async def get_external_recipe(recipe_id: int):
     except Exception as e:
         logger.error(f"외부 레시피 조회 중 오류 발생: {e}")
         raise HTTPException(status_code=500, detail="레시피 조회 중 오류가 발생했습니다.") 
+
+@router.get("/internal/{recipe_id}")
+async def get_internal_recipe(recipe_id: int):
+    # 만개의레시피 DB/크롤러에서 recipe_id로 상세 정보 반환
+    # 예시:
+    recipe = await korean_recipe_crawler_get_recipe_by_id(recipe_id)
+    if not recipe:
+        raise HTTPException(status_code=404, detail="레시피를 찾을 수 없습니다.")
+    return recipe 

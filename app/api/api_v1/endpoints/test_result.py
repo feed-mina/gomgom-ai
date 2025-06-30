@@ -91,8 +91,8 @@ async def get_test_result(
 
         # 9. 응답 데이터 구성
         result = {
-            "results": gpt_results,  # 3개 배열 전체
-            "result": gpt_results[0] if gpt_results else {},  # 첫 번째 결과(기존 호환)
+            "results": gpt_results if gpt_results is not None else [],
+            "result": gpt_results[0] if gpt_results and len(gpt_results) > 0 else {},
             "address": address
         }
 

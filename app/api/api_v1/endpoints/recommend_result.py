@@ -249,7 +249,7 @@ async def recommend_result(
         db = SessionLocal()
         save_recommendation_history(
             db=db,
-            user_id=current_user.id if current_user else None,
+            user_id=None,
             request_type="recommend_result",
             input_data={"text": text, "lat": lat, "lng": lng, "mode": mode, "type1": type1, "type2": type2, "type3": type3, "type4": type4, "type5": type5, "type6": type6, "dummy": dummy},
             result_data=response_data
@@ -260,7 +260,7 @@ async def recommend_result(
         logger.error(f"recommend_result 예외: {e}")
         # 예외 발생 시에도 result, restaurants 필드 포함
         return {
-            "result": None,
+            "result": {},
             "restaurants": [],
             "error": str(e)
         }

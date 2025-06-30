@@ -132,7 +132,7 @@ class KoreanRecipeCrawler:
                 elif isinstance(recipe_data['image'], str):
                     image_url = recipe_data['image']
             
-            return {
+            recipe = {
                 'id': f"10000recipe_{recipe_id}",
                 'title': recipe_data.get('name', ''),
                 'summary': recipe_data.get('description', ''),
@@ -161,6 +161,10 @@ class KoreanRecipeCrawler:
                     ]
                 }] if instructions else []
             }
+            
+            recipe["source"] = "10000recipe"
+            
+            return recipe
             
         except Exception as e:
             logger.error(f"JSON 파싱 중 오류: {e}")
@@ -210,7 +214,7 @@ class KoreanRecipeCrawler:
                 if not image_url.startswith('http'):
                     image_url = f"https:{image_url}"
             
-            return {
+            recipe = {
                 'id': f"10000recipe_{recipe_id}",
                 'title': title,
                 'summary': f"{title} 레시피입니다.",
@@ -240,6 +244,10 @@ class KoreanRecipeCrawler:
                 }] if instructions else []
             }
             
+            recipe["source"] = "10000recipe"
+            
+            return recipe
+            
         except Exception as e:
             logger.error(f"HTML 파싱 중 오류: {e}")
             return None
@@ -266,6 +274,15 @@ class KoreanRecipeCrawler:
         except Exception as e:
             logger.error(f"조리 시간 추출 중 오류: {e}")
             return 30  # 기본값
+
+async def get_recipe_by_id(recipe_id: int):
+    # 만개의레시피 DB/크롤러에서 recipe_id로 상세 정보 반환
+    # 실제 구현에 맞게 아래를 수정하세요!
+    # 예시: 내부 DB에서 recipe_id로 조회
+    # 또는 크롤러에서 해당 id로 상세 정보 크롤링
+    # 아래는 예시입니다.
+    recipe = await korean_recipe_crawler.search_recipes(recipe_id)  # recipe_id로 레시피를 가져오는 코드
+    return recipe
 
 # 전역 크롤러 인스턴스
 korean_recipe_crawler = KoreanRecipeCrawler()
