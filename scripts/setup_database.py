@@ -59,7 +59,7 @@ def main():
             print("\nSetup cancelled by user.")
             break
         except Exception as e:
-            print(f"\nError during setup: {e}")
+            # Print(f"\nError during setup: {e}")
             print("Please check your PostgreSQL configuration and try again.")
             break
 

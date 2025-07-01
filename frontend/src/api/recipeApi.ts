@@ -39,8 +39,11 @@ export const recipeApi = {
     return response.data;
   },
 
-  getRecipeById: async (id: number | string) => {
-    const response = await api.get(`/api/v1/recipes/external/${id}`);
+  getRecipeById: async (id: number | string, source?: string, translate: boolean = false) => {
+    // 한식인 경우 internal 엔드포인트 사용, 그 외에는 external 엔드포인트 사용
+    const endpoint = source === 'KoreanRecipeCrawler' ? 'internal' : 'external';
+    const params = translate ? { translate: 'true' } : {};
+    const response = await api.get(`/api/v1/recipes/${endpoint}/${id}`, { params });
     return response.data;
   },
 }; 

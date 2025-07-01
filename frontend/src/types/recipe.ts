@@ -45,7 +45,7 @@ export interface RecipeNutrition {
 }
 
 export interface RecipeRecommendation {
-  id?: number;
+  id?: number | string;
   title: string;
   summary?: string;
   image_url?: string;

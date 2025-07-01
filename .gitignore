@@ -144,3 +144,7 @@ README_KOREAN_CRAWLER.md
 DEPLOYMENT.md
 start_server.sh
 update_server.sh
+ecosystem.config.js
+.env.backup
+frontend/ecosystem.config.js
+

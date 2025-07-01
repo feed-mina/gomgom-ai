@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Union
 from datetime import datetime
 
 class RecipeBase(BaseModel):
@@ -56,7 +56,7 @@ class RecipeNutrition(BaseModel):
     fiber: Optional[float] = None
 
 class RecipeRecommendation(BaseModel):
-    id: Optional[int] = None
+    id: Optional[Union[int, str]] = None
     title: str
     summary: Optional[str] = None
     image_url: Optional[str] = None

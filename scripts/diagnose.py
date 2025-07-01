@@ -13,12 +13,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 def print_header(title):
-    print(f"\n{'='*50}")
-    print(f"🔍 {title}")
-    print(f"{'='*50}")
+    # Print(f"\n{'='*50}")
+    # Print(f"🔍 {title}")
+    # Print(f"{'='*50}")
 
 def print_section(title):
-    print(f"\n📋 {title}")
+    # Print(f"\n📋 {title}")
     print("-" * 30)
 
 def check_env_file():
@@ -47,9 +47,9 @@ def check_env_file():
         for var in required_vars:
             value = os.getenv(var)
             if value and value not in ["your_openai_api_key_here", "your_spoonacular_api_key_here"]:
-                print(f"✅ {var}: 설정됨")
+                # Print(f"✅ {var}: 설정됨")
             else:
-                print(f"❌ {var}: 설정되지 않음 또는 기본값")
+                # Print(f"❌ {var}: 설정되지 않음 또는 기본값")
     else:
         print("❌ .env 파일이 없습니다.")
         print("💡 해결방법: cp env.example .env")
@@ -82,7 +82,7 @@ def check_database_connection():
         print("❌ psycopg2가 설치되지 않았습니다.")
         print("💡 해결방법: pip install psycopg2-binary")
     except OperationalError as e:
-        print(f"❌ 데이터베이스 연결 실패: {e}")
+        # Print(f"❌ 데이터베이스 연결 실패: {e}")
         print("💡 해결방법: PostgreSQL 서버가 실행 중인지 확인하세요.")
 
 def check_redis_connection():
@@ -110,7 +110,7 @@ def check_redis_connection():
         print("❌ redis가 설치되지 않았습니다.")
         print("💡 해결방법: pip install redis")
     except Exception as e:
-        print(f"❌ Redis 연결 실패: {e}")
+        # Print(f"❌ Redis 연결 실패: {e}")
         print("💡 해결방법: Redis 서버가 실행 중인지 확인하세요.")
 
 def check_api_keys():
@@ -147,20 +147,20 @@ def check_server_status():
         if response.status_code == 200:
             data = response.json()
             print("✅ FastAPI 서버가 실행 중입니다.")
-            print(f"   상태: {data.get('status', 'unknown')}")
+            # Print(f"   상태: {data.get('status', 'unknown')}")
             
             # 서비스 상태 출력
             services = data.get('services', {})
             for service, status in services.items():
-                print(f"   {service}: {status}")
+                # Print(f"   {service}: {status}")
                 
         else:
-            print(f"❌ 서버 응답 오류: {response.status_code}")
+            # Print(f"❌ 서버 응답 오류: {response.status_code}")
     except requests.exceptions.ConnectionError:
         print("❌ FastAPI 서버에 연결할 수 없습니다.")
         print("💡 해결방법: 서버가 실행 중인지 확인하세요.")
     except Exception as e:
-        print(f"❌ 서버 상태 확인 실패: {e}")
+        # Print(f"❌ 서버 상태 확인 실패: {e}")
 
 def check_frontend():
     """프론트엔드 상태 확인"""
@@ -171,12 +171,12 @@ def check_frontend():
         if response.status_code == 200:
             print("✅ Next.js 프론트엔드가 실행 중입니다.")
         else:
-            print(f"❌ 프론트엔드 응답 오류: {response.status_code}")
+            # Print(f"❌ 프론트엔드 응답 오류: {response.status_code}")
     except requests.exceptions.ConnectionError:
         print("❌ Next.js 프론트엔드에 연결할 수 없습니다.")
         print("💡 해결방법: npm run dev로 프론트엔드를 시작하세요.")
     except Exception as e:
-        print(f"❌ 프론트엔드 상태 확인 실패: {e}")
+        # Print(f"❌ 프론트엔드 상태 확인 실패: {e}")
 
 def check_pm2_status():
     """PM2 상태 확인"""

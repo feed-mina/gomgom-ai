@@ -10,11 +10,11 @@ from app.core.config import settings
 def test_connection():
     """PostgreSQL 연결을 테스트하는 함수 (pg8000 사용)"""
     print("Testing PostgreSQL connection with pg8000...")
-    print(f"Host: {settings.POSTGRES_SERVER}")
-    print(f"Port: {settings.POSTGRES_PORT}")
-    print(f"User: {settings.POSTGRES_USER}")
-    print(f"Password: {settings.POSTGRES_PASSWORD}")
-    print(f"Database: {settings.POSTGRES_DB}")
+    # Print(f"Host: {settings.POSTGRES_SERVER}")
+    # Print(f"Port: {settings.POSTGRES_PORT}")
+    # Print(f"User: {settings.POSTGRES_USER}")
+    # Print(f"Password: {settings.POSTGRES_PASSWORD}")
+    # Print(f"Database: {settings.POSTGRES_DB}")
     
     try:
         # 기본 postgres 데이터베이스에 연결 시도
@@ -31,7 +31,7 @@ def test_connection():
         cursor = conn.cursor()
         cursor.execute("SELECT version();")
         version = cursor.fetchone()
-        print(f"PostgreSQL version: {version[0]}")
+        # Print(f"PostgreSQL version: {version[0]}")
         
         cursor.close()
         conn.close()
@@ -81,8 +81,8 @@ def test_connection():
         return True
         
     except Exception as e:
-        print(f"\n✗ Connection test failed: {e}")
-        print(f"Error type: {type(e).__name__}")
+        # Print(f"\n✗ Connection test failed: {e}")
+        # Print(f"Error type: {type(e).__name__}")
         return False
 
 if __name__ == "__main__":

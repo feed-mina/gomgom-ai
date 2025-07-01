@@ -12,11 +12,11 @@ async def test_health_check():
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(f"{BASE_URL}/health")
-            print(f"✅ 헬스체크 성공: {response.status_code}")
-            print(f"📄 응답: {response.json()}")
+            # Print(f"✅ 헬스체크 성공: {response.status_code}")
+            # Print(f"📄 응답: {response.json()}")
             return True
         except Exception as e:
-            print(f"❌ 헬스체크 실패: {e}")
+            # Print(f"❌ 헬스체크 실패: {e}")
             return False
 
 async def test_recipe_search():
@@ -27,18 +27,18 @@ async def test_recipe_search():
             # 올바른 엔드포인트 사용
             params = {"query": "김치찌개", "number": 3}
             response = await client.get(f"{BASE_URL}/api/v1/recommendations/search", params=params)
-            print(f"✅ 레시피 검색 성공: {response.status_code}")
+            # Print(f"✅ 레시피 검색 성공: {response.status_code}")
             
             data = response.json()
             if "recipes" in data:
-                print(f"📄 검색된 레시피 수: {len(data['recipes'])}")
+                # Print(f"📄 검색된 레시피 수: {len(data['recipes'])}")
                 for i, recipe in enumerate(data['recipes'][:2], 1):
-                    print(f"  {i}. {recipe.get('title', '제목 없음')}")
+                    # Print(f"  {i}. {recipe.get('title', '제목 없음')}")
             else:
-                print(f"📄 응답: {data}")
+                # Print(f"📄 응답: {data}")
             return True
         except Exception as e:
-            print(f"❌ 레시피 검색 실패: {e}")
+            # Print(f"❌ 레시피 검색 실패: {e}")
             return False
 
 async def test_recipe_recommendations():
@@ -59,18 +59,18 @@ async def test_recipe_recommendations():
                 f"{BASE_URL}/api/v1/recommendations/search",
                 json=request_data
             )
-            print(f"✅ 레시피 추천 성공: {response.status_code}")
+            # Print(f"✅ 레시피 추천 성공: {response.status_code}")
             
             data = response.json()
             if "recipes" in data:
-                print(f"📄 추천된 레시피 수: {len(data['recipes'])}")
+                # Print(f"📄 추천된 레시피 수: {len(data['recipes'])}")
                 for i, recipe in enumerate(data['recipes'][:2], 1):
-                    print(f"  {i}. {recipe.get('title', '제목 없음')}")
+                    # Print(f"  {i}. {recipe.get('title', '제목 없음')}")
             else:
-                print(f"📄 응답: {data}")
+                # Print(f"📄 응답: {data}")
             return True
         except Exception as e:
-            print(f"❌ 레시피 추천 실패: {e}")
+            # Print(f"❌ 레시피 추천 실패: {e}")
             return False
 
 async def test_restaurant_search():
@@ -84,13 +84,13 @@ async def test_restaurant_search():
                 "text": "한식"
             }
             response = await client.get(f"{BASE_URL}/api/v1/recommendations/recommend_result/", params=params)
-            print(f"✅ 음식점 검색 성공: {response.status_code}")
+            # Print(f"✅ 음식점 검색 성공: {response.status_code}")
             
             data = response.json()
-            print(f"📄 응답: {data}")
+            # Print(f"📄 응답: {data}")
             return True
         except Exception as e:
-            print(f"❌ 음식점 검색 실패: {e}")
+            # Print(f"❌ 음식점 검색 실패: {e}")
             return False
 
 async def test_translation():
@@ -102,16 +102,16 @@ async def test_translation():
         # 한글 -> 영어 번역 테스트
         korean_text = "김치찌개는 한국의 대표적인 음식입니다."
         english_result = await translator.translate_to_english(korean_text)
-        print(f"✅ 한글 -> 영어 번역: {english_result}")
+        # Print(f"✅ 한글 -> 영어 번역: {english_result}")
         
         # 영어 -> 한글 번역 테스트
         english_text = "Kimchi stew is a representative Korean dish."
         korean_result = await translator.translate_to_korean(english_text)
-        print(f"✅ 영어 -> 한글 번역: {korean_result}")
+        # Print(f"✅ 영어 -> 한글 번역: {korean_result}")
         
         return True
     except Exception as e:
-        print(f"❌ 번역 기능 테스트 실패: {e}")
+        # Print(f"❌ 번역 기능 테스트 실패: {e}")
         return False
 
 async def test_ingredients_search():
@@ -121,18 +121,18 @@ async def test_ingredients_search():
         try:
             params = {"query": "돼지고기", "limit": 5}
             response = await client.get(f"{BASE_URL}/api/v1/ingredients/search", params=params)
-            print(f"✅ 재료 검색 성공: {response.status_code}")
+            # Print(f"✅ 재료 검색 성공: {response.status_code}")
             
             data = response.json()
             if "ingredients" in data:
-                print(f"📄 검색된 재료 수: {len(data['ingredients'])}")
+                # Print(f"📄 검색된 재료 수: {len(data['ingredients'])}")
                 for i, ingredient in enumerate(data['ingredients'][:3], 1):
-                    print(f"  {i}. {ingredient.get('name', '이름 없음')}")
+                    # Print(f"  {i}. {ingredient.get('name', '이름 없음')}")
             else:
-                print(f"📄 응답: {data}")
+                # Print(f"📄 응답: {data}")
             return True
         except Exception as e:
-            print(f"❌ 재료 검색 실패: {e}")
+            # Print(f"❌ 재료 검색 실패: {e}")
             return False
 
 async def test_recommendations_health():
@@ -141,11 +141,11 @@ async def test_recommendations_health():
     async with httpx.AsyncClient() as client:
         try:
             response = await client.get(f"{BASE_URL}/api/v1/recommendations/health")
-            print(f"✅ 추천 서비스 헬스체크 성공: {response.status_code}")
-            print(f"📄 응답: {response.json()}")
+            # Print(f"✅ 추천 서비스 헬스체크 성공: {response.status_code}")
+            # Print(f"📄 응답: {response.json()}")
             return True
         except Exception as e:
-            print(f"❌ 추천 서비스 헬스체크 실패: {e}")
+            # Print(f"❌ 추천 서비스 헬스체크 실패: {e}")
             return False
 
 async def main():
@@ -169,7 +169,7 @@ async def main():
             result = await test()
             results.append(result)
         except Exception as e:
-            print(f"❌ 테스트 실행 중 오류: {e}")
+            # Print(f"❌ 테스트 실행 중 오류: {e}")
             results.append(False)
     
     print("\n" + "=" * 50)
@@ -188,11 +188,11 @@ async def main():
     
     for i, (name, result) in enumerate(zip(test_names, results), 1):
         status = "✅ 성공" if result else "❌ 실패"
-        print(f"{i}. {name}: {status}")
+        # Print(f"{i}. {name}: {status}")
     
     success_count = sum(results)
     total_count = len(results)
-    print(f"\n🎯 전체 성공률: {success_count}/{total_count} ({success_count/total_count*100:.1f}%)")
+    # Print(f"\n🎯 전체 성공률: {success_count}/{total_count} ({success_count/total_count*100:.1f}%)")
 
 if __name__ == "__main__":
     asyncio.run(main()) 

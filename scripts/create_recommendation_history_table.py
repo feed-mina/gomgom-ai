@@ -68,7 +68,7 @@ def create_recommendation_history_table():
         
     except Exception as e:
         conn.rollback()
-        print(f"❌ Error creating table: {e}")
+        # Print(f"❌ Error creating table: {e}")
         
     finally:
         cur.close()

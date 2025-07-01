@@ -124,16 +124,16 @@ async def kakao_callback(code: str, db: Session = Depends(get_db)):
             nickname = user_info.get("properties", {}).get("nickname", "카카오 사용자")
             
             # 디버깅을 위한 로그
-            print(f"Kakao user info: {user_info}")
-            print(f"Kakao account: {kakao_account}")
-            print(f"Email: {email}")
-            print(f"Nickname: {nickname}")
+            # Print(f"Kakao user info: {user_info}")
+            # Print(f"Kakao account: {kakao_account}")
+            # Print(f"Email: {email}")
+            # Print(f"Nickname: {nickname}")
             
             # 이메일이 없는 경우 처리
             if not email:
                 # 카카오 ID를 기반으로 임시 이메일 생성
                 email = f"kakao_{kakao_id}@kakao.com"
-                print(f"Generated email: {email}")
+                # Print(f"Generated email: {email}")
             
             # 4. 기존 사용자 확인 또는 새 사용자 생성
             user = db.query(User).filter(User.email == email).first()
@@ -149,9 +149,10 @@ async def kakao_callback(code: str, db: Session = Depends(get_db)):
                 db.add(user)
                 db.commit()
                 db.refresh(user)
-                print(f"Created new user: {user.email}")
+                # Print(f"Created new user: {user.email}")
             else:
-                print(f"Found existing user: {user.email}")
+                # Print(f"Found existing user: {user.email}")
+                pass
 
             # Redis에 사용자 정보 캐싱
             user_data = {
@@ -181,11 +182,11 @@ async def kakao_callback(code: str, db: Session = Depends(get_db)):
             }
             
     except httpx.HTTPStatusError as e:
-        print(f"HTTP error in Kakao callback: {e}")
-        print(f"Response content: {e.response.content}")
+        # Print(f"HTTP error in Kakao callback: {e}")
+        # Print(f"Response content: {e.response.content}")
         raise HTTPException(status_code=e.response.status_code, detail=f"Kakao API error: {e}")
     except Exception as e:
-        print(f"Unexpected error in Kakao callback: {e}")
+        # Print(f"Unexpected error in Kakao callback: {e}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")

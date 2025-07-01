@@ -43,8 +43,8 @@ async def test_korean_crawler_only():
     
     for query, cuisine_type, description in test_cases:
         cuisine_display = cuisine_type if cuisine_type else "필터링 없음"
-        print(f"\n🔍 테스트: '{query}' (cuisine_type: {cuisine_display})")
-        print(f"   설명: {description}")
+        # Print(f"\n🔍 테스트: '{query}' (cuisine_type: {cuisine_display})")
+        # Print(f"   설명: {description}")
         print("-" * 50)
         
         try:
@@ -55,25 +55,25 @@ async def test_korean_crawler_only():
                 cuisine_type=cuisine_type
             )
             
-            print(f"✅ 검색 결과: {len(recipes)}개 레시피 발견")
+            # Print(f"✅ 검색 결과: {len(recipes)}개 레시피 발견")
             
             # 결과 요약
             for i, recipe in enumerate(recipes[:2], 1):
                 title = recipe.get("title", "제목 없음")
                 source = recipe.get("source", "출처 없음")
                 cuisines = recipe.get("cuisines", [])
-                print(f"  {i}. {title}")
-                print(f"     출처: {source}")
-                print(f"     요리 타입: {cuisines}")
+                # Print(f"  {i}. {title}")
+                # Print(f"     출처: {source}")
+                # Print(f"     요리 타입: {cuisines}")
                 
                 # 한식 크롤러에서 온 결과인지 확인
                 if source == "10000recipe":
-                    print(f"     🍜 한식 크롤러에서 가져온 결과")
+                    # Print(f"     🍜 한식 크롤러에서 가져온 결과")
                 else:
-                    print(f"     🌐 Spoonacular API에서 가져온 결과")
+                    # Print(f"     🌐 Spoonacular API에서 가져온 결과")
                 
         except Exception as e:
-            print(f"❌ 오류 발생: {e}")
+            # Print(f"❌ 오류 발생: {e}")
     
     print("\n" + "=" * 60)
     print("🎉 테스트 완료!")

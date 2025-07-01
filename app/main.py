@@ -11,6 +11,7 @@ import logging
 import time
 import traceback
 from typing import Dict, Any
+from fastapi.staticfiles import StaticFiles
 
 # 로깅 설정
 logging.basicConfig(
@@ -34,6 +35,8 @@ app = FastAPI(
     openapi_url="/openapi.json",
     # 비동기 지원 강화
     default_response_class=JSONResponse,
+    # 응답 처리 안정성 향상
+    debug=False,
 )
 
 # Gzip 압축 미들웨어 추가 (응답 크기 감소)
@@ -56,10 +59,30 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001", 
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://localhost:3000/",
+        "http://127.0.0.1:3000/",
+        "*"  # 개발 환경에서만 사용
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language", 
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Origin",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers"
+    ],
+    expose_headers=["*"],
+    max_age=86400,  # 24시간
 )
 
 # 요청 로깅 미들웨어
@@ -69,7 +92,7 @@ async def log_requests(request: Request, call_next):
     start_time = time.time()
     
     # 요청 정보 로깅
-    logger.info(f"요청 시작: {request.method} {request.url.path} - {request.client.host}")
+    # # logger.info(f"요청 시작: {request.method} {request.url.path} - {request.client.host}")
     
     try:
         response = await call_next(request)
@@ -79,7 +102,7 @@ async def log_requests(request: Request, call_next):
         response.headers["X-Process-Time"] = str(process_time)
         
         # 응답 정보 로깅
-        logger.info(f"요청 완료: {request.method} {request.url.path} - {response.status_code} ({process_time:.3f}s)")
+        # # logger.info(f"요청 완료: {request.method} {request.url.path} - {response.status_code} ({process_time:.3f}s)")
         
         return response
     
@@ -88,6 +111,19 @@ async def log_requests(request: Request, call_next):
         process_time = time.time() - start_time
         logger.error(f"요청 실패: {request.method} {request.url.path} - {str(e)} ({process_time:.3f}s)")
         logger.error(f"오류 상세: {traceback.format_exc()}")
+        
+        # Content-Length 오류 특별 처리
+        if "Too little data for declared Content-Length" in str(e):
+            logger.warning("Content-Length 불일치 오류 - 안전한 응답 반환")
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "error": "응답 처리 오류",
+                    "detail": "응답 데이터 처리 중 오류가 발생했습니다.",
+                    "path": request.url.path
+                }
+            )
+        
         raise
 
 # 전역 예외 처리기
@@ -123,6 +159,20 @@ async def general_exception_handler(request: Request, exc: Exception):
     """일반 예외 처리"""
     logger.error(f"예상치 못한 오류 발생: {str(exc)}")
     logger.error(f"오류 상세: {traceback.format_exc()}")
+    
+    # Content-Length 오류 특별 처리
+    if "Too little data for declared Content-Length" in str(exc):
+        logger.warning("Content-Length 불일치 오류 감지 - 빈 응답으로 처리")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": "응답 처리 오류",
+                "detail": "응답 데이터 처리 중 오류가 발생했습니다.",
+                "path": request.url.path
+            },
+            headers={"Content-Length": "0"}
+        )
+    
     return JSONResponse(
         status_code=500,
         content={
@@ -134,6 +184,9 @@ async def general_exception_handler(request: Request, exc: Exception):
 
 # 라우터 등록
 app.include_router(api_router, prefix="/api/v1")
+
+# 정적 파일 서빙
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # 루트 경로 엔드포인트
 @app.get("/")
@@ -207,7 +260,7 @@ async def health_check():
         
         health_status["api_keys"] = api_keys_status
         
-        logger.info("헬스체크 요청 처리 완료")
+        # # logger.info("헬스체크 요청 처리 완료")
         return health_status
     
     except Exception as e:
@@ -224,10 +277,10 @@ async def health_check():
 # 서버 시작 설정 (성능 최적화)
 if __name__ == "__main__":
     try:
-        logger.info("GomGom Recipe API 서버 시작 중...")
+        # # logger.info("GomGom Recipe API 서버 시작 중...")
         
         # 시작 전 초기화 검증
-        logger.info("서비스 초기화 검증 중...")
+        # # logger.info("서비스 초기화 검증 중...")
         
         # 설정 검증
         if not settings.OPENAI_API_KEY:
@@ -242,7 +295,7 @@ if __name__ == "__main__":
             db = SessionLocal()
             db.execute("SELECT 1")
             db.close()
-            logger.info("✅ 데이터베이스 연결 확인 완료")
+            # # logger.info("✅ 데이터베이스 연결 확인 완료")
         except Exception as e:
             logger.error(f"❌ 데이터베이스 연결 실패: {e}")
             logger.warning("데이터베이스 없이 서버를 시작합니다. 일부 기능이 제한됩니다.")
@@ -253,14 +306,14 @@ if __name__ == "__main__":
             cache = Cache()
             if cache.redis_client:
                 cache.redis_client.ping()
-                logger.info("✅ Redis 연결 확인 완료")
+                # # logger.info("✅ Redis 연결 확인 완료")
             else:
                 logger.warning("⚠️  Redis가 비활성화되어 있습니다.")
         except Exception as e:
             logger.error(f"❌ Redis 연결 실패: {e}")
             logger.warning("Redis 없이 서버를 시작합니다. 캐시 기능이 비활성화됩니다.")
         
-        logger.info("🚀 서버 시작 준비 완료")
+        # # logger.info("🚀 서버 시작 준비 완료")
         
         uvicorn.run(
             "app.main:app",

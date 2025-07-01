@@ -114,7 +114,7 @@ try:
         password=settings.POSTGRES_PASSWORD
     )
     conn.close()
-    logger.info("PostgreSQL 데이터베이스 연결 성공")
+    # logger.info("PostgreSQL 데이터베이스 연결 성공")
 except Exception as e:
     logger.error(f"PostgreSQL 데이터베이스 연결 실패: {e}")
     logger.warning("데이터베이스 연결이 실패했습니다. 일부 기능이 제한될 수 있습니다.")
@@ -130,7 +130,7 @@ try:
         socket_timeout=5
     )
     redis_client.ping()
-    logger.info("Redis 연결 성공")
+    # logger.info("Redis 연결 성공")
 except Exception as e:
     logger.error(f"Redis 연결 실패: {e}")
     logger.warning("Redis 연결이 실패했습니다. 캐시 기능이 비활성화됩니다.")

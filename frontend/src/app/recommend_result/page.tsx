@@ -4,6 +4,7 @@ import React, { useEffect, useState, Suspense, useCallback } from 'react';
 import styled from '@emotion/styled';
 import { useRouter, useSearchParams } from 'next/navigation';
 import apiClient from '@/utils/apiClient';
+import Loading from '@/components/Loading';
 import {
   Box,
   CircularProgress,
@@ -16,38 +17,35 @@ import ErrorDisplay from '../../components/ErrorDisplay';
 
 
 interface Restaurant {
-  name: string;
+  store: string;
   description?: string;
   category?: string;
   keywords?: string[];
   logo_url?: string;
-  review_avg?: string;
   address?: string;
-  id?: string;
+  review_avg?: number;
   categories?: string;
 }
 
 interface RecommendResult {
-  result: {
-    store: string;
-    description: string;
-    category: string;
-    keywords: string[];
-    logo_url: string;
-    // 필요한 필드 추가
-  };
-  store: string;
-  description: string;
-  category: string;
-  keywords: string[];
-  logo_url: string;
+  results: Restaurant[];
+  result: Restaurant;
   address: string;
-  restaurants: Restaurant[];
 }
 
 const Container = styled.div`
   min-height: 100vh;
   background-color: #FAF0D7;
+`;
+
+
+const SelectedDescription = styled.p`
+  font-size: 1.2rem;
+  color: #666;
+  
+  @media (max-width: 768px) {
+    font-size: 1rem;
+  }
 `;
 
 const Main = styled.main`
@@ -60,6 +58,16 @@ const Main = styled.main`
   }
 `;
 
+
+const SelectedStore = styled.h3`
+  font-size: 1.8rem;
+  color: #6B4E71;
+  margin-bottom: 0.5rem;
+  
+  @media (max-width: 768px) {
+    font-size: 1.4rem;
+  }
+`;
 const Card = styled.div`
   display: flex;
   flex-direction: column;
@@ -179,7 +187,7 @@ function RecommendResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [result, setResult] = useState<RecommendResult | null>(null);
-  const [results, setResults] = useState<any[]>([]); // 추천 결과 배열
+  const [results, setResults] = useState<Restaurant[]>([]); // 추천 결과 배열
   const [currentIndex, setCurrentIndex] = useState(0); // 현재 인덱스
   const [currentAddress, setCurrentAddress] = useState<string>('로딩 중...');
   const [isLoading, setIsLoading] = useState(true);
@@ -199,7 +207,7 @@ function RecommendResultContent() {
       if (data.error) {
         throw new Error(data.detail || data.error);
       }
-      setResult(data); // result/result.restaurants 등 기존 호환
+      setResult(data); // result/results 등 기존 호환
       setResults(data.results || (data.result ? [data.result] : []));
       setCurrentIndex(0);
       setCurrentAddress(data.result?.address || '');
@@ -220,6 +228,7 @@ function RecommendResultContent() {
     }
   };
 
+  const currentResult = results[currentIndex] || result?.result || {};
   // 조건부 렌더링은 Hook 호출 이후에만!
   if (!text || !lat || !lng || !types) {
     return (
@@ -274,7 +283,7 @@ function RecommendResultContent() {
   console.log('result', result);
 
   // restaurant info 추출
-  const restaurant = result.restaurants && result.restaurants.length > 0 ? result.restaurants[0] : null;
+  const restaurant = results[currentIndex] || result?.result || {};
 
   console.log('restaurant', restaurant);
 
@@ -291,17 +300,10 @@ function RecommendResultContent() {
 
   console.log('address', address);
 
-  const storeName = (restaurant && restaurant.name) || result?.store || '';
 
-
-  console.log('storeName', storeName);
-  const shareTitle = `🍽️ ${result?.store || ''} 추천!`;
   const shareDescription = text
     ? `${text}랑 관련되어 있는 음식은 ...`
     : `당신에게 어울리는 추천 결과입니다!`;
-
-  // 화면에 표시할 추천 결과
-  const currentResult = results[currentIndex] || result?.result || {};
 
   return (
     <Container>
@@ -316,27 +318,32 @@ function RecommendResultContent() {
               {text}와 어울리고 ,
             </div>
           )}
-          <h3>{currentResult.store}</h3>
-          <p><strong>{currentResult.description}</strong></p>
-          <Address>{currentResult.address || currentAddress}</Address>
-            <ResultImage
-              src="/image/rabbit_chef_body2.png"
-              alt="토끼"
-              width={200}
-              height={200}
-            />
+      
+      <SelectedStore>{currentResult.store}</SelectedStore>
+          <SelectedDescription>{currentResult.description}</SelectedDescription>
+          <Address>{currentResult.address || result?.address}</Address>
+          <ResultImage
+            src="/image/rabbit_chef_body2.png"
+            alt="토끼"
+            width={200}
+            height={200}
+          />
           {/* 기타 정보 표시 */}
           {currentResult.logo_url && (
-            <StoreLogo src={currentResult.logo_url} alt="store logo" width={80} height={80} />
+            <StoreLogo 
+            src={currentResult?.logo_url || '/image/default_store_logo.png'} alt="store logo" width={80} height={80} />
           )}
           <InfoText>
             {text && text !== '===' && (
               <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>입력 텍스트:</span> {text}</div>
             )}
-            <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>카테고리:</span> {currentResult.category}</div>
-            <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>키워드:</span> {currentResult.keywords?.join(', ')}</div>
+            <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>카테고리:</span> {restaurant.category}</div>
+            <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>키워드:</span> {restaurant.keywords?.join(', ')}</div>
+            {reviewAvg !== null && (
+              <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>평점:</span> {reviewAvg}</div>
+            )}
           </InfoText>
-          <button
+          {/* <button
             style={{
               background: '#ffe066',
               color: '#333',
@@ -352,22 +359,21 @@ function RecommendResultContent() {
             onClick={handleRetry}
           >
             🔄 다시 추천받기
-          </button>
+          </button> */}
         </Card>
         <KakaoShare
-          title={currentResult.store ? `🍔 ${currentResult.store} 추천!` : '추천 결과'}
-          description={currentResult.description || ''}
+          title={restaurant.store ? `🍔 ${restaurant.store} 추천!` : '추천 결과'}
+          description={restaurant.description || ''}
         />
       </Main>
     </Container>
   );
 }
 
-// 메인 페이지 컴포넌트
-export default function RecommendResultPage() {
+export default function RecommendResult() {
   return (
-    <Suspense fallback={<LoadingFallback message="추천 결과를 불러오는 중..." variant="simple" />}>
+    <Suspense fallback={<Loading />}>
       <RecommendResultContent />
     </Suspense>
   );
-} 
+}

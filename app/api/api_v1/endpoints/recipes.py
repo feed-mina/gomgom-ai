@@ -12,9 +12,59 @@ from app.utils.translator import translator
 import logging
 from app.utils.korean_recipe_crawler import get_recipe_by_id as korean_recipe_crawler_get_recipe_by_id
 # from app.core.cache import get_cache, set_cache, delete_cache
+import asyncio
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+# 번역 헬퍼 함수들
+async def _translate_title_async(recipe_info: dict, field: str):
+    """제목 번역"""
+    try:
+        translated = await translator.translate_to_korean(recipe_info[field])
+        recipe_info[field] = translated
+    except Exception as e:
+        logger.warning(f"제목 번역 실패: {e}")
+
+async def _translate_field_async(recipe_info: dict, field: str, text: str):
+    """필드 번역"""
+    try:
+        translated = await translator.translate_to_korean(text)
+        recipe_info[field] = translated
+    except Exception as e:
+        logger.warning(f"{field} 번역 실패: {e}")
+
+async def _translate_step_async(steps: list, index: int, text: str):
+    """단계 번역"""
+    try:
+        translated = await translator.translate_to_korean(text)
+        steps[index]["step"] = translated
+    except Exception as e:
+        logger.warning(f"단계 {index} 번역 실패: {e}")
+
+async def _translate_ingredient_async(ingredients: list, index: int, text: str):
+    """재료 번역"""
+    try:
+        translated = await translator.translate_to_korean(text)
+        ingredients[index]["name"] = translated
+    except Exception as e:
+        logger.warning(f"재료 {index} 번역 실패: {e}")
+
+async def _translate_cuisine_async(cuisines: list, index: int, text: str):
+    """요리 타입 번역"""
+    try:
+        translated = await translator.translate_to_korean(text)
+        cuisines[index] = translated
+    except Exception as e:
+        logger.warning(f"요리 타입 {index} 번역 실패: {e}")
+
+async def _translate_dish_type_async(dish_types: list, index: int, text: str):
+    """요리 종류 번역"""
+    try:
+        translated = await translator.translate_to_korean(text)
+        dish_types[index] = translated
+    except Exception as e:
+        logger.warning(f"요리 종류 {index} 번역 실패: {e}")
 
 @router.get("/", response_model=List[RecipeResponse])
 @cache_result(timeout=300, key_prefix="recipes")
@@ -48,7 +98,7 @@ async def read_recipes(
             )
         
         # set_cache(cache_key, recipes)
-        logger.info(f"레시피 목록 조회 성공: {len(recipes)}개")
+        # logger.info(f"레시피 목록 조회 성공: {len(recipes)}개")
         return recipes
     
     except SQLAlchemyError as e:
@@ -70,7 +120,7 @@ async def read_recipes_with_recommendations(
     """
     try:
         recipes = get_recipes_with_recommendations(db, skip, limit)
-        logger.info(f"레시피 목록 조회 성공 (추천 포함): {len(recipes)}개")
+        # logger.info(f"레시피 목록 조회 성공 (추천 포함): {len(recipes)}개")
         return recipes
     
     except SQLAlchemyError as e:
@@ -101,7 +151,7 @@ async def read_recipe(
             raise HTTPException(status_code=404, detail="레시피를 찾을 수 없습니다.")
         
         # set_cache(cache_key, recipe)
-        logger.info(f"레시피 조회 성공: ID {recipe_id}")
+        # logger.info(f"레시피 조회 성공: ID {recipe_id}")
         return recipe
     
     except HTTPException:
@@ -127,7 +177,7 @@ async def create_recipe(
         db.commit()
         db.refresh(db_recipe)
         # delete_cache("recipes:list:*")  # 캐시 무효화
-        logger.info(f"레시피 생성 성공: ID {db_recipe.id}")
+        # logger.info(f"레시피 생성 성공: ID {db_recipe.id}")
         return db_recipe
     
     except IntegrityError as e:
@@ -163,7 +213,7 @@ async def update_recipe(
         db.refresh(db_recipe)
         # delete_cache(f"recipe:{recipe_id}")
         # delete_cache("recipes:list:*")
-        logger.info(f"레시피 수정 성공: ID {recipe_id}")
+        # logger.info(f"레시피 수정 성공: ID {recipe_id}")
         return db_recipe
     
     except HTTPException:
@@ -193,7 +243,7 @@ async def delete_recipe(
         db.commit()
         # delete_cache(f"recipe:{recipe_id}")
         # delete_cache("recipes:list:*")
-        logger.info(f"레시피 삭제 성공: ID {recipe_id}")
+        # logger.info(f"레시피 삭제 성공: ID {recipe_id}")
         return {"message": "레시피가 성공적으로 삭제되었습니다."}
     
     except HTTPException:
@@ -206,18 +256,18 @@ async def delete_recipe(
         raise HTTPException(status_code=500, detail="서버 내부 오류가 발생했습니다.")
 
 @router.get("/external/{recipe_id}")
-async def get_external_recipe(recipe_id: int):
+async def get_external_recipe(recipe_id: str, translate: bool = Query(False, description="번역 여부")):
     """
     Spoonacular API에서 레시피 상세 정보를 가져옵니다.
     """
     try:
-        # 캐시 키 생성
-        cache_key = f"recipe_detail:{recipe_id}"
+        # 캐시 키 생성 (번역 여부에 따라 다른 키 사용)
+        cache_key = f"recipe_detail:{recipe_id}:translate_{translate}"
         
         # 캐시에서 결과 확인
         cached_result = get_cache(cache_key)
         if cached_result:
-            logger.info(f"캐시에서 레시피 상세 정보 반환: ID {recipe_id}")
+            # logger.info(f"캐시에서 레시피 상세 정보 반환: ID {recipe_id}, 번역={translate}")
             return cached_result
         
         # 캐시에 없으면 API 호출
@@ -226,82 +276,126 @@ async def get_external_recipe(recipe_id: int):
         if not recipe_info:
             raise HTTPException(status_code=404, detail="레시피를 찾을 수 없습니다.")
         
-        # 제목 번역
-        if recipe_info.get("title"):
-            recipe_info["title"] = await translator.translate_to_korean(recipe_info["title"])
-
-        # 요약 번역
-        if recipe_info.get("summary"):
-            recipe_info["summary"] = await translator.translate_to_korean(recipe_info["summary"])
-
-        # instructions 번역
-        analyzed = recipe_info.get("analyzedInstructions")
-        if analyzed and len(analyzed) > 0 and "steps" in analyzed[0]:
-            for step in analyzed[0]["steps"]:
-                step["step"] = await translator.translate_to_korean(step["step"])
-                
-                # 각 단계의 재료 이름 번역
-                if step.get("ingredients"):
-                    for ingredient in step["ingredients"]:
-                        if ingredient.get("localizedName"):
-                            ingredient["localizedName"] = await translator.translate_to_korean(ingredient["localizedName"])
-                        if ingredient.get("name"):
-                            ingredient["name"] = await translator.translate_to_korean(ingredient["name"])
-                
-                # 각 단계의 도구 이름 번역
-                if step.get("equipment"):
-                    for equipment in step["equipment"]:
-                        if equipment.get("localizedName"):
-                            equipment["localizedName"] = await translator.translate_to_korean(equipment["localizedName"])
-                        if equipment.get("name"):
-                            equipment["name"] = await translator.translate_to_korean(equipment["name"])
+        # 번역이 요청된 경우에만 번역 수행
+        if translate:
+            # logger.info(f"번역 시작: ID {recipe_id}")
             
-            # 프론트에서 사용하기 쉽게 배열로 가공
-            recipe_info["instructions"] = [step["step"] for step in analyzed[0]["steps"]]
-        elif isinstance(recipe_info.get("instructions"), str):
-            recipe_info["instructions"] = await translator.translate_to_korean(recipe_info["instructions"])
+            # 배치 번역을 위한 텍스트 수집
+            texts_to_translate = []
+            text_mapping = []  # (타입, 인덱스, 필드) 튜플
+            
+            # 제목 번역
+            if recipe_info.get("title"):
+                texts_to_translate.append(recipe_info["title"])
+                text_mapping.append(("title", 0, "title"))
 
-        # 재료 번역 (선택)
-        for ing in recipe_info.get("extendedIngredients", []):
-            ing["name"] = await translator.translate_to_korean(ing["name"])
-            ing["original"] = await translator.translate_to_korean(ing["original"])
+            # 요약 번역 (HTML 태그 제거 후)
+            if recipe_info.get("summary"):
+                import re
+                clean_summary = re.sub(r'<[^>]+>', '', recipe_info["summary"])
+                texts_to_translate.append(clean_summary)
+                text_mapping.append(("summary", 0, "summary"))
 
-        # 태그 번역
-        if recipe_info.get("cuisines"):
-            translated_cuisines = []
-            for cuisine in recipe_info["cuisines"]:
-                translated_cuisines.append(await translator.translate_to_korean(cuisine))
-            recipe_info["cuisines"] = translated_cuisines
+            # instructions 번역 (가장 중요한 부분만)
+            analyzed = recipe_info.get("analyzedInstructions")
+            if analyzed and len(analyzed) > 0 and "steps" in analyzed[0]:
+                # 처음 3단계만 번역 (성능 최적화)
+                steps_to_translate = analyzed[0]["steps"][:3]
+                for i, step in enumerate(steps_to_translate):
+                    if step.get("step"):
+                        texts_to_translate.append(step["step"])
+                        text_mapping.append(("step", i, "step"))
+                
+                # 프론트에서 사용하기 쉽게 배열로 가공
+                recipe_info["instructions"] = [step["step"] for step in analyzed[0]["steps"]]
+            elif isinstance(recipe_info.get("instructions"), str):
+                # 문자열인 경우 처음 500자만 번역
+                instructions_text = recipe_info["instructions"][:500]
+                texts_to_translate.append(instructions_text)
+                text_mapping.append(("instructions", 0, "instructions"))
 
-        if recipe_info.get("dishTypes"):
-            translated_dish_types = []
-            for dish_type in recipe_info["dishTypes"]:
-                translated_dish_types.append(await translator.translate_to_korean(dish_type))
-            recipe_info["dishTypes"] = translated_dish_types
+            # 재료 번역 (처음 5개만)
+            ingredients = recipe_info.get("extendedIngredients", [])
+            for i, ing in enumerate(ingredients[:5]):
+                if ing.get("name"):
+                    texts_to_translate.append(ing["name"])
+                    text_mapping.append(("ingredient", i, "name"))
 
-        if recipe_info.get("diets"):
-            translated_diets = []
-            for diet in recipe_info["diets"]:
-                translated_diets.append(await translator.translate_to_korean(diet))
-            recipe_info["diets"] = translated_diets
+            # 태그 번역 (처음 3개만)
+            if recipe_info.get("cuisines"):
+                cuisines = recipe_info["cuisines"][:3]
+                for i, cuisine in enumerate(cuisines):
+                    texts_to_translate.append(cuisine)
+                    text_mapping.append(("cuisine", i, None))
 
-        # 결과를 캐시에 저장 (2시간)
-        set_cache(cache_key, recipe_info, timeout=7200)
+            if recipe_info.get("dishTypes"):
+                dish_types = recipe_info["dishTypes"][:3]
+                for i, dish_type in enumerate(dish_types):
+                    texts_to_translate.append(dish_type)
+                    text_mapping.append(("dish_type", i, None))
+
+            # 배치 번역 실행
+            if texts_to_translate:
+                try:
+                    translated_texts = await asyncio.wait_for(
+                        translator.translate_batch_to_korean(texts_to_translate),
+                        timeout=30.0  # 30초 타임아웃
+                    )
+                    
+                    # 번역 결과를 원래 위치에 적용
+                    for i, (text_type, index, field) in enumerate(text_mapping):
+                        if i < len(translated_texts):
+                            translated_text = translated_texts[i]
+                            
+                            if text_type == "title":
+                                recipe_info["title"] = translated_text
+                            elif text_type == "summary":
+                                recipe_info["summary"] = translated_text
+                            elif text_type == "instructions":
+                                recipe_info["instructions"] = translated_text
+                            elif text_type == "step":
+                                analyzed[0]["steps"][index]["step"] = translated_text
+                            elif text_type == "ingredient":
+                                ingredients[index]["name"] = translated_text
+                            elif text_type == "cuisine":
+                                recipe_info["cuisines"][index] = translated_text
+                            elif text_type == "dish_type":
+                                recipe_info["dishTypes"][index] = translated_text
+                    
+                    # logger.info(f"배치 번역 완료: ID {recipe_id}, {len(texts_to_translate)}개 텍스트")
+                    
+                except asyncio.TimeoutError:
+                    logger.warning(f"번역 타임아웃: ID {recipe_id}, 원본 데이터 반환")
+                except Exception as e:
+                    logger.warning(f"번역 중 오류: {e}, 원본 데이터 반환")
+
+        # 결과를 캐시에 저장 (번역 여부에 따라 다른 TTL)
+        cache_timeout = 7200 if translate else 3600  # 번역된 경우 2시간, 원본은 1시간
+        set_cache(cache_key, recipe_info, timeout=cache_timeout)
         
-        logger.info(f"외부 레시피 조회 성공: ID {recipe_id}")
+        # logger.info(f"외부 레시피 조회 성공: ID {recipe_id}, 번역={translate}")
         return recipe_info
         
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"외부 레시피 조회 중 오류 발생: {e}")
-        raise HTTPException(status_code=500, detail="레시피 조회 중 오류가 발생했습니다.") 
+        raise HTTPException(status_code=500, detail="레시피 조회 중 오류가 발생했습니다.")
 
 @router.get("/internal/{recipe_id}")
-async def get_internal_recipe(recipe_id: int):
-    # 만개의레시피 DB/크롤러에서 recipe_id로 상세 정보 반환
-    # 예시:
-    recipe = await korean_recipe_crawler_get_recipe_by_id(recipe_id)
-    if not recipe:
-        raise HTTPException(status_code=404, detail="레시피를 찾을 수 없습니다.")
-    return recipe 
+async def get_internal_recipe(recipe_id: str):
+    """만개의레시피에서 레시피 상세 정보를 가져옵니다."""
+    try:
+        # 만개의레시피 크롤러에서 recipe_id로 상세 정보 반환
+        recipe = await korean_recipe_crawler_get_recipe_by_id(recipe_id)
+        if not recipe:
+            raise HTTPException(status_code=404, detail="레시피를 찾을 수 없습니다.")
+        
+        # logger.info(f"만개의레시피 레시피 조회 성공: ID {recipe_id}")
+        return recipe
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"만개의레시피 레시피 조회 중 오류 발생: {e}")
+        raise HTTPException(status_code=500, detail="레시피 조회 중 오류가 발생했습니다.") 

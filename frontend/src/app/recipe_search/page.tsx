@@ -70,6 +70,12 @@ export default function RecipeSearchPage() {
       setSearchResult(result);
       setLoading(false);
 
+      // 디버깅: 각 레시피의 source 정보 출력
+      console.log('검색 결과 레시피들의 source 정보:');
+      result.recipes.forEach((recipe, index) => {
+        console.log(`${index + 1}. ${recipe.title} - Source: ${recipe.source}`);
+      });
+
       // 번역은 백그라운드에서 진행
       setTranslating(true);
       
@@ -207,7 +213,7 @@ export default function RecipeSearchPage() {
           <Grid container spacing={3}>
             {searchResult.recipes.map((recipe, index) => (
               <Grid item xs={12} sm={6} md={4} key={index}>
-                <Link href={`/recipe_card?id=${recipe.id}&query=${encodeURIComponent(String(query))}&source=${recipe.source}`}>
+                <Link href={`/recipe_card?id=${recipe.id}&query=${encodeURIComponent(String(query))}&source=${recipe.source}&title=${encodeURIComponent(recipe.title)}`}>
                   <RecipeCard
                     recipe={recipe}
                   />

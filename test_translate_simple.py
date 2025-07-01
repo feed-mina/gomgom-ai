@@ -27,9 +27,9 @@ async def test_translate():
         "turmeric powder tsp"
     ]
     
-    print(f"테스트할 텍스트 개수: {len(test_texts)}")
-    print(f"첫 번째 텍스트 길이: {len(test_texts[0])}자")
-    print(f"두 번째 텍스트 길이: {len(test_texts[1])}자")
+    # Print(f"테스트할 텍스트 개수: {len(test_texts)}")
+    # Print(f"첫 번째 텍스트 길이: {len(test_texts[0])}자")
+    # Print(f"두 번째 텍스트 길이: {len(test_texts[1])}자")
     
     try:
         async with httpx.AsyncClient(timeout=60.0) as client:
@@ -40,27 +40,27 @@ async def test_translate():
                 headers={"Content-Type": "application/json"}
             )
             
-            print(f"응답 상태 코드: {response.status_code}")
+            # Print(f"응답 상태 코드: {response.status_code}")
             
             if response.status_code == 200:
                 data = response.json()
-                print(f"\n번역 성공! 결과 개수: {len(data['translatedTexts'])}")
+                # Print(f"\n번역 성공! 결과 개수: {len(data['translatedTexts'])}")
                 
                 # 처음 몇 개 결과만 출력
                 for i, text in enumerate(data['translatedTexts'][:5]):
-                    print(f"\n텍스트 {i+1}:")
-                    print(f"  원본: {test_texts[i][:100]}...")
-                    print(f"  번역: {text[:100]}...")
+                    # Print(f"\n텍스트 {i+1}:")
+                    # Print(f"  원본: {test_texts[i][:100]}...")
+                    # Print(f"  번역: {text[:100]}...")
                     
                 if len(data['translatedTexts']) > 5:
-                    print(f"\n... 그리고 {len(data['translatedTexts']) - 5}개 더")
+                    # Print(f"\n... 그리고 {len(data['translatedTexts']) - 5}개 더")
                     
             else:
-                print(f"오류 발생: {response.status_code}")
-                print(f"응답 내용: {response.text}")
+                # Print(f"오류 발생: {response.status_code}")
+                # Print(f"응답 내용: {response.text}")
                 
     except Exception as e:
-        print(f"테스트 중 오류 발생: {e}")
+        # Print(f"테스트 중 오류 발생: {e}")
 
 if __name__ == "__main__":
     asyncio.run(test_translate()) 

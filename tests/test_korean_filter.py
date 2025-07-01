@@ -37,7 +37,7 @@ async def test_korean_filtering():
     
     for query, cuisine_type in test_queries:
         cuisine_display = cuisine_type if cuisine_type else "모든 요리"
-        print(f"\n🔍 검색 테스트: '{query}' (cuisine_type: {cuisine_display})")
+        # Print(f"\n🔍 검색 테스트: '{query}' (cuisine_type: {cuisine_display})")
         print("-" * 40)
         
         try:
@@ -48,17 +48,17 @@ async def test_korean_filtering():
                 cuisine_type=cuisine_type
             )
             
-            print(f"✅ 검색 결과: {len(recipes)}개 레시피 발견")
+            # Print(f"✅ 검색 결과: {len(recipes)}개 레시피 발견")
             
             # 결과 요약
             for i, recipe in enumerate(recipes[:2], 1):  # 상위 2개만 표시
                 title = recipe.get("title", "제목 없음")
                 cuisines = recipe.get("cuisines", [])
-                print(f"  {i}. {title}")
-                print(f"     요리 타입: {cuisines}")
+                # Print(f"  {i}. {title}")
+                # Print(f"     요리 타입: {cuisines}")
                 
         except Exception as e:
-            print(f"❌ 오류 발생: {e}")
+            # Print(f"❌ 오류 발생: {e}")
     
     print("\n" + "=" * 50)
     print("🎉 테스트 완료!")
@@ -86,15 +86,15 @@ async def test_api_endpoint():
             
             if response.status_code == 200:
                 data = response.json()
-                print(f"✅ API 응답 성공: {data['total_results']}개 레시피")
+                # Print(f"✅ API 응답 성공: {data['total_results']}개 레시피")
                 
                 for i, recipe in enumerate(data['recipes'][:2], 1):
-                    print(f"  {i}. {recipe['title']}")
+                    # Print(f"  {i}. {recipe['title']}")
             else:
-                print(f"❌ API 오류: {response.status_code}")
+                # Print(f"❌ API 오류: {response.status_code}")
                 
     except Exception as e:
-        print(f"❌ API 테스트 실패: {e}")
+        # Print(f"❌ API 테스트 실패: {e}")
         print("💡 FastAPI 서버가 실행 중인지 확인해주세요.")
 
 if __name__ == "__main__":
@@ -107,6 +107,6 @@ if __name__ == "__main__":
     try:
         asyncio.run(test_api_endpoint())
     except Exception as e:
-        print(f"API 엔드포인트 테스트 건너뜀: {e}")
+        # Print(f"API 엔드포인트 테스트 건너뜀: {e}")
     
     print("\n✨ 모든 테스트 완료!") 

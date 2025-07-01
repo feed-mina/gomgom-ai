@@ -19,23 +19,23 @@ async def test_korean_crawler():
         "불고기"
     ]
     for query in test_queries:
-        print(f"\n🍜 크롤링 테스트: '{query}'")
+        # Print(f"\n🍜 크롤링 테스트: '{query}'")
         print("-" * 40)
         try:
             recipes = await korean_recipe_crawler.search_recipes(query, 3)
-            print(f"✅ 크롤링 결과: {len(recipes)}개 레시피 발견")
+            # Print(f"✅ 크롤링 결과: {len(recipes)}개 레시피 발견")
             for i, recipe in enumerate(recipes[:2], 1):
                 title = recipe.get('title', '제목 없음')
                 source = recipe.get('source', '')
                 source_url = recipe.get('source_url', '')
                 ingredients_count = len(recipe.get('ingredients', []))
                 instructions_count = len(recipe.get('instructions', []))
-                print(f"  {i}. {title}")
-                print(f"     출처: {source}")
-                print(f"     URL: {source_url}")
-                print(f"     재료: {ingredients_count}개, 조리법: {instructions_count}단계")
+                # Print(f"  {i}. {title}")
+                # Print(f"     출처: {source}")
+                # Print(f"     URL: {source_url}")
+                # Print(f"     재료: {ingredients_count}개, 조리법: {instructions_count}단계")
         except Exception as e:
-            print(f"❌ 오류 발생: {e}")
+            # Print(f"❌ 오류 발생: {e}")
     print("\n" + "=" * 50)
     print("🎉 크롤링 테스트 완료!")
 
@@ -49,7 +49,7 @@ async def test_integrated_search():
     ]
     for query, cuisine_type in test_queries:
         cuisine_display = cuisine_type if cuisine_type else "모든 요리"
-        print(f"\n🌐 통합 검색 테스트: '{query}' (cuisine_type: {cuisine_display})")
+        # Print(f"\n🌐 통합 검색 테스트: '{query}' (cuisine_type: {cuisine_display})")
         print("-" * 40)
         try:
             recipes = await spoonacular_client.search_recipes(
@@ -57,16 +57,16 @@ async def test_integrated_search():
                 number=3,
                 cuisine_type=cuisine_type
             )
-            print(f"✅ 통합 검색 결과: {len(recipes)}개 레시피 발견")
+            # Print(f"✅ 통합 검색 결과: {len(recipes)}개 레시피 발견")
             for i, recipe in enumerate(recipes[:2], 1):
                 title = recipe.get('title', '제목 없음')
                 source = recipe.get('source', 'Spoonacular')
                 cuisines = recipe.get('cuisines', [])
-                print(f"  {i}. {title}")
-                print(f"     출처: {source}")
-                print(f"     요리 타입: {cuisines}")
+                # Print(f"  {i}. {title}")
+                # Print(f"     출처: {source}")
+                # Print(f"     요리 타입: {cuisines}")
         except Exception as e:
-            print(f"❌ 오류 발생: {e}")
+            # Print(f"❌ 오류 발생: {e}")
     print("\n" + "=" * 50)
     print("🎉 통합 검색 테스트 완료!")
 

@@ -94,7 +94,7 @@ def create_user(email: str, hashed_password: str, full_name: str) -> Optional[Di
                 (email, hashed_password, full_name)
             )
             result = cursor.fetchone()
-            logger.info(f"사용자 생성 성공: {email}")
+            # logger.info(f"사용자 생성 성공: {email}")
             return result
     except psycopg2.IntegrityError as e:
         logger.error(f"사용자 생성 중 무결성 오류 (중복 이메일): {e}")
@@ -153,7 +153,7 @@ def create_recipe(name: str, description: str, instructions: str, cooking_time: 
                 (name, description, instructions, cooking_time, difficulty)
             )
             result = cursor.fetchone()
-            logger.info(f"레시피 생성 성공: {name}")
+            # logger.info(f"레시피 생성 성공: {name}")
             return result
     except psycopg2.IntegrityError as e:
         logger.error(f"레시피 생성 중 무결성 오류: {e}")
@@ -212,7 +212,7 @@ def create_ingredient(name: str, price: float, unit: str) -> Optional[Dict[str, 
                 (name, price, unit)
             )
             result = cursor.fetchone()
-            logger.info(f"재료 생성 성공: {name}")
+            # logger.info(f"재료 생성 성공: {name}")
             return result
     except psycopg2.IntegrityError as e:
         logger.error(f"재료 생성 중 무결성 오류: {e}")
@@ -271,7 +271,7 @@ def create_location(name: str, address: str, latitude: float, longitude: float) 
                 (name, address, latitude, longitude)
             )
             result = cursor.fetchone()
-            logger.info(f"위치 생성 성공: {name}")
+            # logger.info(f"위치 생성 성공: {name}")
             return result
     except psycopg2.IntegrityError as e:
         logger.error(f"위치 생성 중 무결성 오류: {e}")
@@ -337,7 +337,7 @@ def create_recommendation(user_id: int, recipe_id: int, score: float) -> Optiona
                 (user_id, recipe_id, score)
             )
             result = cursor.fetchone()
-            logger.info(f"추천 생성 성공: 사용자 {user_id}, 레시피 {recipe_id}")
+            # logger.info(f"추천 생성 성공: 사용자 {user_id}, 레시피 {recipe_id}")
             return result
     except psycopg2.IntegrityError as e:
         logger.error(f"추천 생성 중 무결성 오류: {e}")
@@ -359,7 +359,7 @@ def test_connection() -> bool:
                 cursor.execute("SELECT 1")
                 result = cursor.fetchone()
                 if result and result[0] == 1:
-                    logger.info("PostgreSQL 연결 테스트 성공")
+                    # logger.info("PostgreSQL 연결 테스트 성공")
                     return True
                 else:
                     logger.error("PostgreSQL 연결 테스트 실패: 예상치 못한 결과")

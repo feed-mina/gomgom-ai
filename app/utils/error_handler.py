@@ -75,7 +75,8 @@ def log_api_request(method: str, path: str, status_code: int, duration: float):
     if status_code >= 400:
         logger.warning(f"API 요청 실패: {method} {path} - {status_code} ({duration:.3f}s)")
     else:
-        logger.info(f"API 요청 성공: {method} {path} - {status_code} ({duration:.3f}s)")
+        # logger.info(f"API 요청 성공: {method} {path} - {status_code} ({duration:.3f}s)")
+        pass
 
 def log_database_operation(operation: str, table: str, success: bool, error: Optional[str] = None):
     """데이터베이스 작업 로깅"""

@@ -38,7 +38,7 @@ def test_db_connection():
         tables = cursor.fetchall()
         print("Available tables:")
         for table in tables:
-            print(f"  - {table[0]}")
+            # Print(f"  - {table[0]}")
 
         # locations 테이블 구조 확인
         print("\n2. Checking locations table structure...")
@@ -51,37 +51,37 @@ def test_db_connection():
         columns = cursor.fetchall()
         print("Locations table columns:")
         for col in columns:
-            print(f"  - {col[0]}: {col[1]} ({'NULL' if col[2] == 'YES' else 'NOT NULL'})")
+            # Print(f"  - {col[0]}: {col[1]} ({'NULL' if col[2] == 'YES' else 'NOT NULL'})")
 
         # locations 테이블 데이터 확인
         print("\n3. Checking locations table data...")
         cursor.execute("SELECT COUNT(*) FROM locations")
         count = cursor.fetchone()[0]
-        print(f"Locations count: {count}")
+        # Print(f"Locations count: {count}")
         
         if count > 0:
             cursor.execute("SELECT * FROM locations LIMIT 3")
             rows = cursor.fetchall()
             print("Sample locations data:")
             for row in rows:
-                print(f"  - {row}")
+                # Print(f"  - {row}")
 
         # recipes 테이블 데이터 확인
         print("\n4. Checking recipes table data...")
         cursor.execute("SELECT COUNT(*) FROM recipes")
         count = cursor.fetchone()[0]
-        print(f"Recipes count: {count}")
+        # Print(f"Recipes count: {count}")
 
         # ingredients 테이블 데이터 확인
         print("\n5. Checking ingredients table data...")
         cursor.execute("SELECT COUNT(*) FROM ingredients")
         count = cursor.fetchone()[0]
-        print(f"Ingredients count: {count}")
+        # Print(f"Ingredients count: {count}")
 
         print("\nDatabase connection test completed successfully!")
 
     except Exception as e:
-        print(f"Error: {e}")
+        # Print(f"Error: {e}")
         raise
     finally:
         if 'cursor' in locals():

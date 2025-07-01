@@ -99,7 +99,7 @@ const RecipeDetailCardComponent: React.FC<RecipeDetailCardProps> = ({ recipe }) 
         {/* 기본 정보 */}
         <Box sx={{ mb: 3, p: 2, backgroundColor: '#f8f9fa', borderRadius: 2 }}>
           <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-            기본 정보
+          기본 정보
           </Typography>
           <Grid container spacing={2}>
             {recipe.readyInMinutes && (
@@ -152,6 +152,9 @@ const RecipeDetailCardComponent: React.FC<RecipeDetailCardProps> = ({ recipe }) 
             )}
           </Grid>
           
+          <Typography>
+         재료 :   {recipe.ingredients?.map(i => i.name).join(', ')}
+          </Typography>
           {/* 추가 정보 */}
           <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #e0e0e0' }}>
             <Grid container spacing={1}>

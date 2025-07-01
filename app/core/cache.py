@@ -27,7 +27,7 @@ class Cache:
             )
             # 연결 테스트
             self.redis_client.ping()
-            logger.info("Redis 캐시 서비스 초기화 성공")
+            # logger.info("Redis 캐시 서비스 초기화 성공")
         except Exception as e:
             logger.error(f"Redis 캐시 서비스 초기화 실패: {e}")
             self.redis_client = None
@@ -54,6 +54,12 @@ class Cache:
             conn = self.get_postgres_connection()
             if not conn:
                 return False
+            
+            # 저장 전에
+            if hasattr(data, "model_dump"):
+                data = data.model_dump()
+            elif hasattr(data, "dict"):
+                data = data.dict()
             
             with conn.cursor() as cursor:
                 # cache_data 테이블이 없으면 생성
@@ -135,7 +141,7 @@ class Cache:
                 """, (user_id, recipe_id, score))
                 
                 conn.commit()
-                logger.info(f"추천 결과를 PostgreSQL에 저장: user_id={user_id}, recipe_id={recipe_id}")
+                # logger.info(f"추천 결과를 PostgreSQL에 저장: user_id={user_id}, recipe_id={recipe_id}")
                 return True
                 
         except Exception as e:
@@ -176,7 +182,7 @@ class Cache:
                 
                 recipe_id = cursor.fetchone()[0]
                 conn.commit()
-                logger.info(f"레시피를 PostgreSQL에 저장: {recipe_data.get('name')}")
+                # logger.info(f"레시피를 PostgreSQL에 저장: {recipe_data.get('name')}")
                 return recipe_id
                 
         except Exception as e:
@@ -322,7 +328,7 @@ class Cache:
             keys = self.redis_client.keys(pattern)
             if keys:
                 self.redis_client.delete(*keys)
-                logger.info(f"캐시 삭제 완료: {len(keys)}개 키")
+                # logger.info(f"캐시 삭제 완료: {len(keys)}개 키")
             return True
         except redis.ConnectionError as e:
             logger.error(f"Redis 연결 오류 (clear): {e}")
@@ -408,7 +414,7 @@ class Cache:
             keys = self.redis_client.keys(pattern)
             if keys:
                 self.redis_client.delete(*keys)
-                logger.info(f"캐시 삭제 완료: {len(keys)}개 키")
+                # logger.info(f"캐시 삭제 완료: {len(keys)}개 키")
             return True
         except redis.ConnectionError as e:
             logger.error(f"Redis 연결 오류 (clear_sync): {e}")
@@ -452,10 +458,15 @@ def set_cache_with_db(key: str, value: Any, timeout: int = 1800, data_type: str 
     redis_success = cache_instance.set_sync(key, value, timeout)
     
     # PostgreSQL에 저장
+    # 저장 전에
+    if hasattr(value, "model_dump"):
+        value = value.model_dump()
+    elif hasattr(value, "dict"):
+        value = value.dict()
     db_success = cache_instance.save_to_postgresql(key, value, data_type)
     
     if redis_success and db_success:
-        logger.info(f"Redis와 PostgreSQL에 동시 저장 성공: {key}")
+        # logger.info(f"Redis와 PostgreSQL에 동시 저장 성공: {key}")
         return True
     elif redis_success:
         logger.warning(f"Redis만 저장 성공, PostgreSQL 저장 실패: {key}")
@@ -474,13 +485,13 @@ def get_cache_with_db_fallback(key: str) -> Optional[Any]:
         return redis_data
     
     # 2. Redis에 없으면 PostgreSQL에서 조회
-    logger.info(f"Redis 캐시 미스, PostgreSQL에서 조회: {key}")
+    # logger.info(f"Redis 캐시 미스, PostgreSQL에서 조회: {key}")
     db_data = cache_instance.get_from_postgresql(key)
     
     if db_data is not None:
         # PostgreSQL에서 조회된 데이터를 Redis에 다시 캐싱
         cache_instance.set_sync(key, db_data, timeout=1800)
-        logger.info(f"PostgreSQL에서 복구된 데이터를 Redis에 재캐싱: {key}")
+        # logger.info(f"PostgreSQL에서 복구된 데이터를 Redis에 재캐싱: {key}")
         return db_data
     
     return None
@@ -497,7 +508,7 @@ def save_recommendation_with_cache(user_id: int, recipe_id: int, score: float, r
     db_success = cache_instance.save_recommendation_to_db(user_id, recipe_id, score, recommendation_data)
     
     if redis_success and db_success:
-        logger.info(f"추천 결과 Redis+PostgreSQL 동시 저장 성공: user_id={user_id}, recipe_id={recipe_id}")
+        # logger.info(f"추천 결과 Redis+PostgreSQL 동시 저장 성공: user_id={user_id}, recipe_id={recipe_id}")
         return True
     elif redis_success:
         logger.warning(f"추천 결과 Redis만 저장 성공: user_id={user_id}, recipe_id={recipe_id}")
@@ -519,7 +530,8 @@ def save_recipe_with_cache(recipe_data: dict) -> Optional[int]:
         redis_success = cache_instance.set_sync(cache_key, recipe_data, timeout=7200)
         
         if redis_success:
-            logger.info(f"레시피 Redis+PostgreSQL 동시 저장 성공: recipe_id={recipe_id}")
+            # logger.info(f"레시피 Redis+PostgreSQL 동시 저장 성공: recipe_id={recipe_id}")
+            pass
         else:
             logger.warning(f"레시피 PostgreSQL만 저장 성공, Redis 저장 실패: recipe_id={recipe_id}")
         

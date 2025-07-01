@@ -5,12 +5,28 @@ import styled from '@emotion/styled';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+import {
+  Box,
+  CircularProgress,
+  Alert
+} from '@mui/material';
 import Loading from '@/components/Loading';
 import ErrorDisplay from '@/components/ErrorDisplay';
 import type { TestResult } from '@/types';
 import KakaoShare from '../../components/KakaoShare';
 import apiClient from '@/utils/apiClient';
 
+
+interface Restaurant {
+  store: string;
+  description?: string;
+  category?: string;
+  keywords?: string[];
+  logo_url?: string;
+  address?: string;
+  review_avg?: number;
+  categories?: string;
+}
 const Container = styled.div`
   min-height: 100vh;
   background-color: #FAF0D7;
@@ -199,6 +215,16 @@ const RetryButton = styled.button`
   }
 `;
 
+interface Restaurant {
+  store: string;
+  description?: string;
+  category?: string;
+  keywords?: string[];
+  logo_url?: string;
+  address?: string;
+  review_avg?: number;
+}
+
 function TestResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -278,7 +304,33 @@ function TestResultContent() {
     );
   }
 
-  const shareTitle = `🎯 ${result.store} 테스트 결과!`;
+  if (error) {
+    return (
+      <Container>
+          <Alert severity="error">{error}</Alert>
+      </Container>
+    );
+  }
+
+  console.log('result', result);
+
+  // restaurant info 추출
+  const restaurant = results[currentIndex] || result?.result || {};
+
+  console.log('restaurant', restaurant);
+
+  const logoUrl = restaurant && restaurant.logo_url ? restaurant.logo_url : '/image/default_store_logo.png';
+
+  console.log('logoUrl', logoUrl);
+
+  const reviewAvg = restaurant && restaurant.review_avg ? restaurant.review_avg : null;
+
+  console.log('reviewAvg', reviewAvg);
+
+  const address = restaurant && restaurant.address ? restaurant.address : result.address;
+
+  console.log('address', address);
+
   const shareDescription = text
     ? `${text}와/과 관련되어 있는 음식은 ...`
     : `당신에게 어울리는 추천 결과입니다!`;
@@ -316,6 +368,8 @@ function TestResultContent() {
           <InfoText>
             <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>카테고리:</span> {currentResult.category}</div>
             <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>키워드:</span> {currentResult.keywords?.join(', ')}</div>
+            <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>평균 평점:</span> {currentResult.review_avg ?? 0}</div>
+            <div><span style={{fontWeight: 'bold', color: '#6B4E71'}}>테스트 결과:</span> {types}</div>
           </InfoText>
           <button
             style={{

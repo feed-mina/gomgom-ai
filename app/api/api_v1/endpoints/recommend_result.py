@@ -23,7 +23,7 @@ logger = logging.getLogger("uvicorn.error")
 
 # API 키 설정
 openai.api_key = settings.OPENAI_API_KEY
-logger.info(f"OPENAI_API_KEY: {settings.OPENAI_API_KEY}")
+# logger.info(f"OPENAI_API_KEY: {settings.OPENAI_API_KEY}")
 
 def extract_keywords_from_store_name(name: str) -> List[str]:
     keywords = [w for w, pos in okt.pos(name) if pos == 'Noun' and len(w) > 1]
@@ -112,9 +112,9 @@ async def fetch_yogiyo_data(lat: float, lng: float) -> Dict:
         # 요기요 API 응답 데이터 구조 확인
         if isinstance(data, list) and len(data) > 0:
             first_restaurant = data[0]
-            logger.info(f"[YOGIYO API] 첫 번째 레스토랑 데이터: {first_restaurant}")
-            logger.info(f"[YOGIYO API] logo_url 필드: {first_restaurant.get('logo_url', 'NOT_FOUND')}")
-            logger.info(f"[YOGIYO API] 사용 가능한 필드들: {list(first_restaurant.keys())}")
+            # logger.info(f"[YOGIYO API] 첫 번째 레스토랑 데이터: {first_restaurant}")
+            # logger.info(f"[YOGIYO API] logo_url 필드: {first_restaurant.get('logo_url', 'NOT_FOUND')}")
+            # logger.info(f"[YOGIYO API] 사용 가능한 필드들: {list(first_restaurant.keys())}")
         
         if not isinstance(data, list):
             return {"restaurants": []}

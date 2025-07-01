@@ -17,5 +17,22 @@ module.exports = {
     out_file: '/home/ubuntu/.pm2/logs/gomgom-ai-out.log',
     log_file: '/home/ubuntu/.pm2/logs/gomgom-ai-combined.log',
     time: true
+  }, {
+    name: 'gomgom-frontend',
+    script: 'npm',
+    args: 'start',
+    cwd: '/home/ubuntu/frontend',
+    env: {
+      NODE_ENV: 'production',
+      NEXT_PUBLIC_API_URL: 'https://mindevprofile.kr/api'
+    },
+    instances: 1,
+    autorestart: true,
+    watch: false,
+    max_memory_restart: '1G',
+    error_file: '/home/ubuntu/.pm2/logs/gomgom-frontend-error.log',
+    out_file: '/home/ubuntu/.pm2/logs/gomgom-frontend-out.log',
+    log_file: '/home/ubuntu/.pm2/logs/gomgom-frontend-combined.log',
+    time: true
   }]
 }; 

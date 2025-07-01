@@ -12,6 +12,7 @@ from app.schemas.test_result import TestResult
 import random
 from app.db.session import SessionLocal
 from app.db.crud import save_recommendation_history
+import logging
 
 router = APIRouter()
 
@@ -23,40 +24,45 @@ async def get_test_result(
     types: str = Query(...),
     dummy: Optional[str] = Query(None)
 ):
-    # text가 'none'이면 입력 없는 것으로 간주
     if text == 'none':
         text = None
-    # 1. 캐시 확인 (dummy 포함)
     cache_key = f"test_result_{text}_{lat}_{lng}_{types}_{dummy}"
     cached_data = await cache.get(cache_key)
     if cached_data:
-        return cached_data
+        # 반드시 식당 정보만 반환
+        return {
+            "results": cached_data.get("results", []),
+            "result": cached_data.get("result", {}),
+            "address": cached_data.get("address", "")
+        }
 
     try:
-        # 2. 요기요 API에서 가게 리스트 받아오기
         data = await fetch_yogiyo_data(lat, lng)
         restaurants = data if isinstance(data, list) else data.get("restaurants", [])
         if not restaurants:
-            raise HTTPException(status_code=404, detail="주변에 음식점이 없습니다.")
+            return {
+                "results": [],
+                "result": {},
+                "address": ""
+            }
+
+        if restaurants:
+            logger = logging.getLogger("uvicorn.error")
+            # # logger.info(f"[YOGIYO API] 첫 번째 레스토랑 데이터: {restaurants[0]}")
+            # logger.info(f"[YOGIYO API] logo_url 필드: {restaurants[0].get('logo_url', 'NOT_FOUND')}")
+            # logger.info(f"[YOGIYO API] review_avg 필드: {restaurants[0].get('review_avg', 'NOT_FOUND')}")
 
         store_info_list = [make_store_info_line(r) for r in restaurants]
         if len(restaurants) > 1:
             random.shuffle(store_info_list)
         store_info_list = store_info_list[:10]
 
-        print("입력 분류 GPT 호출")
         input_type = await classify_user_input_via_gpt(text or "")
-
-        # 4. 테스트 결과 점수 계산
         score = {}
         for t in types.split(','):
             if t:
                 score[t] = score.get(t, 0) + 1
-
-        # 5. GPT 프롬프트 생성 (테스트 결과 반영, dummy 값 추가)
         prompt = create_yogiyo_prompt_with_options(text, store_info_list, score, input_type) + f"\n#dummy={dummy or random.random()}"
-
-        # 6. GPT 호출
         try:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
@@ -75,7 +81,9 @@ async def get_test_result(
                     "store": best_match.get("name", "추천 없음"),
                     "description": f"'{text or '무작위'}'와 어울리는 인기 메뉴를 추천해요!",
                     "category": ", ".join(best_match.get("categories", [])),
-                    "keywords": best_match.get("keywords", [])
+                    "keywords": best_match.get("keywords", []),
+                    "logo_url": best_match.get("logo_url", ""),
+                    "address": best_match.get("address", "")
                 })
         else:
             best_match = None
@@ -86,31 +94,47 @@ async def get_test_result(
             if not best_match and restaurants:
                 best_match = restaurants[0]
 
-        # 8. 주소 가져오기
         address = await get_address_from_coords(lat, lng)
-
-        # 9. 응답 데이터 구성
+        def enrich_gpt_result_with_yogiyo(gpt_result, restaurants):
+            match = next((r for r in restaurants if r.get("name") == gpt_result.get("store")), None)
+            if match:
+                gpt_result["logo_url"] = match.get("logo_url", "")
+                gpt_result["review_avg"] = match.get("review_avg", 0.0)
+                gpt_result["address"] = match.get("address", "")
+                gpt_result["categories"] = ", ".join(match.get("categories", [])) if isinstance(match.get("categories"), list) else match.get("categories", "")
+            else:
+                gpt_result.setdefault("logo_url", "")
+                gpt_result.setdefault("review_avg", 0.0)
+                gpt_result.setdefault("address", "")
+                gpt_result.setdefault("categories", "")
+            return gpt_result
+        enriched_results = [enrich_gpt_result_with_yogiyo(r, restaurants) for r in gpt_results]
+        def to_result(store):
+            return {
+                "store": store.get("store", ""),
+                "description": store.get("description", ""),
+                "category": store.get("category", ""),
+                "keywords": store.get("keywords", []),
+                "logo_url": store.get("logo_url", ""),
+                "review_avg": store.get("review_avg", 0.0),
+                "address": store.get("address", ""),
+                "categories": store.get("categories", "")
+            }
         result = {
-            "results": gpt_results if gpt_results is not None else [],
-            "result": gpt_results[0] if gpt_results and len(gpt_results) > 0 else {},
+            "results": [to_result(s) for s in enriched_results] if enriched_results is not None else [],
+            "result": to_result(enriched_results[0]) if enriched_results and len(enriched_results) > 0 else {},
             "address": address
         }
-
-        # 10. 결과 캐싱 (30분)
         await cache.set(cache_key, result, timeout=1800)
-
-        # 추천 이력 저장
         db = SessionLocal()
         save_recommendation_history(
             db=db,
-            user_id=None,  # 로그인 유저 정보가 있다면 user_id로 교체
+            user_id=None,
             request_type="test_result",
             input_data={"text": text, "lat": lat, "lng": lng, "types": types, "dummy": dummy},
             result_data=result
         )
-
         return result
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

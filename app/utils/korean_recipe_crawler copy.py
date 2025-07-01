@@ -23,65 +23,76 @@ class KoreanRecipeCrawler:
         self.timeout = 10
         self.max_retries = 2
     
-    async def search_recipes(self, query: str, number: int = 3):
+    async def search_recipes(self, query: str, number: int = 5) -> List[Dict[str, Any]]:
+        """검색어로 레시피를 검색합니다."""
         # # logger.info(f"만개의레시피 검색 시작: query={query}, number={number}")
+        
         try:
             async with aiohttp.ClientSession(headers=self.headers, timeout=aiohttp.ClientTimeout(total=self.timeout)) as session:
+                # 검색 결과 페이지 가져오기
                 search_url = f"{self.search_url}?q={quote(query)}&order=reco&page=1"
                 async with session.get(search_url) as response:
                     if response.status != 200:
                         logger.error(f"검색 페이지 요청 실패: {response.status}")
                         return []
+                    
                     html = await response.text()
+                
+                # 검색 결과 파싱
                 soup = BeautifulSoup(html, 'html.parser')
                 recipe_links = soup.find_all('a', class_='common_sp_link')
-                results = []
-                for link in recipe_links[:number]:
-                    recipe_id = link['href'].split('/')[-1]
-                    title_tag = link.find_next('div', class_='common_sp_caption_tit')
-                    title = title_tag.text.strip() if title_tag else ""
-                    img_tag = link.find('img')
-                    image_url = img_tag['src'] if img_tag else None
-                    # 상세 정보 크롤링
-                    detail = await self._get_recipe_detail(session, recipe_id)
-                    if detail:
-                        detail['id'] = f"10000recipe_{recipe_id}"
-                        detail['title'] = title or detail.get('title', '')
-                        detail['image_url'] = image_url or detail.get('image_url', '')
-                        detail['source'] = '10000recipe'
-                        results.append(detail)
-                    await asyncio.sleep(0.3)
-                # # logger.info(f"만개의레시피 검색 완료: {len(results)}개 레시피 발견")
-                return results
+                
+                if not recipe_links:
+                    logger.warning(f"'{query}'에 대한 검색 결과가 없습니다.")
+                    return []
+                
+                # 상위 N개 레시피 상세 정보 가져오기
+                recipes = []
+                for i, link in enumerate(recipe_links[:number]):
+                    try:
+                        recipe_id = link.get('href', '').split('/')[-1]
+                        if recipe_id:
+                            recipe_detail = await self._get_recipe_detail(session, recipe_id)
+                            if recipe_detail:
+                                recipes.append(recipe_detail)
+                        
+                        # 요청 간격 조절
+                        await asyncio.sleep(0.5)
+                        
+                    except Exception as e:
+                        logger.error(f"레시피 {i+1} 처리 중 오류: {e}")
+                        continue
+                
+                # # logger.info(f"만개의레시피 검색 완료: {len(recipes)}개 레시피 발견")
+                return recipes
+                
         except Exception as e:
             logger.error(f"만개의레시피 검색 중 오류: {e}")
             return []
     
-    async def _get_recipe_detail(self, session, recipe_id):
+    async def _get_recipe_detail(self, session: aiohttp.ClientSession, recipe_id: str) -> Optional[Dict[str, Any]]:
+        """레시피 상세 정보를 가져옵니다."""
         try:
             recipe_url = f"{self.base_url}/recipe/{recipe_id}"
+            
             async with session.get(recipe_url) as response:
                 if response.status != 200:
                     logger.error(f"레시피 상세 페이지 요청 실패: {response.status}")
                     return None
+                
                 html = await response.text()
+            
             soup = BeautifulSoup(html, 'html.parser')
+            
+            # JSON-LD 스크립트 태그에서 레시피 정보 추출
             json_script = soup.find('script', type='application/ld+json')
             if json_script:
-                data = json.loads(json_script.text)
-                ingredients = data.get('recipeIngredient', [])
-                instructions = []
-                for step in data.get('recipeInstructions', []):
-                    if isinstance(step, dict) and 'text' in step:
-                        instructions.append(step['text'])
-                    elif isinstance(step, str):
-                        instructions.append(step)
-                # # logger.info(f"만개의레시피 원본 JSON-LD: {json.dumps(data, ensure_ascii=False)}")
-                return {
-                    'ingredients': [{'name': ing, 'amount': None, 'unit': None} for ing in ingredients],
-                    'instructions': [{'step': inst, 'number': i+1} for i, inst in enumerate(instructions)],
-                }
-            return None
+                recipe_data = json.loads(json_script.text)
+                return self._parse_recipe_json(recipe_data, recipe_id)
+            
+            # JSON-LD가 없는 경우 HTML에서 직접 파싱
+            return self._parse_recipe_html(soup, recipe_id)
+            
         except Exception as e:
             logger.error(f"레시피 상세 정보 파싱 중 오류 (ID: {recipe_id}): {e}")
             return None
@@ -295,37 +306,3 @@ async def get_recipe_by_id(recipe_id: int):
 
 # 전역 크롤러 인스턴스
 korean_recipe_crawler = KoreanRecipeCrawler()
-
-def search_10000recipe(query, max_results=3):
-    url = f"https://www.10000recipe.com/recipe/list.html?q={query}"
-    response = requests.get(url)
-    if response.status_code != 200:
-        print("HTTP response error:", response.status_code)
-        return []
-    soup = BeautifulSoup(response.text, 'html.parser')
-    recipe_links = soup.find_all('a', class_='common_sp_link')
-    results = []
-    for link in recipe_links[:max_results]:
-        recipe_id = link['href'].split('/')[-1]
-        title = link.find_next('div', class_='common_sp_caption_tit').text.strip()
-        img_tag = link.find('img')
-        image_url = img_tag['src'] if img_tag else None
-        # 상세 정보 크롤링
-        detail_url = f"https://www.10000recipe.com/recipe/{recipe_id}"
-        detail_resp = requests.get(detail_url)
-        if detail_resp.status_code == 200:
-            detail_soup = BeautifulSoup(detail_resp.text, 'html.parser')
-            json_ld = detail_soup.find('script', type='application/ld+json')
-            if json_ld:
-                data = json.loads(json_ld.text)
-                ingredients = data.get('recipeIngredient', [])
-                instructions = [step['text'] for step in data.get('recipeInstructions', []) if isinstance(step, dict)]
-                results.append({
-                    'id': f'10000recipe_{recipe_id}',
-                    'title': title,
-                    'image_url': image_url,
-                    'ingredients': ingredients,
-                    'instructions': instructions,
-                    'source': '10000recipe'
-                })
-    return results

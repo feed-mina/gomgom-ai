@@ -38,7 +38,7 @@ def test_db_connection():
         db = SessionLocal()
         db.execute(text("SELECT 1"))
         db.close()
-        logger.info("데이터베이스 연결 테스트 성공")
+        # logger.info("데이터베이스 연결 테스트 성공")
         return True
     except Exception as e:
         logger.error(f"데이터베이스 연결 테스트 실패: {e}")

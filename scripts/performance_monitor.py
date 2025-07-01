@@ -59,7 +59,7 @@ class PerformanceMonitor:
 
     def monitor_database_performance(self):
         """데이터베이스 성능 모니터링"""
-        logger.info("데이터베이스 성능 모니터링 시작")
+        # # logger.info("데이터베이스 성능 모니터링 시작")
         
         try:
             conn = self.get_db_connection()
@@ -124,14 +124,14 @@ class PerformanceMonitor:
             cursor.close()
             conn.close()
             
-            logger.info(f"데이터베이스 모니터링 완료 - 활성 연결: {active_connections}")
+            # # logger.info(f"데이터베이스 모니터링 완료 - 활성 연결: {active_connections}")
             
         except Exception as e:
             logger.error(f"데이터베이스 모니터링 실패: {e}")
 
     def monitor_api_performance(self):
         """API 성능 모니터링"""
-        logger.info("API 성능 모니터링 시작")
+        # # logger.info("API 성능 모니터링 시작")
         
         api_endpoints = [
             '/api/v1/recipes/',
@@ -156,7 +156,7 @@ class PerformanceMonitor:
                     'timestamp': datetime.now().isoformat()
                 }
                 
-                logger.info(f"API {endpoint}: {response_time:.2f}ms")
+                # # logger.info(f"API {endpoint}: {response_time:.2f}ms")
                 
             except Exception as e:
                 logger.error(f"API 모니터링 실패 {endpoint}: {e}")
@@ -169,7 +169,7 @@ class PerformanceMonitor:
 
     def monitor_system_resources(self):
         """시스템 리소스 모니터링"""
-        logger.info("시스템 리소스 모니터링 시작")
+        # # logger.info("시스템 리소스 모니터링 시작")
         
         try:
             # CPU 사용률
@@ -195,14 +195,14 @@ class PerformanceMonitor:
                 'timestamp': datetime.now().isoformat()
             }
             
-            logger.info(f"시스템 모니터링 완료 - CPU: {cpu_percent}%, 메모리: {memory.percent}%")
+            # # logger.info(f"시스템 모니터링 완료 - CPU: {cpu_percent}%, 메모리: {memory.percent}%")
             
         except Exception as e:
             logger.error(f"시스템 모니터링 실패: {e}")
 
     def monitor_cache_performance(self):
         """캐시 성능 모니터링"""
-        logger.info("캐시 성능 모니터링 시작")
+        # # logger.info("캐시 성능 모니터링 시작")
         
         try:
             import redis
@@ -233,7 +233,7 @@ class PerformanceMonitor:
                 'timestamp': datetime.now().isoformat()
             }
             
-            logger.info(f"캐시 모니터링 완료 - 히트율: {hit_rate:.2f}%")
+            # # logger.info(f"캐시 모니터링 완료 - 히트율: {hit_rate:.2f}%")
             
         except Exception as e:
             logger.error(f"캐시 모니터링 실패: {e}")
@@ -244,7 +244,7 @@ class PerformanceMonitor:
 
     def generate_performance_report(self):
         """성능 리포트 생성"""
-        logger.info("성능 리포트 생성 중...")
+        # # logger.info("성능 리포트 생성 중...")
         
         report = {
             'timestamp': datetime.now().isoformat(),
@@ -263,7 +263,7 @@ class PerformanceMonitor:
         with open(report_file, 'w', encoding='utf-8') as f:
             json.dump(report, f, indent=2, ensure_ascii=False)
         
-        logger.info(f"성능 리포트 저장 완료: {report_file}")
+        # # logger.info(f"성능 리포트 저장 완료: {report_file}")
         
         # 콘솔에 요약 출력
         self._print_summary(report)
@@ -323,26 +323,26 @@ class PerformanceMonitor:
         print("="*60)
         
         summary = report['summary']
-        print(f"📊 데이터베이스 연결: {summary['database_connections']}개")
+        # Print(f"📊 데이터베이스 연결: {summary['database_connections']}개")
         
         slowest_api = summary['slowest_api_endpoint']
         if slowest_api:
-            print(f"🐌 가장 느린 API: {slowest_api['endpoint']} ({slowest_api['response_time_ms']:.2f}ms)")
+            # Print(f"🐌 가장 느린 API: {slowest_api['endpoint']} ({slowest_api['response_time_ms']:.2f}ms)")
         
-        print(f"💻 CPU 사용률: {summary['system_cpu_percent']:.1f}%")
-        print(f"🎯 캐시 히트율: {summary['cache_hit_rate']:.1f}%")
+        # Print(f"💻 CPU 사용률: {summary['system_cpu_percent']:.1f}%")
+        # Print(f"🎯 캐시 히트율: {summary['cache_hit_rate']:.1f}%")
         
         recommendations = report['recommendations']
         if recommendations:
-            print(f"\n💡 권장사항 ({len(recommendations)}개):")
+            # Print(f"\n💡 권장사항 ({len(recommendations)}개):")
             for i, rec in enumerate(recommendations, 1):
-                print(f"  {i}. {rec}")
+                # Print(f"  {i}. {rec}")
         
         print("="*60)
 
     def run_monitoring(self):
         """전체 모니터링 실행"""
-        logger.info("성능 모니터링 시작")
+        # # logger.info("성능 모니터링 시작")
         
         try:
             # 각 모니터링 실행
@@ -354,7 +354,7 @@ class PerformanceMonitor:
             # 리포트 생성
             report = self.generate_performance_report()
             
-            logger.info("성능 모니터링 완료")
+            # # logger.info("성능 모니터링 완료")
             return report
             
         except Exception as e:

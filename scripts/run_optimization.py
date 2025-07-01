@@ -27,8 +27,8 @@ logger = logging.getLogger(__name__)
 
 def run_command(command, description):
     """명령어 실행"""
-    logger.info(f"실행 중: {description}")
-    print(f"🔄 {description}...")
+    # # logger.info(f"실행 중: {description}")
+    # Print(f"🔄 {description}...")
     
     try:
         result = subprocess.run(
@@ -38,12 +38,12 @@ def run_command(command, description):
             capture_output=True,
             text=True
         )
-        logger.info(f"성공: {description}")
-        print(f"✅ {description} 완료")
+        # # logger.info(f"성공: {description}")
+        # Print(f"✅ {description} 완료")
         return True
     except subprocess.CalledProcessError as e:
         logger.error(f"실패: {description} - {e}")
-        print(f"❌ {description} 실패: {e}")
+        # Print(f"❌ {description} 실패: {e}")
         return False
 
 def optimize_database():
@@ -120,13 +120,13 @@ def check_redis():
         
         # Redis 정보 조회
         info = redis_client.info()
-        print(f"📊 Redis 메모리 사용량: {info.get('used_memory_human', 'N/A')}")
-        print(f"📊 Redis 연결된 클라이언트: {info.get('connected_clients', 'N/A')}")
+        # Print(f"📊 Redis 메모리 사용량: {info.get('used_memory_human', 'N/A')}")
+        # Print(f"📊 Redis 연결된 클라이언트: {info.get('connected_clients', 'N/A')}")
         
         return True
         
     except Exception as e:
-        print(f"❌ Redis 연결 실패: {e}")
+        # Print(f"❌ Redis 연결 실패: {e}")
         print("💡 Redis 서버가 실행 중인지 확인하세요.")
         return False
 
@@ -148,8 +148,8 @@ def run_performance_test():
         response = requests.get(f"{api_url}/health", timeout=10)
         response_time = (time.time() - start_time) * 1000
         
-        print(f"🏥 헬스체크 응답 시간: {response_time:.2f}ms")
-        print(f"🏥 응답 상태: {response.status_code}")
+        # Print(f"🏥 헬스체크 응답 시간: {response_time:.2f}ms")
+        # Print(f"🏥 응답 상태: {response.status_code}")
         
         if response.status_code == 200:
             print("✅ API 서버 정상 동작")
@@ -159,7 +159,7 @@ def run_performance_test():
             return False
             
     except Exception as e:
-        print(f"❌ 성능 테스트 실패: {e}")
+        # Print(f"❌ 성능 테스트 실패: {e}")
         print("💡 API 서버가 실행 중인지 확인하세요.")
         return False
 
@@ -216,12 +216,12 @@ def generate_optimization_report():
         f.write(report)
     
     print(report)
-    print(f"📄 리포트가 {report_file}에 저장되었습니다.")
+    # Print(f"📄 리포트가 {report_file}에 저장되었습니다.")
 
 def main():
     """메인 함수"""
     print("🚀 GomGom AI 성능 최적화 시작")
-    print(f"⏰ 시작 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    # Print(f"⏰ 시작 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     
     # 1. Redis 상태 확인
     redis_ok = check_redis()
@@ -251,19 +251,19 @@ def main():
     }
     
     for item, result in results.items():
-        print(f"{item}: {result}")
+        # Print(f"{item}: {result}")
     
     success_count = sum(1 for result in results.values() if "성공" in result)
     total_count = len(results)
     
-    print(f"\n📊 전체 성공률: {success_count}/{total_count} ({success_count/total_count*100:.1f}%)")
+    # Print(f"\n📊 전체 성공률: {success_count}/{total_count} ({success_count/total_count*100:.1f}%)")
     
     if success_count == total_count:
         print("🎉 모든 최적화가 성공적으로 완료되었습니다!")
     else:
         print("⚠️ 일부 최적화가 실패했습니다. 로그를 확인하세요.")
     
-    print(f"⏰ 완료 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    # Print(f"⏰ 완료 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 if __name__ == "__main__":
     main() 

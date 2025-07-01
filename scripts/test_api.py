@@ -21,46 +21,46 @@ def test_api():
     print("\n1. Testing root endpoint...")
     try:
         response = requests.get(f"{BASE_URL}/")
-        print(f"Status: {response.status_code}")
-        print(f"Response: {response.json()}")
+        # Print(f"Status: {response.status_code}")
+        # Print(f"Response: {response.json()}")
     except Exception as e:
-        print(f"Error: {e}")
+        # Print(f"Error: {e}")
     
     # 2. 레시피 엔드포인트 테스트
     print("\n2. Testing recipes endpoint...")
     try:
         response = requests.get(f"{BASE_URL}/api/v1/recipes/")
-        print(f"Status: {response.status_code}")
+        # Print(f"Status: {response.status_code}")
         if response.status_code == 200:
-            print(f"Response: {response.json()}")
+            # Print(f"Response: {response.json()}")
         else:
-            print(f"Error: {response.text}")
+            # Print(f"Error: {response.text}")
     except Exception as e:
-        print(f"Error: {e}")
+        # Print(f"Error: {e}")
     
     # 3. 재료 엔드포인트 테스트
     print("\n3. Testing ingredients endpoint...")
     try:
         response = requests.get(f"{BASE_URL}/api/v1/ingredients/")
-        print(f"Status: {response.status_code}")
+        # Print(f"Status: {response.status_code}")
         if response.status_code == 200:
-            print(f"Response: {response.json()}")
+            # Print(f"Response: {response.json()}")
         else:
-            print(f"Error: {response.text}")
+            # Print(f"Error: {response.text}")
     except Exception as e:
-        print(f"Error: {e}")
+        # Print(f"Error: {e}")
     
     # 4. 위치 엔드포인트 테스트
     print("\n4. Testing locations endpoint...")
     try:
         response = requests.get(f"{BASE_URL}/api/v1/locations/")
-        print(f"Status: {response.status_code}")
+        # Print(f"Status: {response.status_code}")
         if response.status_code == 200:
-            print(f"Response: {response.json()}")
+            # Print(f"Response: {response.json()}")
         else:
-            print(f"Error: {response.text}")
+            # Print(f"Error: {response.text}")
     except Exception as e:
-        print(f"Error: {e}")
+        # Print(f"Error: {e}")
 
 if __name__ == "__main__":
     test_api() 

@@ -21,7 +21,7 @@ async def translate_texts(texts: list[str] = Body(...)):
                 logger.warning(f"텍스트 {i}가 너무 깁니다: {len(text)}자 (제한: {max_length}자)")
                 texts[i] = text[:max_length] + "..."  # 잘라내기
         
-        logger.info(f"번역 요청: {len(texts)}개 텍스트")
+        # logger.info(f"번역 요청: {len(texts)}개 텍스트")
         
         # 여러 문장 병렬 번역 (asyncio.gather)
         async def translate_single(text, idx):
@@ -45,7 +45,7 @@ async def translate_texts(texts: list[str] = Body(...)):
         tasks = [translate_single(text, i) for i, text in enumerate(texts)]
         results = await asyncio.gather(*tasks)
         
-        logger.info(f"번역 완료: {len(results)}개 텍스트")
+        # logger.info(f"번역 완료: {len(results)}개 텍스트")
         return {"translatedTexts": results}
         
     except Exception as e:

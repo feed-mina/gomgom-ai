@@ -15,9 +15,9 @@ def execute_sql_file(cursor, file_path):
         with open(file_path, 'r', encoding='utf-8') as file:
             sql = file.read()
             cursor.execute(sql)
-            print(f"Successfully executed: {file_path}")
+            # Print(f"Successfully executed: {file_path}")
     except Exception as e:
-        print(f"Error executing {file_path}: {e}")
+        # Print(f"Error executing {file_path}: {e}")
         raise
 
 def init_database(use_spatial=False):
@@ -40,9 +40,9 @@ def init_database(use_spatial=False):
         exists = cursor.fetchone()
         if not exists:
             cursor.execute(f'CREATE DATABASE "{settings.POSTGRES_DB}"')
-            print(f"Database '{settings.POSTGRES_DB}' created successfully")
+            # Print(f"Database '{settings.POSTGRES_DB}' created successfully")
         else:
-            print(f"Database '{settings.POSTGRES_DB}' already exists")
+            # Print(f"Database '{settings.POSTGRES_DB}' already exists")
 
         cursor.close()
         conn.close()
@@ -81,7 +81,7 @@ def init_database(use_spatial=False):
         print("Database initialization completed successfully!")
 
     except Exception as e:
-        print(f"An error occurred during database initialization: {e}")
+        # Print(f"An error occurred during database initialization: {e}")
         if 'conn' in locals():
             conn.rollback()
         raise

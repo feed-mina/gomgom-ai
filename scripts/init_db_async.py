@@ -14,9 +14,9 @@ async def execute_sql_file(conn, file_path):
         with open(file_path, 'r', encoding='utf-8') as file:
             sql = file.read()
             await conn.execute(sql)
-            print(f"Successfully executed: {file_path}")
+            # Print(f"Successfully executed: {file_path}")
     except Exception as e:
-        print(f"Error executing {file_path}: {e}")
+        # Print(f"Error executing {file_path}: {e}")
         raise
 
 async def init_database():
@@ -42,9 +42,9 @@ async def init_database():
         
         if not exists:
             await conn.execute(f'CREATE DATABASE "{settings.POSTGRES_DB}"')
-            print(f"Database '{settings.POSTGRES_DB}' created successfully")
+            # Print(f"Database '{settings.POSTGRES_DB}' created successfully")
         else:
-            print(f"Database '{settings.POSTGRES_DB}' already exists")
+            # Print(f"Database '{settings.POSTGRES_DB}' already exists")
 
         await conn.close()
 
@@ -76,7 +76,7 @@ async def init_database():
         print("Database initialization completed successfully!")
 
     except Exception as e:
-        print(f"An error occurred during database initialization: {e}")
+        # Print(f"An error occurred during database initialization: {e}")
         raise
 
 if __name__ == "__main__":

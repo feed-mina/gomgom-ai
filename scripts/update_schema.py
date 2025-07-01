@@ -87,12 +87,12 @@ def create_cache_data_table():
             columns = cursor.fetchall()
             print("\n📋 cache_data 테이블 구조:")
             for col in columns:
-                print(f"  - {col[0]}: {col[1]} ({'NULL' if col[2] == 'YES' else 'NOT NULL'})")
+                # Print(f"  - {col[0]}: {col[1]} ({'NULL' if col[2] == 'YES' else 'NOT NULL'})")
             
             return True
             
     except Exception as e:
-        print(f"❌ cache_data 테이블 생성 실패: {e}")
+        # Print(f"❌ cache_data 테이블 생성 실패: {e}")
         if conn:
             conn.rollback()
         return False
@@ -115,7 +115,7 @@ def check_existing_data():
         with conn.cursor() as cursor:
             cursor.execute("SELECT COUNT(*) FROM cache_data")
             count = cursor.fetchone()[0]
-            print(f"\n📊 현재 cache_data 테이블에 {count}개의 레코드가 있습니다.")
+            # Print(f"\n📊 현재 cache_data 테이블에 {count}개의 레코드가 있습니다.")
             
             if count > 0:
                 cursor.execute("""
@@ -128,12 +128,12 @@ def check_existing_data():
                 types = cursor.fetchall()
                 print("\n📈 데이터 타입별 분포:")
                 for data_type, count in types:
-                    print(f"  - {data_type}: {count}개")
+                    # Print(f"  - {data_type}: {count}개")
             
             return True
             
     except Exception as e:
-        print(f"❌ 데이터 확인 실패: {e}")
+        # Print(f"❌ 데이터 확인 실패: {e}")
         return False
     finally:
         if conn:

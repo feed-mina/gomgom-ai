@@ -49,7 +49,7 @@ def test_basic_cache_sync():
     
     if redis_data:
         print("✅ Redis 조회 성공")
-        print(f"   데이터: {json.dumps(redis_data, indent=2, ensure_ascii=False)}")
+        # Print(f"   데이터: {json.dumps(redis_data, indent=2, ensure_ascii=False)}")
     else:
         print("❌ Redis 조회 실패")
         return False
@@ -64,7 +64,7 @@ def test_basic_cache_sync():
     
     if recovered_data:
         print("✅ PostgreSQL 복구 성공")
-        print(f"   복구된 데이터: {json.dumps(recovered_data, indent=2, ensure_ascii=False)}")
+        # Print(f"   복구된 데이터: {json.dumps(recovered_data, indent=2, ensure_ascii=False)}")
     else:
         print("❌ PostgreSQL 복구 실패")
         return False
@@ -124,7 +124,7 @@ def test_recipe_sync():
     recipe_id = save_recipe_with_cache(recipe_data)
     
     if recipe_id:
-        print(f"✅ 레시피 저장 성공 (ID: {recipe_id})")
+        # Print(f"✅ 레시피 저장 성공 (ID: {recipe_id})")
     else:
         print("❌ 레시피 저장 실패")
         return False
@@ -167,10 +167,10 @@ def test_performance():
     end_time = time.time()
     duration = end_time - start_time
     
-    print(f"✅ 성능 테스트 완료")
-    print(f"   성공: {success_count}/100")
-    print(f"   소요시간: {duration:.2f}초")
-    print(f"   평균: {duration/100:.4f}초/개")
+    # Print(f"✅ 성능 테스트 완료")
+    # Print(f"   성공: {success_count}/100")
+    # Print(f"   소요시간: {duration:.2f}초")
+    # Print(f"   평균: {duration/100:.4f}초/개")
     
     return success_count == 100
 
@@ -189,11 +189,11 @@ def cleanup_test_data():
         try:
             success = cache_instance.clear_sync(pattern)
             if success:
-                print(f"✅ {pattern} 패턴 데이터 정리 완료")
+                # Print(f"✅ {pattern} 패턴 데이터 정리 완료")
             else:
-                print(f"⚠️ {pattern} 패턴 데이터 정리 실패")
+                # Print(f"⚠️ {pattern} 패턴 데이터 정리 실패")
         except Exception as e:
-            print(f"❌ {pattern} 패턴 데이터 정리 중 오류: {e}")
+            # Print(f"❌ {pattern} 패턴 데이터 정리 중 오류: {e}")
 
 def main():
     """메인 테스트 함수"""
@@ -226,11 +226,11 @@ def main():
     
     for test_name, result in test_results:
         status = "✅ 통과" if result else "❌ 실패"
-        print(f"{test_name}: {status}")
+        # Print(f"{test_name}: {status}")
         if result:
             passed += 1
     
-    print(f"\n전체: {passed}/{total} 테스트 통과")
+    # Print(f"\n전체: {passed}/{total} 테스트 통과")
     
     if passed == total:
         print("🎉 모든 테스트가 성공했습니다!")

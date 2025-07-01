@@ -14,11 +14,14 @@ class RecommendationUpdate(BaseModel):
     score: Optional[float] = Field(None, ge=0, le=5, description="Recommendation score (0-5)")
 
 class RestaurantResult(BaseModel):
-    store: str
-    description: str
-    category: str
-    keywords: List[str]
-    logo_url: str
+    store: Optional[str] = ""
+    description: Optional[str] = ""
+    category: Optional[str] = ""
+    keywords: Optional[List[str]] = []
+    logo_url: Optional[str] = ""
+    review_avg: float = 0.0
+    address: str = ""
+    categories: str = ""
 
 class RestaurantInfo(BaseModel):
     name: str
@@ -29,8 +32,9 @@ class RestaurantInfo(BaseModel):
     logo_url: str
 
 class RecommendationResponse(BaseModel):
-    result: RestaurantResult
-    restaurants: List[RestaurantInfo]
+    results: Optional[List[RestaurantResult]] = []
+    result: Optional[RestaurantResult] = None
+    address: Optional[str] = None
     text: Optional[str] = None
     lat: Optional[float] = None
     lng: Optional[float] = None

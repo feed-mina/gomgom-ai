@@ -43,14 +43,14 @@ def execute_sql_file(cursor, file_path):
         with open(file_path, 'r', encoding='utf-8') as file:
             sql_content = file.read()
             cursor.execute(sql_content)
-        logger.info(f"SQL 파일 실행 완료: {file_path}")
+        # # logger.info(f"SQL 파일 실행 완료: {file_path}")
     except Exception as e:
         logger.error(f"SQL 파일 실행 실패 {file_path}: {e}")
         raise
 
 def create_performance_indexes(cursor):
     """성능 최적화 인덱스 생성"""
-    logger.info("성능 최적화 인덱스 생성 중...")
+    # # logger.info("성능 최적화 인덱스 생성 중...")
     
     # 추가 성능 인덱스
     performance_indexes = [
@@ -77,13 +77,13 @@ def create_performance_indexes(cursor):
     for index_sql in performance_indexes:
         try:
             cursor.execute(index_sql)
-            logger.info(f"인덱스 생성 완료: {index_sql[:50]}...")
+            # # logger.info(f"인덱스 생성 완료: {index_sql[:50]}...")
         except Exception as e:
             logger.warning(f"인덱스 생성 실패: {e}")
 
 def analyze_tables(cursor):
     """테이블 통계 분석"""
-    logger.info("테이블 통계 분석 중...")
+    # # logger.info("테이블 통계 분석 중...")
     
     tables = [
         'users', 'recipes', 'ingredients', 'ingredients_ko', 
@@ -93,13 +93,13 @@ def analyze_tables(cursor):
     for table in tables:
         try:
             cursor.execute(f"ANALYZE {table};")
-            logger.info(f"테이블 분석 완료: {table}")
+            # # logger.info(f"테이블 분석 완료: {table}")
         except Exception as e:
             logger.error(f"테이블 분석 실패 {table}: {e}")
 
 def vacuum_tables(cursor):
     """테이블 정리 및 최적화"""
-    logger.info("테이블 정리 및 최적화 중...")
+    # # logger.info("테이블 정리 및 최적화 중...")
     
     tables = [
         'users', 'recipes', 'ingredients', 'ingredients_ko', 
@@ -109,31 +109,31 @@ def vacuum_tables(cursor):
     for table in tables:
         try:
             cursor.execute(f"VACUUM ANALYZE {table};")
-            logger.info(f"테이블 정리 완료: {table}")
+            # # logger.info(f"테이블 정리 완료: {table}")
         except Exception as e:
             logger.error(f"테이블 정리 실패 {table}: {e}")
 
 def optimize_query_performance(cursor):
     """쿼리 성능 최적화"""
-    logger.info("쿼리 성능 최적화 중...")
+    # # logger.info("쿼리 성능 최적화 중...")
     
     # 쿼리 플랜 캐시 정리
     try:
         cursor.execute("DISCARD PLANS;")
-        logger.info("쿼리 플랜 캐시 정리 완료")
+        # # logger.info("쿼리 플랜 캐시 정리 완료")
     except Exception as e:
         logger.warning(f"쿼리 플랜 캐시 정리 실패: {e}")
     
     # 통계 정보 업데이트
     try:
         cursor.execute("SELECT pg_stat_statements_reset();")
-        logger.info("통계 정보 리셋 완료")
+        # # logger.info("통계 정보 리셋 완료")
     except Exception as e:
         logger.warning(f"통계 정보 리셋 실패: {e}")
 
 def check_database_health(cursor):
     """데이터베이스 상태 확인"""
-    logger.info("데이터베이스 상태 확인 중...")
+    # # logger.info("데이터베이스 상태 확인 중...")
     
     # 테이블 크기 확인
     cursor.execute("""
@@ -149,7 +149,7 @@ def check_database_health(cursor):
     """)
     
     stats = cursor.fetchall()
-    logger.info(f"통계 정보 조회 완료: {len(stats)}개 컬럼")
+    # # logger.info(f"통계 정보 조회 완료: {len(stats)}개 컬럼")
     
     # 인덱스 사용률 확인
     cursor.execute("""
@@ -165,7 +165,7 @@ def check_database_health(cursor):
     """)
     
     indexes = cursor.fetchall()
-    logger.info(f"인덱스 사용률 조회 완료: {len(indexes)}개 인덱스")
+    # # logger.info(f"인덱스 사용률 조회 완료: {len(indexes)}개 인덱스")
     
     # 느린 쿼리 확인 (pg_stat_statements 확장이 있는 경우)
     try:
@@ -182,19 +182,20 @@ def check_database_health(cursor):
         """)
         
         slow_queries = cursor.fetchall()
-        logger.info(f"느린 쿼리 조회 완료: {len(slow_queries)}개 쿼리")
+        # # logger.info(f"느린 쿼리 조회 완료: {len(slow_queries)}개 쿼리")
         
         if slow_queries:
-            logger.info("상위 10개 느린 쿼리:")
+            # # logger.info("상위 10개 느린 쿼리:")
             for i, query in enumerate(slow_queries, 1):
-                logger.info(f"{i}. 평균 시간: {query['mean_time']:.2f}ms, 호출 횟수: {query['calls']}")
+                # # logger.info(f"{i}. 평균 시간: {query['mean_time']:.2f}ms, 호출 횟수: {query['calls']}")
+                pass
     
     except Exception as e:
         logger.warning(f"느린 쿼리 조회 실패: {e}")
 
 def main():
     """메인 함수"""
-    logger.info("데이터베이스 성능 최적화 시작")
+    # # logger.info("데이터베이스 성능 최적화 시작")
     
     try:
         conn = get_db_connection()
@@ -218,7 +219,7 @@ def main():
         # 변경사항 커밋
         conn.commit()
         
-        logger.info("데이터베이스 성능 최적화 완료")
+        # # logger.info("데이터베이스 성능 최적화 완료")
         
     except Exception as e:
         logger.error(f"데이터베이스 최적화 중 오류 발생: {e}")

@@ -27,7 +27,7 @@ class TranslationService:
             self.base_url = "https://translation.googleapis.com/language/translate/v2"
             # Google Translate API 글자수 제한 (5000자)
             self.max_chunk_size = 4000  # 안전하게 4000자로 설정
-            logger.info("Google Cloud Translation API 클라이언트(API 키)로 초기화 성공")
+            # # logger.info("Google Cloud Translation API 클라이언트(API 키)로 초기화 성공")
         except Exception as e:
             logger.warning(f"Google Cloud Translation API 초기화 실패: {e}. 번역 기능이 비활성화됩니다.")
             self.translate_client = None
@@ -70,7 +70,7 @@ class TranslationService:
     async def _translate_chunk(self, text: str, source: str, target: str) -> str:
         """단일 청크 번역"""
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=10.0) as client:  # 타임아웃 단축
                 response = await client.post(
                     self.base_url,
                     params={"key": self.api_key},
@@ -107,13 +107,16 @@ class TranslationService:
             chunks = self._split_text_into_chunks(korean_text)
             logger.debug(f"텍스트를 {len(chunks)}개 청크로 분할")
             
-            # 각 청크를 병렬로 번역
+            # 각 청크를 병렬로 번역 (타임아웃 설정)
             tasks = [
                 self._translate_chunk(chunk, "ko", "en") 
                 for chunk in chunks
             ]
             
-            translated_chunks = await asyncio.gather(*tasks, return_exceptions=True)
+            translated_chunks = await asyncio.wait_for(
+                asyncio.gather(*tasks, return_exceptions=True),
+                timeout=15.0  # 15초 타임아웃
+            )
             
             # 번역 결과 결합
             result = " ".join([
@@ -124,6 +127,9 @@ class TranslationService:
             logger.debug(f"번역 완료: '{korean_text[:50]}...' -> '{result[:50]}...'")
             return result
                     
+        except asyncio.TimeoutError:
+            logger.warning(f"번역 타임아웃: '{korean_text[:50]}...'")
+            return korean_text
         except Exception as e:
             logger.warning(f"번역 중 오류 발생: {e}. 원본 텍스트를 반환합니다.")
             return korean_text
@@ -141,13 +147,16 @@ class TranslationService:
             chunks = self._split_text_into_chunks(english_text)
             logger.debug(f"텍스트를 {len(chunks)}개 청크로 분할")
             
-            # 각 청크를 병렬로 번역
+            # 각 청크를 병렬로 번역 (타임아웃 설정)
             tasks = [
                 self._translate_chunk(chunk, "en", "ko") 
                 for chunk in chunks
             ]
             
-            translated_chunks = await asyncio.gather(*tasks, return_exceptions=True)
+            translated_chunks = await asyncio.wait_for(
+                asyncio.gather(*tasks, return_exceptions=True),
+                timeout=15.0  # 15초 타임아웃
+            )
             
             # 번역 결과 결합
             result = " ".join([
@@ -158,9 +167,55 @@ class TranslationService:
             logger.debug(f"번역 완료: '{english_text[:50]}...' -> '{result[:50]}...'")
             return result
                     
+        except asyncio.TimeoutError:
+            logger.warning(f"번역 타임아웃: '{english_text[:50]}...'")
+            return english_text
         except Exception as e:
             logger.warning(f"번역 중 오류 발생: {e}. 원본 텍스트를 반환합니다.")
             return english_text
+    
+    async def translate_batch_to_korean(self, texts: List[str]) -> List[str]:
+        """여러 텍스트를 한글로 배치 번역"""
+        if not self.api_key:
+            logger.debug("번역 기능이 비활성화되어 원본 텍스트를 반환합니다.")
+            return texts
+        
+        if not texts:
+            return []
+        
+        try:
+            logger.debug(f"배치 번역 시작: {len(texts)}개 텍스트")
+            
+            # 텍스트들을 하나로 합치기 (Google Translate API는 여러 텍스트를 한 번에 처리 가능)
+            combined_text = "\n".join(texts)
+            
+            # 배치 번역 실행
+            translated_combined = await asyncio.wait_for(
+                self._translate_chunk(combined_text, "en", "ko"),
+                timeout=20.0  # 배치 번역은 더 긴 타임아웃
+            )
+            
+            # 결과를 다시 분할
+            translated_texts = translated_combined.split("\n")
+            
+            # 원본 개수와 번역된 개수가 다를 경우 처리
+            if len(translated_texts) != len(texts):
+                logger.warning(f"배치 번역 결과 개수 불일치: 원본 {len(texts)}, 번역 {len(translated_texts)}")
+                # 부족한 경우 원본으로 채움
+                while len(translated_texts) < len(texts):
+                    translated_texts.append(texts[len(translated_texts)])
+                # 초과한 경우 잘라냄
+                translated_texts = translated_texts[:len(texts)]
+            
+            logger.debug(f"배치 번역 완료: {len(texts)}개 텍스트")
+            return translated_texts
+                    
+        except asyncio.TimeoutError:
+            logger.warning(f"배치 번역 타임아웃: {len(texts)}개 텍스트")
+            return texts
+        except Exception as e:
+            logger.warning(f"배치 번역 중 오류 발생: {e}. 원본 텍스트를 반환합니다.")
+            return texts
 
 # 전역 번역 서비스 인스턴스
 translator = TranslationService() 
