@@ -177,7 +177,10 @@ async def recommend_result(
         try:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}]
+                messages=[
+                    {"role": "system", "content": "당신은 사용자의 요구사항을 정확히 파악하여 최적의 음식점을 추천하는 전문가입니다. 항상 JSON 형식으로 정확하게 응답하고, 사용자 요청과 직접적으로 관련된 음식점만 추천합니다."},
+                    {"role": "user", "content": prompt}
+                ]
             )
             gpt_content = response.choices[0].message.content
             gpt_results = json.loads(gpt_content)  # 배열로 파싱

@@ -15,37 +15,44 @@ def create_yogiyo_prompt_with_testoptions(
     
     score_text = f"\n기분 태그는 {', '.join(score.keys())}입니다." if score else ""
 
+    # 음식점 리스트를 7개로 제한
+    limited_store_list = store_keywords_list[:7]
+
     prompt = f"""
-    {base_text}{score_text}
-    사용자 입력 키워드: "{user_text or '무작위'}"
-    이 키워드는 사용자가 **먹고 싶은 음식**을 의미합니다. 예를 들어 "매운음식"이라면 매콤한 음식, 매운맛 위주 메뉴가 포함된 가게를 추천해야 합니다.
+당신은 사용자의 요구사항과 기분 태그를 종합적으로 분석하여 최적의 음식점을 추천하는 전문가입니다.
 
-    아래는 현재 배달 가능한 음식점 리스트입니다. 각 줄은 "가게명: 키워드들" 형식입니다.
- 
-    ---
-    {chr(10).join(store_keywords_list[:10])}
-    ---
-    당신의 역할:
-    - 위 리스트에서 "{user_text or '무작위'}"와 **맛·카테고리·유형적으로 가장 잘 맞는** 가게를 1개 고르세요.
-    - 추천 이유는 감성적으로 쓰되, **사용자 입력과의 관련성**을 포함하세요.
-    - 사용자 입력이 없는 경우, 기분 태그를 기반으로 추천해주세요.
+**사용자 요청**: {base_text}
+**기분 태그**: {score_text if score else "없음"}
+**사용자 입력 키워드**: "{user_text or '무작위'}"
 
-    조건:
-    - 사용자 요청({user_text or '무작위'}) 또는 기분 태그와 의미적으로 가장 가까운 음식점을 골라주세요.
-    - 추천 이유를 감성적으로 한 줄로 써주세요.
-    - 가게 이름에 \"{user_text or '무작위'}\"가 직접 없더라도, 의미가 통하거나 비슷한 음식이면 괜찮습니다.
-    - 결과는 반드시 JSON 형식으로 아래처럼 주세요:
-        {{
-            "store": 음식점 이름,
-            "description": 감성적 설명,
-            "category": 대표 카테고리,
-            "keywords": [관련 키워드1, 관련 키워드2, ...]
-        }}
+**음식점 목록** (상위 7개):
+{chr(10).join(limited_store_list)}
 
-    주의:
-    - 입력값 또는 기분 태그와 연관 없는 가게는 절대 추천하지 마세요.
-    - 꼭 의미적으로 유사한 가게를 골라야 합니다.
-    """
+**추천 조건**:
+1. 사용자 요청("{user_text or '무작위'}")과 가장 관련성 높은 음식점 1곳 선택
+2. 기분 태그가 있는 경우 이를 고려하여 추천
+3. 추천 이유는 감성적이되 구체적인 이유 포함
+4. 사용자가 요청한 음식과 직접적으로 연관된 곳 우선
+
+**출력 형식** (반드시 JSON):
+{{
+    "store": "음식점명",
+    "description": "사용자 요청과 연관된 구체적인 추천 이유",
+    "category": "주요 카테고리",
+    "keywords": ["키워드1", "키워드2", "키워드3"]
+}}
+
+**예시**:
+사용자: "치킨", 기분: "피곤해"
+추천: {{
+    "store": "교촌치킨",
+    "description": "피곤한 하루 끝에 바삭한 치킨으로 기운을 내세요. 간편하면서도 든든한 선택입니다.",
+    "category": "치킨",
+    "keywords": ["치킨", "후라이드", "양념치킨", "간편식"]
+}}
+
+**중요**: 사용자 요청과 무관한 음식점은 절대 추천하지 마세요.
+"""
     return prompt 
 
 def classify_input_prompt(user_input: str) -> str:
@@ -75,7 +82,10 @@ async def classify_user_input_via_gpt(user_input: str) -> str:
     prompt = classify_input_prompt(user_input)
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[
+            {"role": "system", "content": "당신은 사용자 입력을 정확히 분류하는 전문가입니다. 항상 JSON 형식으로 응답하고, 입력의 의미를 정확히 파악하여 분류합니다."},
+            {"role": "user", "content": prompt}
+        ]
     )
     gpt_content = response.choices[0].message.content
     try:
@@ -93,42 +103,81 @@ def make_store_info_line(store: dict) -> str:
     return f"{name} | 카테고리: {categories} | 대표메뉴: {menus} | 키워드: {keywords} | 태그: {tags}"
 
 def create_yogiyo_prompt_with_options(user_text: str, store_info_list: List[str], score: Optional[Dict] = None, input_type: str = "음식") -> str:
+    # 사용자 입력에 따른 구체적인 지시사항 생성
+    user_instruction = ""
+    if input_type == "음식":
+        if user_text:
+            user_instruction = f"사용자가 '{user_text}'를 원합니다. 이 음식과 직접적으로 관련된 메뉴나 카테고리를 가진 음식점을 우선적으로 추천하세요."
+        else:
+            user_instruction = "사용자가 특별한 음식을 요청하지 않았습니다. 다양한 옵션을 제공하세요."
+    elif input_type == "기분":
+        if "피곤" in user_text or "힘들" in user_text:
+            user_instruction = "피곤한 상태이므로 간편하고 든든한 음식을 추천하세요."
+        elif "기분 좋" in user_text or "행복" in user_text:
+            user_instruction = "기분이 좋은 상태이므로 특별하고 맛있는 음식을 추천하세요."
+        elif "우울" in user_text or "슬픈" in user_text:
+            user_instruction = "우울한 상태이므로 위로가 되는 편안한 음식을 추천하세요."
+        else:
+            user_instruction = "사용자의 기분에 맞는 적절한 음식을 추천하세요."
+    elif input_type == "상황":
+        if "공부" in user_text or "업무" in user_text:
+            user_instruction = "집중력이 필요한 상황이므로 가볍고 간편한 음식을 추천하세요."
+        elif "야근" in user_text or "늦" in user_text:
+            user_instruction = "늦은 시간이므로 배달이 빠르고 간편한 음식을 추천하세요."
+        else:
+            user_instruction = "상황에 맞는 적절한 음식을 추천하세요."
+    else:
+        user_instruction = "다양한 옵션을 제공하세요."
+
+    # 음식점 리스트를 7개로 제한
+    limited_store_list = store_info_list[:7]
+    
     prompt = f"""
-너는 사용자 입력을 기반으로 딱 맞는 음식점을 고르는 추천 전문가야.
-사용자 입력은 \"기분\", \"상황\", 또는 \"음식\"일 수 있어.
-입력: \"{user_text}\"
-이 입력은 \"{input_type}\"에 해당해.
+당신은 사용자의 요구사항을 정확히 파악하여 최적의 음식점을 추천하는 전문가입니다.
 
-조건:
-- 입력과 가장 잘 맞는 음식점 3곳을 골라줘.
-- 음식점은 아래 리스트 중에서만 선택해.
-- 설명은 감성적이되 현실적인 이유로, 한 문장으로 써줘.
-- 결과는 반드시 아래 JSON 배열 형식으로만 출력해.
-- 연관 없는 음식점은 추천하지 마세요.
+**사용자 요청**: "{user_text}"
+**요청 유형**: {input_type}
+**추가 지시**: {user_instruction}
 
-음식점 리스트:
-{chr(10).join(store_info_list[:10])}
+**음식점 목록** (상위 7개):
+{chr(10).join(limited_store_list)}
 
-출력 예시:
+**추천 조건**:
+1. 사용자 요청("{user_text}")과 가장 관련성 높은 음식점 3곳 선택
+2. 각 추천은 구체적이고 현실적인 이유 포함
+3. 사용자가 요청한 음식/기분/상황과 직접적으로 연관된 곳 우선
+
+**출력 형식** (반드시 JSON 배열):
 [
   {{
-    "store": "버거킹",
-    "description": "피곤한 하루 끝에 빠르게 즐기기 좋은 든든한 선택이에요.",
-    "category": "패스트푸드",
-    "keywords": ["버거", "패스트푸드", "간편식"]
-  }},
-  {{
-    "store": "맘스터치",
-    "description": "든든한 치킨버거로 에너지를 충전할 수 있어요.",
-    "category": "치킨, 패스트푸드",
-    "keywords": ["치킨", "버거", "패스트푸드"]
-  }},
-  {{
-    "store": "롯데리아",
-    "description": "가볍게 즐기기 좋은 다양한 버거 메뉴가 있어요.",
-    "category": "패스트푸드",
-    "keywords": ["버거", "패스트푸드"]
+    "store": "음식점명",
+    "description": "사용자 요청과 연관된 구체적인 추천 이유",
+    "category": "주요 카테고리",
+    "keywords": ["키워드1", "키워드2", "키워드3"]
   }}
 ]
+
+**예시**:
+사용자: "치킨"
+추천: [
+  {{
+    "store": "교촌치킨",
+    "description": "바삭한 후라이드와 매콤달콤한 양념치킨으로 치킨의 진수를 맛볼 수 있어요.",
+    "category": "치킨",
+    "keywords": ["치킨", "후라이드", "양념치킨", "바삭함"]
+  }}
+]
+
+사용자: "분식"
+추천: [
+  {{
+    "store": "떡볶이천국",
+    "description": "쫄깃한 떡볶이와 바삭한 튀김으로 학교 앞 분식의 향수를 느낄 수 있어요.",
+    "category": "분식",
+    "keywords": ["떡볶이", "분식", "튀김", "쫄깃함"]
+  }}
+]
+
+**중요**: 사용자 요청과 무관한 음식점은 절대 추천하지 마세요.
 """
     return prompt

@@ -243,6 +243,13 @@ class SpoonacularClient:
             # logger.info(f"캐시에서 레시피 상세 정보 반환: ID {recipe_id}")
             return cached
         
+        # 404 오류 캐시 확인
+        error_cache_key = f"recipe_error:{recipe_id}"
+        error_cached = get_cache(error_cache_key)
+        if error_cached:
+            logger.info(f"404 오류 캐시에서 확인됨: ID {recipe_id}")
+            return None
+        
         # API 키 검증
         if not self.api_key:
             logger.warning("Spoonacular API 키가 설정되지 않았습니다.")
@@ -289,7 +296,10 @@ class SpoonacularClient:
                             return recipe_data
                     
                     elif response.status_code == 404:
-                        logger.warning(f"레시피를 찾을 수 없습니다: ID {recipe_id}")
+                        logger.warning(f"레시피를 찾을 수 없습니다: ID {recipe_id} (Spoonacular API에서 삭제됨)")
+                        # 404 오류를 캐시에 저장하여 반복 요청 방지 (5분간)
+                        error_cache_key = f"recipe_error:{recipe_id}"
+                        set_cache(error_cache_key, {"error": "not_found", "timestamp": time.time()}, timeout=300)
                         return None
                     
                     elif response.status_code == 429:  # Rate limit

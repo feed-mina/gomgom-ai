@@ -69,6 +69,7 @@ class RecipeRecommendation(BaseModel):
     source: str
     total_cost: Optional[float] = None
     currency: str = "KRW"
+    api_endpoint: Optional[str] = None  # API 엔드포인트 추가
 
 class RecipeSearchRequest(BaseModel):
     query: str = Field(..., description="검색할 레시피 이름")

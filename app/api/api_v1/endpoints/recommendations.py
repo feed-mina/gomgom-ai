@@ -317,6 +317,16 @@ async def _search_recipes_impl(
         total_cost = 0.0
         
         for recipe in recipes:
+            # 404 오류가 발생한 레시피 필터링
+            recipe_id = recipe.get("id")
+            if recipe_id:
+                from app.core.cache import get_cache
+                error_cache_key = f"recipe_error:{recipe_id}"
+                error_cached = get_cache(error_cache_key)
+                if error_cached:
+                    logger.info(f"404 오류 레시피 필터링: ID {recipe_id}")
+                    continue
+            
             # 조리 시간 필터링
             cooking_time = recipe.get("readyInMinutes", 0)
             if max_cooking_time and cooking_time > max_cooking_time:
@@ -343,6 +353,11 @@ async def _search_recipes_impl(
                     )
                     instructions.append(instruction)
             
+            # ID 형식에 따른 API 엔드포인트 결정
+            recipe_id = recipe.get("id", 0)
+            is_korean_recipe = str(recipe_id).startswith("10000recipe_")
+            api_endpoint = f"/api/v1/recipes/internal/{recipe_id}" if is_korean_recipe else f"/api/v1/recipes/external/{recipe_id}"
+            
             # 레시피 추천 객체 생성
             recipe_recommendation = RecipeRecommendation(
                 id=recipe.get("id", 0),
@@ -354,8 +369,9 @@ async def _search_recipes_impl(
                 cooking_time=cooking_time,
                 servings=recipe.get("servings", 1),
                 difficulty=_calculate_difficulty(cooking_time, len(ingredients)),
-                source="Spoonacular",
-                currency="KRW"
+                source="만개의레시피" if is_korean_recipe else "Spoonacular",
+                currency="KRW",
+                api_endpoint=api_endpoint  # API 엔드포인트 추가
             )
             
             recipe_list.append(recipe_recommendation)
@@ -392,7 +408,8 @@ async def _search_recipes_impl(
                 servings=2,
                 difficulty="보통",
                 source="Dummy",
-                currency="KRW"
+                currency="KRW",
+                api_endpoint=f"/api/v1/recipes/external/1"
             ),
             RecipeRecommendation(
                 id=2,
@@ -411,7 +428,8 @@ async def _search_recipes_impl(
                 servings=1,
                 difficulty="쉬움",
                 source="Dummy",
-                currency="KRW"
+                currency="KRW",
+                api_endpoint=f"/api/v1/recipes/external/2"
             )
         ]
         

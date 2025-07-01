@@ -258,9 +258,18 @@ async def delete_recipe(
 @router.get("/external/{recipe_id}")
 async def get_external_recipe(recipe_id: str, translate: bool = Query(False, description="번역 여부")):
     """
-    Spoonacular API에서 레시피 상세 정보를 가져옵니다.
+    외부 API에서 레시피 상세 정보를 가져옵니다.
+    ID 형식에 따라 Spoonacular API 또는 만개의레시피 API를 사용합니다.
     """
     try:
+        # ID 형식 감지
+        is_korean_recipe = recipe_id.startswith("10000recipe_")
+        
+        if is_korean_recipe:
+            # 만개의레시피 ID인 경우 내부 API로 리다이렉트
+            logger.info(f"만개의레시피 ID 감지: {recipe_id}, 내부 API로 리다이렉트")
+            return await get_internal_recipe(recipe_id)
+        
         # 캐시 키 생성 (번역 여부에 따라 다른 키 사용)
         cache_key = f"recipe_detail:{recipe_id}:translate_{translate}"
         
@@ -270,11 +279,25 @@ async def get_external_recipe(recipe_id: str, translate: bool = Query(False, des
             # logger.info(f"캐시에서 레시피 상세 정보 반환: ID {recipe_id}, 번역={translate}")
             return cached_result
         
-        # 캐시에 없으면 API 호출
+        # 캐시에 없으면 Spoonacular API 호출
         recipe_info = await spoonacular_client.get_recipe_by_id(recipe_id)
         
         if not recipe_info:
-            raise HTTPException(status_code=404, detail="레시피를 찾을 수 없습니다.")
+            # 404 오류 시 더 자세한 정보 제공
+            logger.warning(f"레시피를 찾을 수 없음: ID {recipe_id}")
+            
+            # 에러 응답에 더 많은 컨텍스트 제공
+            error_detail = {
+                "error": "레시피를 찾을 수 없습니다",
+                "recipe_id": recipe_id,
+                "message": "요청하신 레시피가 Spoonacular API에서 삭제되었거나 접근할 수 없는 상태입니다.",
+                "suggestions": [
+                    "다른 레시피 ID를 시도해보세요",
+                    "레시피 검색 API를 사용하여 유사한 레시피를 찾아보세요",
+                    "만개의레시피 내부 API를 사용해보세요 (/api/v1/recipes/internal/{recipe_id})"
+                ]
+            }
+            raise HTTPException(status_code=404, detail=error_detail)
         
         # 번역이 요청된 경우에만 번역 수행
         if translate:
@@ -386,12 +409,33 @@ async def get_external_recipe(recipe_id: str, translate: bool = Query(False, des
 async def get_internal_recipe(recipe_id: str):
     """만개의레시피에서 레시피 상세 정보를 가져옵니다."""
     try:
+        # 캐시 확인
+        cache_key = f"korean_recipe_detail:{recipe_id}"
+        cached_result = get_cache(cache_key)
+        if cached_result:
+            logger.info(f"캐시에서 만개의레시피 정보 반환: ID {recipe_id}")
+            return cached_result
+        
         # 만개의레시피 크롤러에서 recipe_id로 상세 정보 반환
         recipe = await korean_recipe_crawler_get_recipe_by_id(recipe_id)
         if not recipe:
-            raise HTTPException(status_code=404, detail="레시피를 찾을 수 없습니다.")
+            # 404 오류 시 더 자세한 정보 제공
+            error_detail = {
+                "error": "레시피를 찾을 수 없습니다",
+                "recipe_id": recipe_id,
+                "message": "요청하신 레시피가 만개의레시피에서 삭제되었거나 접근할 수 없는 상태입니다.",
+                "suggestions": [
+                    "다른 레시피 ID를 시도해보세요",
+                    "레시피 검색 API를 사용하여 유사한 레시피를 찾아보세요",
+                    "Spoonacular 외부 API를 사용해보세요 (/api/v1/recipes/external/{recipe_id})"
+                ]
+            }
+            raise HTTPException(status_code=404, detail=error_detail)
         
-        # logger.info(f"만개의레시피 레시피 조회 성공: ID {recipe_id}")
+        # 결과를 캐시에 저장 (1시간)
+        set_cache(cache_key, recipe, timeout=3600)
+        
+        logger.info(f"만개의레시피 레시피 조회 성공: ID {recipe_id}")
         return recipe
         
     except HTTPException:
