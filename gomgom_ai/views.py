@@ -386,20 +386,13 @@ def ask_gpt_to_choose(score,food_list, food_data_dict=None):
             pass
         return {"food": fallback_food, "description": fallback_desc}
 
-@cache_page(60 * 5)  # 5분 동안 캐싱
-@csrf_exempt
-def test_result_view(request):
-    text = request.GET.get("text")
-    lat = request.GET.get("lat") or "37.484934"
-    lng = request.GET.get("lng") or "126.981321"
+def run_recommend(text, lat, lng, score, user_ip):
+    """입맛 테스트 결과 화면과 JSON API가 함께 쓰는 추천 계산.
 
-    types = [request.GET.get(f"type{i + 1}") for i in range(6)]
-
-    # 기분 태그 개수 세기
-    score = {}
-    for t in types:
-        if t:
-            score[t] = score.get(t, 0) + 1
+    기존 test_result_view 본문을 그대로 옮긴 것이며 로직 변경은 없다.
+    request 대신 user_ip 를 인자로 받는 점만 다르다.
+    반환: (result, matched_restaurants)
+    """
 
     # === 병렬 실행용 함수들 정의 ===
     def fetch_yogiyo():
@@ -456,7 +449,7 @@ def test_result_view(request):
                 keywords=result.get('keywords', []),
                 latitude=float(lat) if lat else None,
                 longitude=float(lng) if lng else None,
-                user_ip=request.META.get('REMOTE_ADDR'),
+                user_ip=user_ip,
                 is_success=True,
                 gpt_raw_response=gpt_response.choices[0].message.content if gpt_response else None,
                 matched_restaurant_id=best_match.get('id') if best_match else None
@@ -489,11 +482,33 @@ def test_result_view(request):
                 keywords=result.get('keywords', []),
                 latitude=float(lat) if lat else None,
                 longitude=float(lng) if lng else None,
-                user_ip=request.META.get('REMOTE_ADDR'),
+                user_ip=user_ip,
                 is_success=False,
                 gpt_raw_response=None,
                 matched_restaurant_id=fallback.get('id') if fallback else None
             )
+
+    return result, matched_restaurants
+
+
+@cache_page(60 * 5)  # 5분 동안 캐싱
+@csrf_exempt
+def test_result_view(request):
+    text = request.GET.get("text")
+    lat = request.GET.get("lat") or "37.484934"
+    lng = request.GET.get("lng") or "126.981321"
+
+    types = [request.GET.get(f"type{i + 1}") for i in range(6)]
+
+    # 기분 태그 개수 세기
+    score = {}
+    for t in types:
+        if t:
+            score[t] = score.get(t, 0) + 1
+
+    result, matched_restaurants = run_recommend(
+        text, lat, lng, score, request.META.get('REMOTE_ADDR')
+    )
 
     return render(request, 'gomgom_ai/test_result.html', {
         "result": result,
@@ -623,3 +638,117 @@ def recommend_result(request):
         "keyword": [result.get("store")],
         "DEBUG": settings.DEBUG,
     })
+
+
+# ===== SDUI Studio 연동용 JSON API =====
+# 화면(HTML) 반환 뷰는 그대로 두고, 같은 계산 결과를 JSON으로 내보내는 창구만 추가한다.
+# SDUI 게시 페이지의 플러그인이 이 두 경로를 호출한다.
+# 응답 봉투는 SDUI 키트 표준인 {"ok": ..., "data": ..., "errors": [...]} 형식을 따른다.
+
+SDUI_ALLOWED_ORIGINS = getattr(settings, 'SDUI_ALLOWED_ORIGINS', [])
+
+# 입맛 테스트 답변에 쓰이는 취향 태그 (templates/gomgom_ai/test.html 의 qnaList 기준)
+VALID_TASTE_TYPES = {
+    'active', 'calm', 'adventurous', 'familiar', 'spicy', 'mild',
+    'rich', 'light', 'drink', 'dessert', 'trendy', 'safe',
+}
+
+
+def _with_cors(response, request):
+    """SDUI 게시 페이지에서 호출할 수 있도록 허용된 origin 에만 CORS 헤더를 붙인다."""
+    origin = request.headers.get('Origin')
+    if origin and origin in SDUI_ALLOWED_ORIGINS:
+        response['Access-Control-Allow-Origin'] = origin
+        response['Access-Control-Allow-Headers'] = 'Content-Type'
+        response['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS'
+        response['Access-Control-Max-Age'] = '600'
+        response['Vary'] = 'Origin'
+    return response
+
+
+def _ok(data, request):
+    return _with_cors(JsonResponse({"ok": True, "data": data, "errors": []}), request)
+
+
+def _error(code, message, request, status=400):
+    return _with_cors(
+        JsonResponse({"ok": False, "data": None, "errors": [{"code": code, "message": message}]}, status=status),
+        request,
+    )
+
+
+@csrf_exempt
+def recommend_api(request):
+    """POST /api/v1/gomgom/recommend — 자유 입력·취향 태그로 가게 한 곳을 추천한다."""
+    if request.method == 'OPTIONS':
+        return _with_cors(JsonResponse({}, status=204), request)
+    if request.method != 'POST':
+        return _error('METHOD_NOT_ALLOWED', 'POST 로 호출해주세요.', request, status=405)
+
+    try:
+        body = json.loads(request.body or b'{}')
+    except json.JSONDecodeError:
+        return _error('VALIDATION_ERROR', '요청 본문이 JSON 형식이 아닙니다.', request)
+    if not isinstance(body, dict):
+        return _error('VALIDATION_ERROR', '요청 본문은 객체여야 합니다.', request)
+
+    text = body.get('text')
+    if not isinstance(text, str) or not text.strip():
+        return _error('VALIDATION_ERROR', 'text 는 비어 있지 않은 문자열이어야 합니다.', request)
+    text = text.strip()[:200]
+
+    lat = body.get('lat') or "37.484934"
+    lng = body.get('lng') or "126.981321"
+
+    types = body.get('types') or []
+    if not isinstance(types, list):
+        return _error('VALIDATION_ERROR', 'types 는 배열이어야 합니다.', request)
+    types = [t for t in types[:6] if t in VALID_TASTE_TYPES]
+
+    # 기분 태그 개수 세기 (test_result_view 와 동일한 집계)
+    score = {}
+    for t in types:
+        score[t] = score.get(t, 0) + 1
+
+    try:
+        result, matched_restaurants = run_recommend(
+            text, lat, lng, score, request.META.get('REMOTE_ADDR')
+        )
+    except Exception as exc:  # 외부 API·DB 장애
+        return _error('PLUGIN_ERROR', f'추천을 만들지 못했습니다: {exc}', request, status=502)
+
+    return _ok({
+        "store": result.get('store', ''),
+        "description": result.get('description', ''),
+        "category": result.get('category', ''),
+        "keywords": result.get('keywords', []),
+        "restaurant": matched_restaurants[0] if matched_restaurants else None,
+    }, request)
+
+
+@csrf_exempt
+def restaurants_api(request):
+    """GET /api/v1/gomgom/restaurants?lat=&lng= — 좌표 주변 배달 가게 목록."""
+    if request.method == 'OPTIONS':
+        return _with_cors(JsonResponse({}, status=204), request)
+    if request.method != 'GET':
+        return _error('METHOD_NOT_ALLOWED', 'GET 으로 호출해주세요.', request, status=405)
+
+    lat = request.GET.get('lat') or "37.484934"
+    lng = request.GET.get('lng') or "126.981321"
+
+    cache_key = f"restaurants:{lat}:{lng}"
+    restaurants = cache.get(cache_key)
+    if restaurants is None:
+        data = get_yogiyo_restaurants(lat, lng)
+        restaurants = data.get("restaurants", []) if isinstance(data, dict) else (data or [])
+        cache.set(cache_key, restaurants, timeout=60 * 5)  # 5분 캐시
+
+    return _ok({
+        "restaurants": [{
+            "name": r.get('name', ''),
+            "review_avg": str(r.get('review_avg', '')),
+            "categories": ", ".join(r.get('categories', [])),
+            "logo_url": r.get('logo_url', ''),
+        } for r in restaurants[:20]],
+    }, request)

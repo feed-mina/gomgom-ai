@@ -1,0 +1,8 @@
+{ "$schema": "https://json-schema.org/draft/2020-12/schema", "title": "RecommendInput", "type": "object",
+  "required": ["text"], "additionalProperties": false,
+  "properties": {
+    "text": { "type": "string", "maxLength": 200 },
+    "lat": { "type": "number", "default": 37.484934 },
+    "lng": { "type": "number", "default": 126.981321 },
+    "types": { "type": "array", "maxItems": 6, "items": { "type": "string",
+      "enum": ["active","calm","adventurous","familiar","spicy","mild","rich","light","drink","dessert","trendy","safe"] } } } }

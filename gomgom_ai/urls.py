@@ -20,5 +20,8 @@ urlpatterns = [
     path('restaurant_list/', views.restaurant_list_view, name='restaurant_list'),
     path('async-test/', views.async_test_view),
     path('api/ip-location/', views.get_ip_location),
+    # SDUI Studio 게시 페이지의 플러그인이 호출하는 JSON 창구
+    path('api/v1/gomgom/recommend', views.recommend_api, name='sdui_recommend'),
+    path('api/v1/gomgom/restaurants', views.restaurants_api, name='sdui_restaurants'),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATICFILES_DIRS[0])
