@@ -99,6 +99,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'gomgom_ai.wsgi.application'
 
+# SDUI Studio 게시 페이지에서 JSON 창구(/api/v1/gomgom/*)를 호출할 수 있는 origin 목록.
+# 여기 없는 origin 에는 CORS 헤더를 붙이지 않는다.
+SDUI_ALLOWED_ORIGINS = [
+    'https://sdui-template-kit-productization.pages.dev',
+]
+
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases

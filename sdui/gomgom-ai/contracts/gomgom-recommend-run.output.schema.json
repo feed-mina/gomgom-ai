@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RecommendOutput",
+  "type": "object",
+  "required": ["store", "description", "category", "keywords"],
+  "properties": {
+    "store": { "type": "string" },
+    "description": { "type": "string" },
+    "category": { "type": "string" },
+    "keywords": { "type": "array", "items": { "type": "string" } },
+    "restaurant": {
+      "type": ["object", "null"],
+      "description": "matched_restaurants[0]. 성공 경로와 fallback 경로의 키가 다르므로 name 외에는 선택 항목이다.",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "review_avg": { "type": ["string", "number"] },
+        "address": { "type": "string" },
+        "logo": { "type": "string" },
+        "id": { "type": ["integer", "string", "null"] },
+        "categories": { "type": "string" }
+      }
+    }
+  }
+}

@@ -1,0 +1,250 @@
+{
+  "schema": "feedmina.sdui.template.v1",
+  "id": "gomgom-ai",
+  "name": "Gomgom AI · 입맛 추천",
+  "version": "0.1.0",
+  "recommendedTier": "free",
+  "runtimeAdapters": [
+    "cloudflare-worker-static"
+  ],
+  "pluginValidation": "strict",
+  "documentVersion": 2,
+  "defaultLocale": "ko",
+  "locales": [
+    "ko"
+  ],
+  "messages": {
+    "ko": {
+      "pages.main.title": "메인"
+    }
+  },
+  "metadata": {
+    "format": "inline"
+  },
+  "pages": [
+    {
+      "id": "main",
+      "sourceKind": "page_key",
+      "title": "메인",
+      "route": "/main/",
+      "metadataRef": "embedded:pages.main",
+      "pluginRefs": [
+        "gomgom-recommend"
+      ],
+      "state": {
+        "askTest": false
+      },
+      "nodes": [
+        {
+          "id": "n_root",
+          "name": "메인 전체",
+          "type": "Stack",
+          "props": {
+            "direction": "vertical"
+          },
+          "style": {
+            "gap": "var(--space-md)",
+            "padding": "var(--space-lg)"
+          },
+          "states": {},
+          "children": [
+            {
+              "id": "n_title",
+              "name": "헤더",
+              "type": "Heading",
+              "props": {
+                "text": "CLICK YOUR TASTE!",
+                "level": 1
+              },
+              "style": {},
+              "states": {},
+              "children": []
+            },
+            {
+              "id": "n_bubble",
+              "name": "말풍선",
+              "type": "Text",
+              "props": {
+                "text": "오늘 뭐 먹을지 골라드릴게요"
+              },
+              "style": {},
+              "states": {},
+              "children": []
+            },
+            {
+              "id": "n_input",
+              "name": "자유 입력",
+              "type": "Input",
+              "props": {
+                "label": "먹고 싶은 음식·기분",
+                "placeholder": "예: 매운 음식 추천해줘",
+                "value": "",
+                "inputType": "text"
+              },
+              "style": {},
+              "states": {},
+              "source": {
+                "fieldId": "text"
+              },
+              "children": []
+            },
+            {
+              "id": "n_btn_recommend",
+              "name": "입력 추천",
+              "type": "Button",
+              "props": {
+                "label": "입력 추천",
+                "variant": "primary"
+              },
+              "style": {},
+              "states": {},
+              "source": {
+                "actionType": "gomgom.recommend.run"
+              },
+              "children": []
+            },
+            {
+              "id": "n_btn_test",
+              "name": "입맛 테스트",
+              "type": "Button",
+              "props": {
+                "label": "입맛 테스트",
+                "variant": "primary"
+              },
+              "style": {},
+              "states": {},
+              "events": {
+                "onClick": {
+                  "action": "setState",
+                  "target": "askTest",
+                  "value": true
+                }
+              },
+              "children": []
+            },
+            {
+              "id": "n_modal",
+              "name": "테스트 병행 확인",
+              "type": "Modal",
+              "props": {
+                "title": "입맛 테스트도 해보시겠어요?",
+                "description": "6개 질문에 답하면 취향 태그로 추천합니다.",
+                "actionLabel": "네"
+              },
+              "style": {},
+              "states": {},
+              "visibleWhen": {
+                "state": "askTest",
+                "equals": true
+              },
+              "children": []
+            },
+            {
+              "id": "n_result",
+              "name": "추천 결과",
+              "type": "Card",
+              "props": {
+                "title": "추천 가게",
+                "description": "추천을 누르면 여기에 가게 이름과 이유가 채워집니다."
+              },
+              "style": {},
+              "states": {},
+              "source": {
+                "refDataId": "gomgom.restaurants.nearby"
+              },
+              "children": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "components": [
+    "TEXT",
+    "INPUT",
+    "BUTTON",
+    "GROUP",
+    "WIDGET"
+  ],
+  "plugins": [
+    {
+      "id": "gomgom-recommend",
+      "kind": "page-plugin",
+      "version": "1.0.0",
+      "contractVersion": "1.0",
+      "runtimeAdapters": [
+        "cloudflare-worker-static"
+      ],
+      "entry": "/studio/sdui-gomgom.js",
+      "entryMode": "host",
+      "permissions": [
+        "gomgom:recommend",
+        "gomgom:read"
+      ],
+      "dependencies": [],
+      "provides": {
+        "actions": {
+          "gomgom.recommend.run": {
+            "inputSchema": "contracts/gomgom-recommend-run.input.schema.json",
+            "outputSchema": "contracts/gomgom-recommend-run.output.schema.json",
+            "permissions": [
+              "gomgom:recommend"
+            ],
+            "sideEffect": "write",
+            "idempotency": "optional",
+            "timeoutMs": 8000,
+            "errors": [
+              "VALIDATION_ERROR",
+              "PERMISSION_DENIED",
+              "PLUGIN_ERROR",
+              "TIMEOUT"
+            ]
+          }
+        },
+        "hydrators": {
+          "gomgom.restaurants.nearby": {
+            "inputSchema": "contracts/gomgom-restaurants-nearby.input.schema.json",
+            "outputSchema": "contracts/gomgom-restaurants-nearby.output.schema.json",
+            "permissions": [
+              "gomgom:read"
+            ],
+            "sideEffect": "read",
+            "idempotency": "none",
+            "timeoutMs": 5000
+          }
+        },
+        "widgets": {}
+      }
+    }
+  ],
+  "api": {
+    "contract": "api-contract.md",
+    "endpoints": [
+      {
+        "method": "POST",
+        "path": "/api/v1/gomgom/recommend",
+        "auth": "public"
+      },
+      {
+        "method": "GET",
+        "path": "/api/v1/gomgom/restaurants",
+        "auth": "public"
+      }
+    ]
+  },
+  "env": {
+    "secrets": [
+      "OPENAI_API_KEY",
+      "KAKAO_REST_API"
+    ]
+  },
+  "gating": {
+    "free": [
+      "metadata",
+      "manual-preview"
+    ]
+  },
+  "risks": [
+    "플러그인 JS는 Studio 호스트 배포가 필요"
+  ]
+}
